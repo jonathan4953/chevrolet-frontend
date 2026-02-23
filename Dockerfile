@@ -2,7 +2,8 @@
 FROM node:22-alpine AS build-stage
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# Instalando com --legacy-peer-deps para evitar erros de versão de bibliotecas
+RUN npm install --legacy-peer-deps
 COPY . .
 RUN npm run build
 
