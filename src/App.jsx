@@ -147,14 +147,20 @@ export default function App() {
   const [selectedBrand, setSelectedBrand] = useState("Todas"); 
   const [yearNum, setYearNum] = useState(2024);
   const [kmMensal, setKmMensal] = useState(3000);
-  const [taxaJurosMensal, setTaxaJurosMensal] = useState(0.0129);
+  const [taxaJurosMensal, setTaxaJurosMensal] = useState(0.0145); // Padrão Espacial
   const [percentualAplicado, setPercentualAplicado] = useState(0.028);
   const [revisaoMensal, setRevisaoMensal] = useState(56.88);
-  const [prazos] = useState([12, 24, 36, 48]);
+  const [prazos] = useState([12, 24, 36]); // Ajustado para regra Espacial
   
-  // Parâmetros técnicos
+  // Novos Parâmetros Espacial Car Rental
+  const [valorFinanciado, setValorFinanciado] = useState(0);
+  const [nperFinanciamento, setNperFinanciamento] = useState(48);
+  const [franquiaKm, setFranquiaKm] = useState(1000);
+  const [projecaoRevenda, setProjecaoRevenda] = useState("");
   const [custoPneus, setCustoPneus] = useState(880.00);
   const [seguroAnual, setSeguroAnual] = useState(2100.00);
+  
+  // Parâmetros mantidos por compatibilidade
   const [impostosMensais, setImpostosMensais] = useState(195.00);
   const [rastreamentoMensal, setRastreamentoMensal] = useState(45.00);
   
@@ -167,7 +173,7 @@ export default function App() {
   const [search, setSearch] = useState("");
   
   const [savedScenarios] = useState([
-    { id: 1, name: "Padrão Varejo", taxa: 0.0129, margem: 0.028 },
+    { id: 1, name: "Padrão Varejo", taxa: 0.0145, margem: 0.028 },
     { id: 2, name: "Frotista Agro", taxa: 0.0115, margem: 0.020 },
     { id: 3, name: "Locadora Gov", taxa: 0.0105, margem: 0.015 }
   ]);
@@ -181,10 +187,16 @@ export default function App() {
   
   const resetParams = () => { 
     setKmMensal(3000); 
-    setTaxaJurosMensal(0.0129); 
+    setTaxaJurosMensal(0.0145); 
     setPercentualAplicado(0.028); 
     setRevisaoMensal(56.88); 
     setYearNum(2024); 
+    setValorFinanciado(0);
+    setNperFinanciamento(48);
+    setFranquiaKm(1000);
+    setProjecaoRevenda("");
+    setCustoPneus(880.00);
+    setSeguroAnual(2100.00);
   };
   
   const clearResults = () => { 
@@ -618,6 +630,21 @@ export default function App() {
   // --- LÓGICA DE LOGIN E PRIMEIRO ACESSO (CONECTADA AO BANCO) ---
   const handleLogin = async (e) => {
     e.preventDefault();
+   /* // ---- BYPASS LOCAL PARA TESTES ----
+    if (email === "admin@frota.com.br" && password === "123456") {
+      const mockAdmin = { 
+        id: 1, 
+        name: "Admin Local", 
+        email: email, 
+        role: "admin", 
+        precisa_trocar_senha: false,
+        canEdit: true
+      };
+      setCurrentUser(mockAdmin);
+      setIsLoggedIn(true);
+      return; // Para a execução aqui e não chama a API
+    }
+    // ----------------------------------*/
     try {
       const res = await api.post('/login', { email, password });
       const user = res.data;
@@ -741,8 +768,6 @@ export default function App() {
         anos: syncAno ? [parseInt(syncAno)] : null
       };
       
-      // CONFIGURAÇÃO DOS LOGS DINÂMICOS PARA MOSTRAR A GRAVAÇÃO REAL
-      // Substituído o hardcode da Fiat por um dicionário dinâmico que mapeia de forma realista os veículos gravados
       const generateMockFlow = (brand) => {
         const brandModels = {
             "Fiat": ["Strada Volcano 1.3 Flex 8V CD", "Titano Endurance 2.2 16V 4x4", "Toro Ultra 1.3 16V", "Fastback Limited Edition 1.3", "Pulse Abarth 1.3 Turbo"],
@@ -775,7 +800,6 @@ export default function App() {
         }
       }, 800);
 
-      // Chamada HTTP real que processa a persistência dos dados
       const response = await api.post("/fipe/sync", payload, { signal: controller.signal }); 
       
       clearInterval(logTimer);
@@ -823,8 +847,12 @@ export default function App() {
         rastreamento_mensal: Number(rastreamentoMensal), 
         cliente_nome: clienteNome || "Proposta Comercial", 
         quantidade: qtdSelecionada, 
-        prazos: [12, 24, 36, 48], 
-        logo_url: sysLogos.pdf 
+        prazos: [12, 24, 36], // Conforme Arquitetura Espacial
+        logo_url: sysLogos.pdf,
+        valor_financiado: Number(valorFinanciado),
+        nper_financiamento: Number(nperFinanciamento),
+        franquia_km: Number(franquiaKm),
+        projecao_revenda: projecaoRevenda ? Number(projecaoRevenda) : null
       }; 
       
       const response = await api.post("/pricing/download-pdf", payload, { 
@@ -936,7 +964,11 @@ export default function App() {
           seguro_anual: Number(seguroAnual), 
           impostos_mensais: Number(impostosMensais), 
           rastreamento_mensal: Number(rastreamentoMensal), 
-          prazos: [12, 24, 36, 48] 
+          prazos: [12, 24, 36], // Conforme Arquitetura Espacial
+          valor_financiado: Number(valorFinanciado),
+          nper_financiamento: Number(nperFinanciamento),
+          franquia_km: Number(franquiaKm),
+          projecao_revenda: projecaoRevenda ? Number(projecaoRevenda) : null
         })) 
       };
       
@@ -2142,12 +2174,27 @@ export default function App() {
                   </div>
                   
                   <div style={styles.formGrid}>
-                    <Field label="KM Mensal" value={kmMensal} setValue={setKmMensal} />
+                    {/* Novos Campos Arquitetura Espacial */}
+                    <Field label="Valor Financiado (R$)" value={valorFinanciado} setValue={setValorFinanciado} />
+                    <Field label="Prazo Financ. (Meses)" value={nperFinanciamento} setValue={setNperFinanciamento} />
+                    
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Franquia KM/mês</label>
+                      <select style={styles.inputSmall} value={franquiaKm} onChange={(e) => setFranquiaKm(Number(e.target.value))}>
+                        <option value={1000}>1.000 km</option>
+                        <option value={2000}>2.000 km</option>
+                        <option value={2500}>2.500 km</option>
+                        <option value={3000}>3.000 km</option>
+                      </select>
+                    </div>
+
+                    <Field label="Proj. Revenda (Opcional R$)" value={projecaoRevenda} setValue={setProjecaoRevenda} />
                     <Field label="Ano Modelo" value={yearNum} setValue={setYearNum} />
-                    <Field label="Taxa Juros" value={taxaJurosMensal} setValue={setTaxaJurosMensal} step="0.0001" />
-                    <Field label="Margem Net" value={percentualAplicado} setValue={setPercentualAplicado} step="0.0001" />
+                    <Field label="Taxa Juros Mensal" value={taxaJurosMensal} setValue={setTaxaJurosMensal} step="0.0001" />
                     <Field label="Manutenção/mês" value={revisaoMensal} setValue={setRevisaoMensal} />
+                    <Field label="Custo Pneus (Jogo)" value={custoPneus} setValue={setCustoPneus} />
                     <Field label="Seguro Anual" value={seguroAnual} setValue={setSeguroAnual} />
+                    <Field label="Margem Net (Legado)" value={percentualAplicado} setValue={setPercentualAplicado} step="0.0001" />
                   </div>
                   
                   <button 
@@ -2210,10 +2257,32 @@ export default function App() {
                           
                           <div style={styles.compareBody}>
                             {item.pricing?.map(p => (
-                              <div key={p.prazo_meses} style={styles.compareRow}>
-                                <div style={styles.prazoBadge}>{p.prazo_meses} MESES</div>
-                                <div style={styles.mainValue}>R$ {formatBRL(p.mensalidade_calculada)}</div>
-                                {q > 1 && <div style={styles.fleetTotal}>Frota: R$ {formatBRL(p.mensalidade_calculada * q)}</div>}
+                              <div key={p.prazo_meses} style={{...styles.compareRow, borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                  <div style={styles.prazoBadge}>{p.prazo_meses} MESES</div>
+                                  <div style={{
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    padding: '3px 8px',
+                                    borderRadius: '4px',
+                                    color: '#fff',
+                                    backgroundColor: p.status === 'APROVAR' ? '#10b981' : p.status === 'AJUSTAR' ? '#f59e0b' : '#ef4444'
+                                  }}>
+                                    {p.status}
+                                  </div>
+                                </div>
+                                
+                                <div style={styles.mainValue}>R$ {formatBRL(p.mensalidade_final || p.mensalidade)}</div>
+                                {q > 1 && <div style={styles.fleetTotal}>Frota: R$ {formatBRL((p.mensalidade_final || p.mensalidade) * q)}</div>}
+
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '10px', color: '#94a3b8'}}>
+                                   <span>Técnica: R$ {formatBRL(p.mensalidade_tecnica)}</span>
+                                   <span>Piso: R$ {formatBRL(p.mensalidade_piso)}</span>
+                                </div>
+                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '10px', color: '#94a3b8'}}>
+                                   <span>ROI: {p.roi_percentual}%</span>
+                                   <span>Payback: {p.payback_meses}m</span>
+                                </div>
                               </div>
                             ))}
                             <button 
@@ -2329,10 +2398,10 @@ function Field({ label, value, setValue, step = "1" }) {
       <label style={styles.fieldLabel}>{label}</label>
       <input 
         style={styles.inputSmall} 
-        type="number" 
+        type={step === "any" || step === "0.0001" ? "number" : "text"} 
         step={step} 
         value={value} 
-        onChange={(e) => setValue(Number(e.target.value))} 
+        onChange={(e) => setValue(e.target.value === "" ? "" : Number(e.target.value))} 
       />
     </div>
   ); 
