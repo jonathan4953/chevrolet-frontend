@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "./api";
+import ContasBancarias from "./ContasBancarias";
+import Clientes from "./Clientes";
+import Fornecedores from "./Fornecedores";
 
 // IMPORTAÇÃO DAS LOGOS LOCAIS
 const CHEVROLET_LOGO = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Chevrolet-logo.png/800px-Chevrolet-logo.png";
 
 export default function App() {
+// --- ESTADO DO DASHBOARD FINANCEIRO ---
+  const [dashboardFin, setDashboardFin] = useState({
+    saldo_formatado: "R$ 0,00",
+    entradas_mes: 0,
+    saidas_mes: 0,
+    lucro_operacional: 0
+  });
+
   // --- ESTADOS DE CONTROLE ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -178,6 +189,485 @@ export default function App() {
     { id: 3, name: "Locadora Gov", taxa: 0.0105, margem: 0.015 }
   ]);
 
+  // --- ESTADOS DO MÓDULO FINANCEIRO GERAL ---
+  const [contasPagar, setContasPagar] = useState([]);
+  const [financeiroBuscaPagar, setFinanceiroBuscaPagar] = useState("");
+  const [financeiroDataInicioPagar, setFinanceiroDataInicioPagar] = useState("");
+  const [financeiroDataFimPagar, setFinanceiroDataFimPagar] = useState("");
+
+  const [contasReceber, setContasReceber] = useState([]);
+  const [financeiroBuscaReceber, setFinanceiroBuscaReceber] = useState("");
+  const [financeiroDataInicioReceber, setFinanceiroDataInicioReceber] = useState("");
+  const [financeiroDataFimReceber, setFinanceiroDataFimReceber] = useState("");
+
+// --- ESTADOS DE EDIÇÃO E CONCILIAÇÃO FINANCEIRA (NOVOS) ---
+  const [showEditContaModal, setShowEditContaModal] = useState(false);
+  const [contaToEdit, setContaToEdit] = useState(null);
+  const [showConciliacaoModal, setShowConciliacaoModal] = useState(false);
+  const [conciliacaoData, setConciliacaoData] = useState([]);
+
+  const [dashFin, setDashFin] = useState({
+  saldo_formatado: "R$ 0,00",
+  entradas_mes: 0,
+  saidas_mes: 0,
+  lucro_operacional: 0,
+  fluxo_mensal: []
+});
+const [loadingFin, setLoadingFin] = useState(false);
+const [filtroStatusPagar, setFiltroStatusPagar] = useState("TODOS");
+const [filtroStatusReceber, setFiltroStatusReceber] = useState("TODOS");
+
+  // ============================================================
+  // CADASTRO DE FORNECEDORES (NOVO MÓDULO ATUALIZADO)
+  // ============================================================
+  const [fornecedores, setFornecedores] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [clienteSelecionado, setClienteSelecionado] = useState(null);
+  const [showAddFornecedorModal, setShowAddFornecedorModal] = useState(false);
+  const [showEditFornecedorModal, setShowEditFornecedorModal] = useState(false);
+  const [fornecedorToEdit, setFornecedorToEdit] = useState(null);
+  const [novoFornecedor, setNovoFornecedor] = useState({
+    nome_razao: "", documento: "", email: "", telefone: "", tipo_fornecedor: "Geral",
+    tipo_pessoa: "PJ", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: ""
+  });
+
+  const loadFornecedores = async () => {
+    try {
+      const res = await api.get('/fornecedores'); 
+      if(Array.isArray(res.data)) {
+        setFornecedores(res.data);
+      }
+    } catch(e) {
+      console.error("Erro ao carregar fornecedores:", e);
+    }
+  };
+
+  const loadClientes = async () => {
+    try {
+      const res = await api.get('/clientes');
+      if(Array.isArray(res.data)) setClientes(res.data);
+    } catch(e) {
+      console.error("Erro ao carregar clientes:", e);
+    }
+  };
+
+  const handleSalvarFornecedor = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const docLimpo = novoFornecedor.documento.replace(/\D/g, '');
+      await api.post('/fornecedores', { ...novoFornecedor, documento: docLimpo });
+      logAction("Módulo Fornecedores", `Cadastrou fornecedor: ${novoFornecedor.nome_razao}`);
+      alert("Fornecedor cadastrado com sucesso!");
+      setShowAddFornecedorModal(false);
+      setNovoFornecedor({ 
+        nome_razao: "", documento: "", email: "", telefone: "", tipo_fornecedor: "Geral",
+        tipo_pessoa: "PJ", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: ""
+      });
+      loadFornecedores();
+    } catch (err) {
+      alert("Erro ao salvar o fornecedor. Verifique os dados ou se o CNPJ/CPF já existe.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateFornecedor = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const docLimpo = fornecedorToEdit.documento.replace(/\D/g, '');
+      await api.put(`/fornecedores/${fornecedorToEdit.id}`, { ...fornecedorToEdit, documento: docLimpo });
+      logAction("Módulo Fornecedores", `Editou fornecedor: ${fornecedorToEdit.nome_razao}`);
+      alert("Fornecedor atualizado com sucesso!");
+      setShowEditFornecedorModal(false);
+      setFornecedorToEdit(null);
+      loadFornecedores();
+    } catch (err) {
+      alert("Erro ao atualizar o fornecedor. Verifique os dados.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcluirFornecedor = async (id, nome) => {
+    if (!window.confirm(`Deseja realmente excluir o fornecedor ${nome}?`)) return;
+    setLoading(true);
+    try {
+      await api.delete(`/fornecedores/${id}`);
+      logAction("Módulo Fornecedores", `Excluiu fornecedor: ${nome}`);
+      alert("Fornecedor excluído com sucesso!");
+      loadFornecedores();
+    } catch (e) {
+      alert("Erro ao excluir fornecedor. Ele pode estar vinculado a alguma obrigação financeira.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- ESTADOS ESPECÍFICOS: CADASTRO NOVA OBRIGAÇÃO (CONTAS A PAGAR) ---
+  const [showAddObrigacaoModal, setShowAddObrigacaoModal] = useState(false);
+  const [novaObrigacao, setNovaObrigacao] = useState({
+    id_fornecedor: "", 
+    descricao: "",
+    categoria: "Despesas Operacionais",
+    centro_custo: "",
+    competencia: "",
+    valor_total: "",
+    data_vencimento: "",
+    forma_pagamento: "PIX",
+    conta_bancaria: "Conta Principal",
+    observacoes: "",
+    tipo_pagamento: "avista", // avista, parcelado, recorrente
+    qtd_parcelas: 2,
+    intervalo_parcelas: "mensal",
+    recorrencia_tipo: "meses", // meses, semanas, anos, dias
+    recorrencia_qtd: 12,
+    parcelas_geradas: [], // Array de { numero_parcela, valor, data_vencimento } para edição em tela
+    is_rateado: false,
+    tipo_rateio: "Centro de Custo",
+    rateios: [], // Array de { id, referencia, percentual }
+    anexos: []
+  });
+
+  const resetNovaObrigacao = () => {
+    setNovaObrigacao({
+      id_fornecedor: "", descricao: "", categoria: "Despesas Operacionais",
+      centro_custo: "", competencia: "", valor_total: "", data_vencimento: "", forma_pagamento: "PIX",
+      conta_bancaria: "Conta Principal", observacoes: "", tipo_pagamento: "avista", qtd_parcelas: 2,
+      intervalo_parcelas: "mensal", recorrencia_tipo: "meses", recorrencia_qtd: 12, parcelas_geradas: [], 
+      is_rateado: false, tipo_rateio: "Centro de Custo", rateios: [], anexos: []
+    });
+  };
+
+  const handleRemoverAnexo = (indexToRemove) => {
+    setNovaObrigacao(prev => ({
+      ...prev,
+      anexos: prev.anexos.filter((_, index) => index !== indexToRemove)
+    }));
+  };
+
+  // Função para pré-calcular parcelas em tela antes do salvamento
+  const calcularParcelasOuRecorrencia = () => {
+    if (!novaObrigacao.valor_total || !novaObrigacao.data_vencimento) {
+      return alert("Preencha o Valor Total e a Data Base de Vencimento primeiro.");
+    }
+
+    const parcelas = [];
+    const baseDate = new Date(novaObrigacao.data_vencimento + 'T12:00:00');
+    const total = Number(novaObrigacao.valor_total);
+
+    if (novaObrigacao.tipo_pagamento === 'parcelado') {
+      const qtd = Number(novaObrigacao.qtd_parcelas);
+      const valParcela = Math.floor((total / qtd) * 100) / 100;
+      const resto = total - (valParcela * qtd);
+      
+      for(let i = 1; i <= qtd; i++) {
+        let d = new Date(baseDate);
+        if (novaObrigacao.intervalo_parcelas === 'mensal') d.setMonth(d.getMonth() + (i - 1));
+        else if (novaObrigacao.intervalo_parcelas === 'semanal') d.setDate(d.getDate() + (i - 1) * 7);
+
+        let valorAtual = valParcela;
+        if (i === 1) valorAtual += resto; // Ajuste dos centavos
+
+        parcelas.push({ numero_parcela: i, valor: valorAtual.toFixed(2), data_vencimento: d.toISOString().split('T')[0] });
+      }
+    } else if (novaObrigacao.tipo_pagamento === 'recorrente') {
+      const qtd = Number(novaObrigacao.recorrencia_qtd);
+      for(let i = 1; i <= qtd; i++) {
+        let d = new Date(baseDate);
+        if (novaObrigacao.recorrencia_tipo === 'meses') d.setMonth(d.getMonth() + (i - 1));
+        else if (novaObrigacao.recorrencia_tipo === 'anos') d.setFullYear(d.getFullYear() + (i - 1));
+        else if (novaObrigacao.recorrencia_tipo === 'semanas') d.setDate(d.getDate() + (i - 1) * 7);
+        else if (novaObrigacao.recorrencia_tipo === 'dias') d.setDate(d.getDate() + (i - 1));
+
+        parcelas.push({ numero_parcela: i, valor: total.toFixed(2), data_vencimento: d.toISOString().split('T')[0] });
+      }
+    }
+    setNovaObrigacao(prev => ({ ...prev, parcelas_geradas: parcelas }));
+  };
+
+  const handleUpdateParcelaGerada = (index, field, value) => {
+    const novas = [...novaObrigacao.parcelas_geradas];
+    novas[index][field] = value;
+    setNovaObrigacao({ ...novaObrigacao, parcelas_geradas: novas });
+  };
+
+
+  // ============================================================
+  // handleSalvarObrigacao ATUALIZADA (Lida com edições de data/valor)
+  // ============================================================
+  const handleSalvarObrigacao = async (e) => {
+    e.preventDefault();
+
+    if (!novaObrigacao.id_fornecedor) return alert("Selecione um fornecedor.");
+    if (Number(novaObrigacao.valor_total) <= 0) return alert("O valor total deve ser maior que zero.");
+    if (!novaObrigacao.data_vencimento) return alert("Informe a data base de vencimento.");
+    if (novaObrigacao.is_rateado) {
+      const soma = novaObrigacao.rateios.reduce((acc, curr) => acc + Number(curr.percentual), 0);
+      if (Math.abs(soma - 100) > 0.01) return alert(`A soma do rateio está em ${soma.toFixed(2)}%. É obrigatório fechar 100%.`);
+    }
+
+    // Se for parcelado ou recorrente e o usuário não gerou as parcelas para conferir, obriga a gerar.
+    if ((novaObrigacao.tipo_pagamento === 'parcelado' || novaObrigacao.tipo_pagamento === 'recorrente') && novaObrigacao.parcelas_geradas.length === 0) {
+      return alert("Por favor, clique em 'Gerar Previsão de Parcelas' para conferir as datas e valores antes de cadastrar.");
+    }
+
+    setLoading(true);
+    try {
+      // ── ETAPA 1: Determinar parcelas de envio ──────────────────────────────
+      let parcelasParaEnvio = [...novaObrigacao.parcelas_geradas];
+      
+      // Se for à vista, forçamos a geração de uma única parcela na hora de enviar
+      if (novaObrigacao.tipo_pagamento === 'avista' || parcelasParaEnvio.length === 0) {
+        parcelasParaEnvio = [{
+          numero_parcela: 1,
+          valor: Number(novaObrigacao.valor_total),
+          data_vencimento: novaObrigacao.data_vencimento
+        }];
+      }
+
+      const fornecedorSelecionado = fornecedores.find(f => String(f.id) === String(novaObrigacao.id_fornecedor));
+      const tipoRecorrenciaFinal = novaObrigacao.tipo_pagamento === 'parcelado' ? 'PARCELADO' : (novaObrigacao.tipo_pagamento === 'recorrente' ? 'RECORRENTE' : 'AVISTA');
+
+      // ── ETAPA 2: Montar FormData (suporta anexos e chave ID) ────────────────────────
+      const formData = new FormData();
+
+      const dadosJSON = {
+        id_fornecedor: Number(novaObrigacao.id_fornecedor),
+        fornecedor: fornecedorSelecionado?.nome_razao || "", 
+        fornecedor_doc: fornecedorSelecionado?.documento || "", 
+        descricao: novaObrigacao.descricao,
+        id_categoria: null,
+        id_centro_custo: null,
+        competencia: novaObrigacao.competencia || new Date().toISOString().slice(0, 7),
+        valor_total: Number(novaObrigacao.valor_total),
+        qtd_parcelas: parcelasParaEnvio.length,
+        parcelado: novaObrigacao.tipo_pagamento === 'parcelado',
+        recorrente: novaObrigacao.tipo_pagamento === 'recorrente',
+        observacoes: novaObrigacao.observacoes || "",
+        tipo_recorrencia: tipoRecorrenciaFinal,
+        forma_pagamento: novaObrigacao.forma_pagamento,
+        conta_bancaria: novaObrigacao.conta_bancaria,
+        numero_nf: "",
+        parcelas: parcelasParaEnvio.map(p => ({
+          numero_parcela: p.numero_parcela,
+          valor: Number(p.valor),
+          data_vencimento: p.data_vencimento,
+          status: "Aberto",
+          forma_pagamento: novaObrigacao.forma_pagamento,
+          id_conta_bancaria: null
+        })),
+        rateios: novaObrigacao.is_rateado
+          ? novaObrigacao.rateios.map(r => ({
+              id_centro_custo: 1,
+              percentual: Number(r.percentual),
+              valor_rateado: Number(novaObrigacao.valor_total) * Number(r.percentual) / 100,
+              referencia: r.referencia
+            }))
+          : []
+      };
+
+      formData.append('dados', JSON.stringify(dadosJSON));
+
+      novaObrigacao.anexos.forEach((arquivo) => {
+        formData.append('anexos', arquivo);
+      });
+
+      // ── ETAPA 3: Envia ao backend ────────────────────────────────────────
+      await api.post('/financeiro/contas-pagar/add', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      logAction("Módulo Financeiro", `Cadastrou obrigação: ${novaObrigacao.descricao} (${parcelasParaEnvio.length} registro(s))`);
+      alert(`Obrigação financeira cadastrada com sucesso! Foram provisionados ${parcelasParaEnvio.length} lançamento(s).`);
+
+      setShowAddObrigacaoModal(false);
+      resetNovaObrigacao();
+      loadContasPagar();
+
+    } catch (err) {
+      console.error("Erro no backend ao salvar obrigação:", err);
+      setError("Erro ao salvar obrigação financeira. Verifique o console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- FUNÇÕES DE EDIÇÃO INDIVIDUAL (CONTAS A PAGAR) ---
+// --- FUNÇÕES DE EDIÇÃO INDIVIDUAL (CONTAS A PAGAR) ---
+  const handleUpdateContaPagar = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.put(`/financeiro/contas-pagar/${contaToEdit.id}`, contaToEdit);
+      logAction("Módulo Financeiro", `Editou obrigação ID ${contaToEdit.id} (${contaToEdit.descricao})`);
+      alert("Obrigação atualizada com sucesso!");
+      setShowEditContaModal(false);
+      setContaToEdit(null);
+      loadContasPagar();
+    } catch (err) {
+      alert("Erro ao atualizar a obrigação financeira.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcluirObrigacao = async (id_obrigacao, descricao) => {
+    if (!window.confirm(`Excluir TODA a obrigação "${descricao}" e todas as suas parcelas?`)) return;
+    setLoading(true);
+    try {
+      await api.delete(`/financeiro/obrigacoes/${id_obrigacao}`);
+      logAction("Módulo Financeiro", `Excluiu obrigação inteira ID ${id_obrigacao} (${descricao})`);
+      alert("Obrigação removida com sucesso.");
+      loadContasPagar();
+    } catch (err) { 
+      alert("Erro ao excluir obrigação."); 
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const handleExcluirParcela = async (id_parcela) => {
+    if (!window.confirm(`Excluir APENAS a parcela #${id_parcela}?`)) return;
+    setLoading(true);
+    try {
+      await api.delete(`/financeiro/parcelas/${id_parcela}`);
+      logAction("Módulo Financeiro", `Excluiu a parcela ID ${id_parcela}`);
+      alert("Parcela excluída com sucesso.");
+      loadContasPagar();
+    } catch (err) { 
+      alert("Erro ao excluir parcela."); 
+    } finally { 
+      setLoading(false); 
+    }
+  };
+
+  const handleImportOFX = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await api.post("/financeiro/conciliar", formData);
+      setConciliacaoData(res.data.conciliacao || []);
+      setShowConciliacaoModal(true);
+      logAction("Conciliação Bancária", `Importou o arquivo ${file.name} para matching.`);
+    } catch (err) { 
+      alert("Erro ao ler o arquivo OFX/PDF."); 
+    } finally { 
+      setLoading(false); 
+      e.target.value = null; // Limpa o input para permitir enviar o mesmo arquivo novamente se precisar
+    }
+  };
+
+  const handleAprovarConciliacao = async (idParcela, idTransacaoExtrato) => {
+    if(!window.confirm("Aprovar conciliação (A parcela será dada como Paga)?")) return;
+    setLoading(true);
+    try {
+      await api.put(`/financeiro/parcelas/${idParcela}`, { 
+        status: 'Pago', 
+        data_pagamento: new Date().toISOString().split('T')[0] 
+      });
+      logAction("Conciliação Bancária", `Conciliou e baixou a parcela ID ${idParcela}`);
+      alert("Conciliação confirmada com sucesso!");
+      // Remove a sugestão aprovada da tela
+      setConciliacaoData(prev => prev.filter(c => c.id_transacao !== idTransacaoExtrato));
+      loadContasPagar();
+    } catch(err) { 
+      alert("Erro ao efetivar a conciliação."); 
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- FUNÇÃO PARA IMPORTAR O ARQUIVO OFX ---
+  const handleImportarOFX = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Criamos um "pacote" especial para enviar arquivos (FormData)
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true);
+    try {
+      // Envia para a rota do Python que acabamos de construir
+      const res = await api.post("/financeiro/conciliar", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      // Salva as sugestões recebidas do backend
+      setConciliacaoData(res.data.conciliacao);
+      
+      // Abre a tela bonita que construímos!
+      setShowConciliacaoModal(true);
+      
+      // Se não tiver nada para conciliar, avisa o usuário
+      if (res.data.conciliacao.length === 0) {
+        alert("O extrato foi lido, mas não há transações novas (ou já foram todas conciliadas).");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao ler o arquivo OFX. Verifique se o formato está correto.");
+    } finally {
+      setLoading(false);
+      // Limpa o input para permitir subir o mesmo arquivo de novo, se necessário
+      event.target.value = null; 
+    }
+  };
+
+  // --- NOVA FUNÇÃO: LANÇAMENTO DIRETO BIDIRECIONAL (ESTILO NIBO) ---
+  const handleLancarEConciliar = async (item, index) => {
+    // Captura o fornecedor/cliente selecionado no select específico daquela linha
+    const fornecedorId = document.getElementById(`forn_rapido_${index}`).value;
+    
+    if (!fornecedorId) {
+      return alert("Por favor, selecione um Fornecedor/Cliente para realizar o lançamento direto.");
+    }
+
+    setLoading(true);
+    try {
+      // Verifica se o valor veio como crédito (Entrada) ou débito (Saída) do OFX
+      const tipoLancamento = item.tipo === "credito" ? "ENTRADA" : "SAIDA";
+
+      // Chamada para a rota inteligente no Python
+      await api.post("/financeiro/conciliar/lancar-direto", {
+        id_transacao_banco: item.id_transacao,
+        id_fornecedor: parseInt(fornecedorId),
+        descricao: item.extrato_descricao || "Lançamento Direto via Conciliação",
+        valor: parseFloat(item.extrato_valor),
+        data: item.extrato_data_iso || new Date().toISOString().split('T')[0],
+        tipo: tipoLancamento
+      });
+
+      logAction("Conciliação Bancária", `Lançamento Direto (${tipoLancamento}): ${item.extrato_descricao} vinculado ao ID ${fornecedorId}`);
+      alert(`Lançamento rápido de ${tipoLancamento} realizado e conciliado com sucesso!`);
+      
+      // Remove a transação da lista de conciliação atual na tela
+      setConciliacaoData(prev => prev.filter(c => c.id_transacao !== item.id_transacao));
+      
+      // Atualiza a tabela correspondente
+      if (tipoLancamento === "SAIDA") {
+        loadContasPagar();
+      }
+      // NOTA: Futuramente, quando criar a aba de contas a receber, pode adicionar aqui:
+      // else { loadContasReceber(); }
+      
+      // Atualiza o Dashboard com o novo saldo e o gráfico de colunas
+      if (typeof loadDashboardFin === 'function') {
+        loadDashboardFin();
+      }
+      
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao realizar lançamento direto. Verifique a conexão com o servidor.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // --- FUNÇÕES DE LIMPEZA ---
   const resetVehicles = () => { 
     setSelectedVehicles([]); 
@@ -211,14 +701,21 @@ export default function App() {
     switch (status) {
       case "Vendido": 
       case "Vendidos": 
+      case "ATRASADO":
         return "#f87171"; // Vermelho
       case "Locado": 
       case "Locados": 
+      case "PAGO":
+      case "RECEBIDO":
+      case "CONCILIADO":
         return "#60a5fa"; // Azul
       case "Disponível": 
       case "Ociosos": 
         return "#4ade80"; // Verde
       case "Manutenção": 
+      case "ABERTO":
+      case "A RECEBER":
+      case "SUGESTÃO":
         return "#facc15"; // Amarelo
       default: 
         return "#94a3b8"; // Cinza padrão
@@ -306,6 +803,35 @@ export default function App() {
       setLoading(false); 
     }
   };
+  // --- CARREGAR RESUMO FINANCEIRO (DASHBOARD) ---
+  const loadDashboardFin = async () => {
+    try {
+      const res = await api.get("/financeiro/dashboard-consolidado");
+      setDashboardFin(res.data);
+    } catch (err) {
+      console.error("Erro ao carregar o dashboard financeiro:", err);
+    }
+  };
+
+  const loadDashFin = async () => {
+  setLoadingFin(true);
+  try {
+    const res = await api.get("/financeiro/dashboard-consolidado");
+    setDashFin(res.data);
+  } catch (err) {
+    console.error("Erro ao carregar dashboard financeiro:", err);
+  } finally {
+    setLoadingFin(false);
+  }
+};
+
+
+  // Carrega os dados sempre que o utilizador clicar na aba "dashboard"
+  useEffect(() => {
+    if (activeTab === "dashboard" && isLoggedIn) {
+      loadDashboardFin();
+    }
+  }, [activeTab, isLoggedIn]);
 
   // --- LOGICA DE EDIÇÃO E EXCLUSÃO (FRONTEND) ---
   const openEditModal = (vehicle, tipoEstoque) => {
@@ -560,6 +1086,134 @@ export default function App() {
     return []; 
   }, [pendingData]);
 
+  // --- LÓGICA DO MÓDULO FINANCEIRO DIVIDIDO E CONCILIAÇÃO OFX ---
+  const loadContasPagar = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (financeiroBuscaPagar) params.append("busca", financeiroBuscaPagar);
+      if (financeiroDataInicioPagar) params.append("data_inicio", financeiroDataInicioPagar);
+      if (financeiroDataFimPagar) params.append("data_fim", financeiroDataFimPagar);
+      
+      const res = await api.get(`/financeiro/contas-pagar?${params.toString()}`);
+      if(Array.isArray(res.data)) {
+        setContasPagar(res.data);
+      }
+    } catch(e) {
+      console.error("Erro ao carregar módulo financeiro a pagar:", e);
+    }
+  };
+
+  const loadContasReceber = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (financeiroBuscaReceber) params.append("busca", financeiroBuscaReceber);
+      if (financeiroDataInicioReceber) params.append("data_inicio", financeiroDataInicioReceber);
+      if (financeiroDataFimReceber) params.append("data_fim", financeiroDataFimReceber);
+      
+      const res = await api.get(`/financeiro/contas-receber?${params.toString()}`);
+      if(Array.isArray(res.data)) {
+        setContasReceber(res.data);
+      }
+    } catch(e) {
+      console.error("Erro ao carregar módulo financeiro a receber:", e);
+    }
+  };
+
+  // Importação e Conciliação Específica para Contas a Pagar
+
+  const handleImportOFXPagar = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const contasRes = await api.get("/conciliacao/contas-bancarias").catch(() => ({ data: [] }));
+    const contas = contasRes.data;
+    if (contas.length === 0) {
+      return alert("Cadastre ao menos uma Conta Bancária antes de importar OFX.\nVá em: Financeiro → Contas Bancárias");
+    }
+
+    const opcoes = contas.map((c, i) => `${i + 1}. ${c.nome} (${c.banco})`).join("\n");
+    const escolha = window.prompt(`Selecione a conta bancária do extrato (digite o número):\n\n${opcoes}`);
+    if (!escolha) return;
+    const idx = parseInt(escolha) - 1;
+    if (idx < 0 || idx >= contas.length) return alert("Opção inválida.");
+    const idConta = contas[idx].id;
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("id_conta_bancaria", idConta);
+      const res = await api.post("/financeiro/conciliar/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setConciliacaoData(res.data.conciliacao || []);
+      if ((res.data.conciliacao || []).length > 0) {
+        setShowConciliacaoModal(true);
+      } else {
+        alert(`OFX processado! ${res.data.conciliadas_automaticamente || 0} transação(ões) conciliadas automaticamente. Nenhuma pendente.`);
+      }
+      logAction("Conciliação Bancária", `Importou ${file.name} na conta ${contas[idx].nome}`);
+      loadContasPagar();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Erro ao processar OFX.");
+    } finally {
+      setLoading(false);
+      e.target.value = null;
+    }
+  };
+
+  const handleImportOFXReceber = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const contasRes = await api.get("/conciliacao/contas-bancarias").catch(() => ({ data: [] }));
+    const contas = contasRes.data;
+    if (contas.length === 0) {
+      return alert("Cadastre ao menos uma Conta Bancária antes de importar OFX.\nVá em: Financeiro → Contas Bancárias");
+    }
+
+    const opcoes = contas.map((c, i) => `${i + 1}. ${c.nome} (${c.banco})`).join("\n");
+    const escolha = window.prompt(`Selecione a conta bancária do extrato (digite o número):\n\n${opcoes}`);
+    if (!escolha) return;
+    const idx = parseInt(escolha) - 1;
+    if (idx < 0 || idx >= contas.length) return alert("Opção inválida.");
+    const idConta = contas[idx].id;
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("id_conta_bancaria", idConta);
+      const res = await api.post("/financeiro/conciliar/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      setConciliacaoData(res.data.conciliacao || []);
+      if ((res.data.conciliacao || []).length > 0) {
+        setShowConciliacaoModal(true);
+      } else {
+        alert(`OFX processado! ${res.data.conciliadas_automaticamente || 0} conciliadas automaticamente.`);
+      }
+      logAction("Conciliação Bancária", `Importou ${file.name} na conta ${contas[idx].nome}`);
+      loadContasReceber();
+    } catch (err) {
+      alert(err.response?.data?.detail || "Erro ao processar OFX.");
+    } finally {
+      setLoading(false);
+      e.target.value = null;
+    }
+  };
+
+  const handleConfirmarConciliacao = async (idExtrato, idSistema) => {
+    try {
+      await api.post("/financeiro/confirmar-conciliacao", { idExtrato, idSistema });
+      alert("Conciliação confirmada com sucesso!");
+      // Atualiza a lista em tela, removendo a já feita
+      setConciliacaoData(prev => prev.filter(c => c.extrato.id !== idExtrato));
+      loadContasPagar();
+    } catch (err) {
+      alert("Erro ao confirmar conciliação.");
+    }
+  };
 
   // --- CARREGAMENTO DE USUÁRIOS REAIS DO BANCO ---
   const loadUsers = async () => {
@@ -630,21 +1284,6 @@ export default function App() {
   // --- LÓGICA DE LOGIN E PRIMEIRO ACESSO (CONECTADA AO BANCO) ---
   const handleLogin = async (e) => {
     e.preventDefault();
-   /* // ---- BYPASS LOCAL PARA TESTES ----
-    if (email === "admin@frota.com.br" && password === "123456") {
-      const mockAdmin = { 
-        id: 1, 
-        name: "Admin Local", 
-        email: email, 
-        role: "admin", 
-        precisa_trocar_senha: false,
-        canEdit: true
-      };
-      setCurrentUser(mockAdmin);
-      setIsLoggedIn(true);
-      return; // Para a execução aqui e não chama a API
-    }
-    // ----------------------------------*/
     try {
       const res = await api.post('/login', { email, password });
       const user = res.data;
@@ -845,7 +1484,8 @@ export default function App() {
         seguro_anual: Number(seguroAnual), 
         impostos_mensais: Number(impostosMensais), 
         rastreamento_mensal: Number(rastreamentoMensal), 
-        cliente_nome: clienteNome || "Proposta Comercial", 
+        cliente_nome: clienteSelecionado ? clienteSelecionado.nome : (clienteNome || "Proposta Comercial"), 
+        cliente_id: clienteSelecionado?.id || null,
         quantidade: qtdSelecionada, 
         prazos: [12, 24, 36], // Conforme Arquitetura Espacial
         logo_url: sysLogos.pdf,
@@ -869,8 +1509,23 @@ export default function App() {
       link.href = url; 
       link.download = `Proposta_${vehicleCleanName}_x${qtdSelecionada}.pdf`; 
       link.click();
+
+      // Registra proposta vinculada ao cliente se houver
+      if (clienteSelecionado?.id) {
+        try {
+          await api.post("/clientes/propostas", {
+            id_cliente: clienteSelecionado.id,
+            veiculo: vehicleCleanName,
+            quantidade: qtdSelecionada,
+            prazo: 36,
+            valor_mensal: null,
+            status: "Gerada"
+          });
+          loadClientes();
+        } catch(e) { console.warn("Proposta não registrada:", e); }
+      }
       
-      logAction("Proposta", `Gerou PDF da proposta para ${vehicleCleanName}`);
+      logAction("Proposta", `Gerou PDF da proposta para ${vehicleCleanName} - Cliente: ${clienteSelecionado?.nome || clienteNome || "Sem cliente"}`);
     } catch (e) { 
       setError("Erro ao gerar PDF."); 
     } finally { 
@@ -896,15 +1551,38 @@ export default function App() {
     } 
   };
 
+  // ==========================================
+  // AJUSTE CRÍTICO DE PERFORMANCE E INITIAL FETCH
+  // ==========================================
+
+  // 1. Carregamento inicial (Apenas no Login)
   useEffect(() => { 
     if (isLoggedIn) { 
       loadModels(); 
       loadInventoryVendas(); 
       loadInventoryLocacao(); 
       loadDashboardData();
-      loadUsers(); // Agora a lista de usuários vem do banco assim que fazemos login!
+      loadUsers(); 
+      loadFornecedores(); // Opção 2 - FK Fornecedor
+      loadDashFin();
     } 
   }, [isLoggedIn]);
+
+  // 2. Atualiza Módulo de Contas a Pagar se a aba estiver ativa e filtros mudarem
+  useEffect(() => {
+    if (isLoggedIn && activeTab === "financeiro_pagar") {
+      loadContasPagar();
+    }
+  }, [isLoggedIn, activeTab, financeiroBuscaPagar, financeiroDataInicioPagar, financeiroDataFimPagar]);
+
+  // 3. Atualiza Módulo de Contas a Receber se a aba estiver ativa e filtros mudarem
+  useEffect(() => {
+    if (isLoggedIn && activeTab === "financeiro_receber") {
+      loadContasReceber();
+    }
+  }, [isLoggedIn, activeTab, financeiroBuscaReceber, financeiroDataInicioReceber, financeiroDataFimReceber]);
+
+  // ==========================================
 
   const availableBrands = useMemo(() => { 
     if (!models || !Array.isArray(models)) return ["Todas"]; 
@@ -1054,7 +1732,7 @@ export default function App() {
                 <button 
                   type="button" 
                   onClick={() => {setShowFirstAccessModal(false); setPendingUser(null);}} 
-                  style={{...styles.clearResultsBtn, flex: 1, background: '#1e293b'}}
+                  style={{...styles.clearResultsBtn, flex: 1, background: 'rgba(248, 113, 113, 0.2)'}}
                 >
                   CANCELAR
                 </button>
@@ -1103,6 +1781,182 @@ export default function App() {
   return (
     <div style={styles.page}>
       
+      {/* MODAIS GERAIS AQUI... */}
+      {/* MODAL DE CONCILIAÇÃO OFX EM TELA (NOVO) */}
+     {showConciliacaoModal && (
+  <div style={{
+    position:"fixed",inset:0,
+    background:"rgba(2,6,20,0.88)",backdropFilter:"blur(16px)",
+    display:"flex",alignItems:"center",justifyContent:"center",
+    zIndex:9999,padding:16,
+  }}>
+    <div style={{
+      background:"rgba(10,18,32,0.95)",
+      border:"1px solid rgba(255,255,255,0.1)",
+      borderRadius:24,padding:"40px 36px",
+      width:"100%",maxWidth:920,maxHeight:"92vh",overflowY:"auto",
+      position:"relative",
+      boxShadow:"0 60px 120px rgba(0,0,0,0.8),0 0 40px rgba(16,185,129,0.06)",
+    }}>
+      <button onClick={()=>setShowConciliacaoModal(false)} style={{
+        position:"absolute",top:20,right:24,
+        background:"rgba(255,255,255,0.05)",border:"1px solid rgba(255,255,255,0.1)",
+        color:"#94a3b8",fontSize:18,cursor:"pointer",borderRadius:8,
+        width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",
+        transition:"all 0.15s",
+      }}
+        onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.1)";e.currentTarget.style.color="#fff";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.05)";e.currentTarget.style.color="#94a3b8";}}
+      >✕</button>
+
+      {/* Header */}
+      <div style={{marginBottom:28}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8}}>
+          <div style={{width:4,height:32,borderRadius:2,background:"linear-gradient(to bottom,#10b981,#3b82f6)"}}/>
+          <h2 style={{margin:0,fontSize:20,fontWeight:900}}>Conciliação Bancária Inteligente</h2>
+        </div>
+        <p style={{margin:"0 0 0 16px",color:"#64748b",fontSize:13}}>
+          {conciliacaoData.length > 0
+            ? `${conciliacaoData.length} transação(ões) identificada(s). Confirme os vínculos ou realize lançamentos diretos.`
+            : "Processando extrato..."}
+        </p>
+      </div>
+
+      {/* Itens de conciliação */}
+      {conciliacaoData.length > 0 ? conciliacaoData.map((item, index) => (
+        <div key={index} style={{
+          background:"rgba(255,255,255,0.025)",
+          border:`1px solid ${item.tipo==="credito"?"rgba(16,185,129,0.2)":"rgba(239,68,68,0.2)"}`,
+          borderRadius:16,padding:"22px 24px",marginBottom:16,
+        }}>
+          {/* Cabeçalho da transação */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",paddingBottom:16,marginBottom:16,borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+            <div>
+              <div style={{fontSize:10,color:"#64748b",fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>
+                {item.tipo==="credito"?"💚 Crédito (Entrada no Extrato)":"🔴 Débito (Saída do Extrato)"}
+              </div>
+              <div style={{fontSize:22,fontWeight:900,color:item.tipo==="credito"?"#10b981":"#ef4444",fontFamily:"monospace"}}>
+                {item.tipo==="credito"?"+ ":"− "}R$ {item.extrato_valor}
+              </div>
+              <div style={{fontSize:12,color:"#94a3b8",marginTop:4,fontStyle:"italic"}}>
+                "{item.extrato_descricao}"
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:10,color:"#64748b",marginBottom:4}}>Data do Extrato</div>
+              <div style={{fontSize:15,fontWeight:800,color:"#e2e8f0"}}>{item.extrato_data}</div>
+              <div style={{
+                marginTop:8,
+                background: item.sugestoes_vinculo?.length?"rgba(16,185,129,0.12)":"rgba(245,158,11,0.12)",
+                border:`1px solid ${item.sugestoes_vinculo?.length?"rgba(16,185,129,0.3)":"rgba(245,158,11,0.3)"}`,
+                color: item.sugestoes_vinculo?.length?"#34d399":"#fcd34d",
+                padding:"3px 10px",borderRadius:12,fontSize:10,fontWeight:800,
+                textTransform:"uppercase",letterSpacing:"0.06em",
+              }}>
+                {item.sugestoes_vinculo?.length?"✦ Match Encontrado":"⚡ Lançamento Direto"}
+              </div>
+            </div>
+          </div>
+
+          {/* CASO 1: Parcela encontrada */}
+          {item.sugestoes_vinculo?.length>0 ? (
+            <div>
+              <div style={{fontSize:10,color:"#fcd34d",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:10}}>
+                Vínculo sugerido no sistema:
+              </div>
+              {item.sugestoes_vinculo.map((sug,sIdx)=>(
+                <div key={sIdx} style={{
+                  display:"flex",justifyContent:"space-between",alignItems:"center",
+                  background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",
+                  borderRadius:12,padding:"14px 18px",marginBottom:6,
+                }}>
+                  <div>
+                    <div style={{fontWeight:800,fontSize:14,marginBottom:3}}>{sug.fornecedor} — {sug.descricao}</div>
+                    <div style={{color:"#34d399",fontSize:12}}>
+                      Valor: <strong>R$ {sug.valor_sistema}</strong> · Venc.: {sug.vencimento_sistema}
+                    </div>
+                  </div>
+                  <button
+                    onClick={()=>handleAprovarConciliacao(sug.id_parcela,item.id_transacao)}
+                    style={{
+                      background:"linear-gradient(135deg,#059669,#10b981)",
+                      color:"#fff",border:"none",borderRadius:10,
+                      padding:"10px 22px",cursor:"pointer",fontWeight:900,fontSize:12,
+                      boxShadow:"0 4px 15px rgba(16,185,129,0.4)",
+                      transition:"opacity 0.15s",flexShrink:0,marginLeft:16,
+                    }}
+                    onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
+                    onMouseLeave={e=>e.currentTarget.style.opacity="1"}
+                  >✔ CONFIRMAR MATCH</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* CASO 2: Lançamento rápido / memória */
+            <div style={{
+              background:"rgba(245,158,11,0.06)",
+              border:"1px dashed rgba(245,158,11,0.35)",
+              borderRadius:12,padding:"16px 18px",
+            }}>
+              <p style={{color:"#fcd34d",fontSize:12,fontWeight:700,marginBottom:12}}>
+                {item.sugestao_regra
+                  ? `✨ Memória: "${item.extrato_descricao}" costuma ser de ${item.sugestao_regra.fornecedor_nome}.`
+                  : `⚡ Sem provisão encontrada. Selecione a empresa para baixar na hora:`}
+              </p>
+              <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                <select
+                  id={`forn_rapido_${index}`}
+                  defaultValue={item.sugestao_regra?item.sugestao_regra.id_fornecedor:""}
+                  style={{
+                    flex:1,padding:"10px 13px",borderRadius:10,
+                    background:"rgba(0,0,0,0.4)",border:"1px solid rgba(245,158,11,0.3)",
+                    color:"#f1f5f9",fontSize:12,
+                  }}
+                >
+                  <option value="">-- Selecionar Empresa / Cliente --</option>
+                  {fornecedores.map(f=>(
+                    <option key={f.id} value={f.id}>{f.nome_razao} ({f.documento})</option>
+                  ))}
+                </select>
+                <button
+                  onClick={()=>handleLancarEConciliar(item,index)}
+                  style={{
+                    background:item.sugestao_regra?"linear-gradient(135deg,#b45309,#f59e0b)":"linear-gradient(135deg,#b45309,#f59e0b)",
+                    color:"#000",border:"none",borderRadius:10,
+                    padding:"10px 20px",cursor:"pointer",fontWeight:900,fontSize:12,
+                    boxShadow:"0 4px 15px rgba(245,158,11,0.3)",
+                    flexShrink:0,
+                  }}
+                >{item.sugestao_regra?"CONFIRMAR E BAIXAR":"CRIAR E CONCILIAR"}</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )) : (
+        <div style={{
+          padding:"60px 20px",textAlign:"center",
+          background:"rgba(16,185,129,0.04)",border:"1px solid rgba(16,185,129,0.15)",borderRadius:16,
+        }}>
+          <div style={{fontSize:52,marginBottom:16}}>🎉</div>
+          <p style={{color:"#f1f5f9",fontSize:18,fontWeight:800,margin:"0 0 8px 0"}}>Extrato 100% Conciliado!</p>
+          <p style={{color:"#64748b",fontSize:13,margin:0}}>Não há transações pendentes.</p>
+        </div>
+      )}
+
+      <button onClick={()=>setShowConciliacaoModal(false)} style={{
+        display:"block",width:"100%",marginTop:24,padding:14,
+        background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.1)",
+        color:"#94a3b8",borderRadius:12,cursor:"pointer",fontWeight:700,fontSize:13,
+        transition:"all 0.15s",
+      }}
+        onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.08)";e.currentTarget.style.color="#fff";}}
+        onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.04)";e.currentTarget.style.color="#94a3b8";}}
+      >Fechar Conciliação</button>
+    </div>
+  </div>
+)}
+
+
       {/* MODAL EDIÇÃO VEÍCULO */}
       {showEditModal && vehicleToEdit && (
         <div style={styles.modalOverlay}>
@@ -1200,6 +2054,528 @@ export default function App() {
         </div>
       )}
 
+      {/* MODAL EDIÇÃO OBRIGAÇÃO FINANCEIRA (CONTAS A PAGAR) (NOVO) */}
+      {showEditContaModal && contaToEdit && (
+        <div style={styles.modalOverlay}>
+          <div style={{...styles.modalContent, maxWidth: '600px'}}>
+            <h2 style={styles.cardTitle}>Editar Provisão ID: {contaToEdit.id}</h2>
+            <form onSubmit={handleUpdateContaPagar} style={{marginTop: '20px'}}>
+              <div style={styles.inputGroup}>
+                <label style={styles.fieldLabel}>Descrição</label>
+                <input style={styles.inputSmall} value={contaToEdit.descricao} onChange={e => setContaToEdit({...contaToEdit, descricao: e.target.value})} required />
+              </div>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Data de Vencimento</label>
+                  <input type="date" style={styles.inputSmall} value={contaToEdit.vencimento} onChange={e => setContaToEdit({...contaToEdit, vencimento: e.target.value})} required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Valor (R$)</label>
+                  <input type="number" step="0.01" style={styles.inputSmall} value={contaToEdit.valor} onChange={e => setContaToEdit({...contaToEdit, valor: e.target.value})} required />
+                </div>
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.fieldLabel}>Status</label>
+                <select style={styles.inputSmall} value={contaToEdit.status} onChange={e => setContaToEdit({...contaToEdit, status: e.target.value})}>
+                  <option value="ABERTO">Em Aberto</option>
+                  <option value="PAGO">Pago</option>
+                  <option value="ATRASADO">Atrasado</option>
+                  <option value="CONCILIADO">Conciliado (OFX)</option>
+                </select>
+              </div>
+              <div style={{display: 'flex', gap: 15, marginTop: 30}}>
+                <button type="submit" style={{...styles.exportBtn, flex: 2}}>SALVAR ALTERAÇÕES</button>
+                <button type="button" style={{...styles.clearResultsBtn, flex: 1}} onClick={() => { setShowEditContaModal(false); setContaToEdit(null); }}>CANCELAR</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVA OBRIGAÇÃO FINANCEIRA COM FORNECEDOR E EDIÇÃO DE PARCELAS (ATUALIZADO) */}
+      {showAddObrigacaoModal && (
+        <div style={styles.modalOverlay}>
+          <div style={{...styles.modalContent, maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto'}}>
+            
+            <button 
+              onClick={() => setShowAddObrigacaoModal(false)} 
+              style={{position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer', fontWeight: 'bold'}}
+            >
+              X
+            </button>
+            
+            <h2 style={styles.cardTitle}>Cadastro de Obrigação no Contas a Pagar</h2>
+            <p style={{color: '#94a3b8', fontSize: 13, marginBottom: 25}}>
+              Registrar uma obrigação financeira, garantindo controle de fluxo de caixa, competência contábil e rastreabilidade.
+            </p>
+
+            <form onSubmit={handleSalvarObrigacao}>
+              
+              {/* ETAPA 1: FORNECEDOR COM BOTÃO + NOVO */}
+              <div style={{background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>1. Identificação do Fornecedor</h3>
+                <div style={styles.formGrid}>
+                  <div style={{...styles.inputGroup, gridColumn: 'span 2'}}>
+                    <label style={styles.fieldLabel}>Selecione o Fornecedor Cadastrado *</label>
+                    <div style={{display: 'flex', gap: '10px'}}>
+                        <select 
+                          style={{...styles.inputSmall, flex: 1}} 
+                          value={novaObrigacao.id_fornecedor} 
+                          onChange={e => setNovaObrigacao({...novaObrigacao, id_fornecedor: e.target.value})} 
+                          required
+                        >
+                          <option value="">-- Selecione o Fornecedor --</option>
+                          {fornecedores.map((f) => (
+                            <option key={f.id} value={f.id}>{f.nome_razao} ({f.documento})</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddFornecedorModal(true)}
+                          style={{...styles.exportBtn, background: '#3b82f6', padding: '0 15px'}}
+                          title="Cadastrar Novo Fornecedor Rapidamente"
+                        >
+                          + NOVO FORNECEDOR
+                        </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ETAPA 2: DADOS GERAIS */}
+              <div style={{background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>2. Dados Gerais da Obrigação</h3>
+                <div style={styles.formGrid}>
+                  <div style={{...styles.inputGroup, gridColumn: 'span 2'}}>
+                    <label style={styles.fieldLabel}>Descrição da Despesa *</label>
+                    <input style={styles.inputSmall} placeholder="Ex: Compra de Peças Lote X" value={novaObrigacao.descricao} onChange={e => setNovaObrigacao({...novaObrigacao, descricao: e.target.value})} required />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Categoria Financeira *</label>
+                    <select style={styles.inputSmall} value={novaObrigacao.categoria} onChange={e => setNovaObrigacao({...novaObrigacao, categoria: e.target.value})} required>
+                      <option value="Despesas Operacionais">Despesas Operacionais</option>
+                      <option value="Impostos e Taxas">Impostos e Taxas</option>
+                      <option value="Folha de Pagamento">Folha de Pagamento</option>
+                      <option value="Fornecedores">Fornecedores (Veículos/Peças)</option>
+                    </select>
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Competência (Mês/Ano) *</label>
+                    <input type="month" style={styles.inputSmall} value={novaObrigacao.competencia} onChange={e => setNovaObrigacao({...novaObrigacao, competencia: e.target.value})} required />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Centro de Custo (Opcional)</label>
+                    <select style={styles.inputSmall} value={novaObrigacao.centro_custo} onChange={e => setNovaObrigacao({...novaObrigacao, centro_custo: e.target.value})}>
+                      <option value="">Nenhum</option>
+                      <option value="Vendas">Vendas</option>
+                      <option value="Locação">Locação</option>
+                      <option value="Administrativo">Administrativo</option>
+                      <option value="Oficina">Oficina</option>
+                    </select>
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Observações</label>
+                    <input style={styles.inputSmall} placeholder="Notas adicionais..." value={novaObrigacao.observacoes} onChange={e => setNovaObrigacao({...novaObrigacao, observacoes: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ETAPA 3: DADOS FINANCEIROS & PARCELAMENTO/RECORRÊNCIA (ATUALIZADA) */}
+              <div style={{background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>3. Dados Financeiros & Condições</h3>
+                <div style={styles.formGrid}>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Valor Total (R$) *</label>
+                    <input type="number" step="0.01" min="0.01" style={{...styles.inputSmall, color: '#4ade80', fontWeight: 'bold'}} value={novaObrigacao.valor_total} onChange={e => setNovaObrigacao({...novaObrigacao, valor_total: e.target.value})} required />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Data Base Vencimento *</label>
+                    <input type="date" style={styles.inputSmall} value={novaObrigacao.data_vencimento} onChange={e => setNovaObrigacao({...novaObrigacao, data_vencimento: e.target.value})} required />
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Forma de Pagamento</label>
+                    <select style={styles.inputSmall} value={novaObrigacao.forma_pagamento} onChange={e => setNovaObrigacao({...novaObrigacao, forma_pagamento: e.target.value})}>
+                      <option value="PIX">PIX</option>
+                      <option value="Boleto">Boleto</option>
+                      <option value="Transferência">Transferência / TED</option>
+                      <option value="Cartão">Cartão de Crédito</option>
+                    </select>
+                  </div>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.fieldLabel}>Conta Bancária Saída</label>
+                    <select style={styles.inputSmall} value={novaObrigacao.conta_bancaria} onChange={e => setNovaObrigacao({...novaObrigacao, conta_bancaria: e.target.value})}>
+                      <option value="Conta Principal">Conta Corrente Principal</option>
+                      <option value="Conta Reserva">Conta Reserva</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* OPÇÕES DE PAGAMENTO (ÚNICO, PARCELADO, RECORRENTE) */}
+                <div style={{marginTop: '15px', padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px'}}>
+                  <label style={styles.fieldLabel}>ESTRUTURA DE PAGAMENTO</label>
+                  <div style={{display: 'flex', gap: '20px', marginBottom: '15px'}}>
+                    <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '13px'}}>
+                      <input type="radio" name="tipoPagamento" value="avista" checked={novaObrigacao.tipo_pagamento === 'avista'} onChange={e => setNovaObrigacao({...novaObrigacao, tipo_pagamento: e.target.value, parcelas_geradas: []})} style={{marginRight: '8px'}} />
+                      Pagamento Único (À Vista)
+                    </label>
+                    <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '13px'}}>
+                      <input type="radio" name="tipoPagamento" value="parcelado" checked={novaObrigacao.tipo_pagamento === 'parcelado'} onChange={e => setNovaObrigacao({...novaObrigacao, tipo_pagamento: e.target.value, parcelas_geradas: []})} style={{marginRight: '8px'}} />
+                      Parcelado (Divide o Valor)
+                    </label>
+                    <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '13px'}}>
+                      <input type="radio" name="tipoPagamento" value="recorrente" checked={novaObrigacao.tipo_pagamento === 'recorrente'} onChange={e => setNovaObrigacao({...novaObrigacao, tipo_pagamento: e.target.value, parcelas_geradas: []})} style={{marginRight: '8px'}} />
+                      Recorrente (Repete o Valor)
+                    </label>
+                  </div>
+                  
+                  {/* PARCELADO CONFIG */}
+                  {novaObrigacao.tipo_pagamento === 'parcelado' && (
+                    <div style={{display: 'flex', gap: '15px', marginTop: '15px', alignItems: 'flex-end'}}>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Qtd Parcelas</label>
+                        <input type="number" min="2" style={styles.inputSmall} value={novaObrigacao.qtd_parcelas} onChange={e => setNovaObrigacao({...novaObrigacao, qtd_parcelas: e.target.value})} />
+                      </div>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Intervalo</label>
+                        <select style={styles.inputSmall} value={novaObrigacao.intervalo_parcelas} onChange={e => setNovaObrigacao({...novaObrigacao, intervalo_parcelas: e.target.value})}>
+                          <option value="mensal">Mensal</option>
+                          <option value="semanal">Semanal</option>
+                          <option value="personalizado">Personalizado</option>
+                        </select>
+                      </div>
+                      <button type="button" onClick={calcularParcelasOuRecorrencia} style={{...styles.exportBtn, background: '#3b82f6', marginBottom: '18px'}}>Gerar Previsão</button>
+                    </div>
+                  )}
+
+                  {/* RECORRENTE CONFIG */}
+                  {novaObrigacao.tipo_pagamento === 'recorrente' && (
+                    <div style={{display: 'flex', gap: '15px', marginTop: '15px', alignItems: 'flex-end'}}>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Tempo de Recorrência</label>
+                        <select style={styles.inputSmall} value={novaObrigacao.recorrencia_tipo} onChange={e => setNovaObrigacao({...novaObrigacao, recorrencia_tipo: e.target.value})}>
+                          <option value="meses">Meses</option>
+                          <option value="semanas">Semanas</option>
+                          <option value="anos">Anos</option>
+                          <option value="dias">Dias</option>
+                        </select>
+                      </div>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Quantas vezes se repetirá?</label>
+                        <input type="number" min="2" style={styles.inputSmall} value={novaObrigacao.recorrencia_qtd} onChange={e => setNovaObrigacao({...novaObrigacao, recorrencia_qtd: e.target.value})} />
+                      </div>
+                      <button type="button" onClick={calcularParcelasOuRecorrencia} style={{...styles.exportBtn, background: '#3b82f6', marginBottom: '18px'}}>Gerar Previsão</button>
+                    </div>
+                  )}
+
+                  {/* TABELA DE EDIÇÃO DAS PARCELAS GERADAS */}
+                  {novaObrigacao.parcelas_geradas.length > 0 && (
+                    <div style={{marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px'}}>
+                      <h4 style={{fontSize: '12px', color: '#eab308', marginBottom: '10px'}}>Confira e Edite os Lançamentos antes de Salvar:</h4>
+                      <table style={styles.tableMassa}>
+                        <thead>
+                          <tr>
+                            <th style={{...styles.thMassa, padding: '10px'}}>Nº</th>
+                            <th style={{...styles.thMassa, padding: '10px'}}>Vencimento (Editável)</th>
+                            <th style={{...styles.thMassa, padding: '10px'}}>Valor (Editável)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {novaObrigacao.parcelas_geradas.map((p, idx) => (
+                            <tr key={idx}>
+                              <td style={{...styles.tdMassa, padding: '8px'}}>{p.numero_parcela}</td>
+                              <td style={{...styles.tdMassa, padding: '8px'}}>
+                                <input 
+                                  type="date" 
+                                  style={{...styles.inputSmall, padding: '8px'}} 
+                                  value={p.data_vencimento} 
+                                  onChange={(e) => handleUpdateParcelaGerada(idx, 'data_vencimento', e.target.value)} 
+                                />
+                              </td>
+                              <td style={{...styles.tdMassa, padding: '8px'}}>
+                                <input 
+                                  type="number" 
+                                  step="0.01" 
+                                  style={{...styles.inputSmall, padding: '8px', color: '#4ade80'}} 
+                                  value={p.valor} 
+                                  onChange={(e) => handleUpdateParcelaGerada(idx, 'valor', e.target.value)} 
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* ETAPA 4: RATEIO CONDICIONAL */}
+              <div style={{background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>4. Rateio Gerencial</h3>
+                <label style={{display: 'flex', alignItems: 'center', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', marginBottom: '15px'}}>
+                  <input type="checkbox" style={{marginRight: '10px', transform: 'scale(1.2)'}} checked={novaObrigacao.is_rateado} onChange={e => setNovaObrigacao({...novaObrigacao, is_rateado: e.target.checked})} />
+                  Habilitar Rateio Múltiplo
+                </label>
+
+                {novaObrigacao.is_rateado && (
+                  <div style={{padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px'}}>
+                    <div style={{...styles.inputGroup, width: '50%'}}>
+                      <label style={styles.fieldLabel}>Divisão Baseada Em:</label>
+                      <select style={styles.inputSmall} value={novaObrigacao.tipo_rateio} onChange={e => setNovaObrigacao({...novaObrigacao, tipo_rateio: e.target.value, rateios: []})}>
+                        <option value="Centro de Custo">Centro de Custo</option>
+                        <option value="Categoria">Categoria Financeira</option>
+                      </select>
+                    </div>
+
+                    {novaObrigacao.rateios.map((rt, idx) => (
+                       <div key={idx} style={{display: 'flex', gap: '15px', alignItems: 'flex-end', marginBottom: '10px'}}>
+                          <div style={{...styles.inputGroup, flex: 2, marginBottom: 0}}>
+                            <label style={styles.fieldLabel}>Referência</label>
+                            <input style={styles.inputSmall} placeholder={`Nome do ${novaObrigacao.tipo_rateio}`} value={rt.referencia} onChange={(e) => {
+                              const novos = [...novaObrigacao.rateios];
+                              novos[idx] = { ...novos[idx], referencia: e.target.value };
+                              setNovaObrigacao({...novaObrigacao, rateios: novos});
+                            }} />
+                          </div>
+                          <div style={{...styles.inputGroup, flex: 1, marginBottom: 0}}>
+                            <label style={styles.fieldLabel}>Percentual (%)</label>
+                            <input type="number" step="0.01" style={styles.inputSmall} value={rt.percentual} onChange={(e) => {
+                              const novos = [...novaObrigacao.rateios];
+                              novos[idx] = { ...novos[idx], percentual: e.target.value };
+                              setNovaObrigacao({...novaObrigacao, rateios: novos});
+                            }} />
+                          </div>
+                          <button type="button" onClick={() => {
+                              const novos = novaObrigacao.rateios.filter((_, i) => i !== idx);
+                              setNovaObrigacao({...novaObrigacao, rateios: novos});
+                          }} style={{...styles.clearResultsBtn, padding: '12px', height: '42px'}}>🗑️</button>
+                       </div>
+                    ))}
+                    <button type="button" onClick={() => setNovaObrigacao({...novaObrigacao, rateios: [...novaObrigacao.rateios, {referencia: '', percentual: 0}]})} style={{...styles.clearBtn, color: '#4ade80', border: '1px solid #4ade80', marginTop: '10px'}}>+ Adicionar Linha de Rateio</button>
+                  </div>
+                )}
+              </div>
+
+              {/* ETAPA 5: ANEXOS */}
+              <div style={{background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '15px', marginBottom: '20px', border: '1px solid rgba(255,255,255,0.05)'}}>
+                <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>5. Anexos Documentais</h3>
+                <input type="file" id="anexoUpload" accept=".pdf, .jpg, .png" multiple style={{display: 'none'}} onChange={(e) => {
+                  if(e.target.files.length) {
+                    setNovaObrigacao({...novaObrigacao, anexos: [...novaObrigacao.anexos, ...Array.from(e.target.files)]});
+                  }
+                }} />
+                <label htmlFor="anexoUpload" style={{...styles.exportBtn, background: 'rgba(15, 23, 42, 0.8)', border: '1px dashed #94a3b8', display: 'block', textAlign: 'center', width: '100%', padding: '20px', cursor: 'pointer', color: '#cbd5e1'}}>
+                  📎 Clique para adicionar Nota Fiscal, Boleto, Contrato (PDF, JPG, PNG)
+                </label>
+                {novaObrigacao.anexos.length > 0 && (
+                  <ul style={{marginTop: '15px', fontSize: '12px', color: '#94a3b8', listStyle: 'none', padding: 0}}>
+                    {novaObrigacao.anexos.map((f, i) => (
+                      <li key={i} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', padding: '8px 12px', borderRadius: '8px', marginBottom: '5px'}}>
+                        <span>📎 {f.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoverAnexo(i)}
+                          style={{background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontWeight: 'bold'}}
+                          title="Remover anexo"
+                        >
+                          X
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* VALIDAÇÃO FINAL E SALVAMENTO */}
+              <div style={{display: 'flex', gap: 15, marginTop: 30}}>
+                <button type="submit" style={{...styles.exportBtn, flex: 2, fontSize: '14px', background: '#3b82f6', boxShadow: '0 4px 15px rgba(59, 130, 246, 0.5)'}} disabled={loading}>
+                  {loading ? "PROCESSANDO E SALVANDO..." : "✔️ CADASTRAR OBRIGAÇÃO FINANCEIRA"}
+                </button>
+                <button type="button" style={{...styles.clearResultsBtn, flex: 1}} onClick={() => setShowAddObrigacaoModal(false)}>
+                  CANCELAR
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVO FORNECEDOR COM DADOS ATUALIZADOS */}
+      {showAddFornecedorModal && (
+        <div style={styles.modalOverlay}>
+          <div style={{...styles.modalContent, maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <h2 style={styles.cardTitle}>Cadastro Completo de Fornecedor</h2>
+            <form onSubmit={handleSalvarFornecedor} style={{marginTop: '20px'}}>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                
+                <div style={{...styles.inputGroup, gridColumn: 'span 2'}}>
+                  <label style={styles.fieldLabel}>Tipo de Pessoa *</label>
+                  <select style={styles.inputSmall} value={novoFornecedor.tipo_pessoa} onChange={e => setNovoFornecedor({...novoFornecedor, tipo_pessoa: e.target.value})} required>
+                    <option value="PJ">Pessoa Jurídica (CNPJ)</option>
+                    <option value="PF">Pessoa Física (CPF)</option>
+                  </select>
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Nome ou Razão Social *</label>
+                  <input style={styles.inputSmall} value={novoFornecedor.nome_razao} onChange={e => setNovoFornecedor({...novoFornecedor, nome_razao: e.target.value})} required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>{novoFornecedor.tipo_pessoa === 'PJ' ? 'CNPJ' : 'CPF'} (Apenas números) *</label>
+                  <input style={styles.inputSmall} value={novoFornecedor.documento} onChange={e => setNovoFornecedor({...novoFornecedor, documento: e.target.value})} required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>E-mail Contato</label>
+                  <input type="email" style={styles.inputSmall} value={novoFornecedor.email} onChange={e => setNovoFornecedor({...novoFornecedor, email: e.target.value})} />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Telefone</label>
+                  <input style={styles.inputSmall} value={novoFornecedor.telefone} onChange={e => setNovoFornecedor({...novoFornecedor, telefone: e.target.value})} />
+                </div>
+
+                {/* ENDEREÇO */}
+                <div style={{gridColumn: 'span 2', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px'}}>
+                  <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>Endereço</h3>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                    
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>CEP</label>
+                      <input style={styles.inputSmall} value={novoFornecedor.cep} onChange={e => setNovoFornecedor({...novoFornecedor, cep: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Logradouro (Rua/Av)</label>
+                      <input style={styles.inputSmall} value={novoFornecedor.logradouro} onChange={e => setNovoFornecedor({...novoFornecedor, logradouro: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Número</label>
+                      <input style={styles.inputSmall} value={novoFornecedor.numero} onChange={e => setNovoFornecedor({...novoFornecedor, numero: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Complemento</label>
+                      <input style={styles.inputSmall} value={novoFornecedor.complemento} onChange={e => setNovoFornecedor({...novoFornecedor, complemento: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Bairro</label>
+                      <input style={styles.inputSmall} value={novoFornecedor.bairro} onChange={e => setNovoFornecedor({...novoFornecedor, bairro: e.target.value})} />
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px'}}>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Cidade</label>
+                        <input style={styles.inputSmall} value={novoFornecedor.cidade} onChange={e => setNovoFornecedor({...novoFornecedor, cidade: e.target.value})} />
+                      </div>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>UF</label>
+                        <input style={styles.inputSmall} maxLength="2" placeholder="Ex: SP" value={novoFornecedor.uf} onChange={e => setNovoFornecedor({...novoFornecedor, uf: e.target.value.toUpperCase()})} />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+              
+              <div style={{display: 'flex', gap: 15, marginTop: 30}}>
+                <button type="submit" style={{...styles.exportBtn, flex: 2}} disabled={loading}>
+                  {loading ? "SALVANDO..." : "CADASTRAR"}
+                </button>
+                <button type="button" style={{...styles.clearResultsBtn, flex: 1}} onClick={() => setShowAddFornecedorModal(false)}>
+                  CANCELAR
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIÇÃO DE FORNECEDOR COM DADOS ATUALIZADOS */}
+      {showEditFornecedorModal && fornecedorToEdit && (
+        <div style={styles.modalOverlay}>
+          <div style={{...styles.modalContent, maxWidth: '800px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <h2 style={styles.cardTitle}>Editar Fornecedor: {fornecedorToEdit.nome_razao}</h2>
+            <form onSubmit={handleUpdateFornecedor} style={{marginTop: '20px'}}>
+              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                
+                <div style={{...styles.inputGroup, gridColumn: 'span 2'}}>
+                  <label style={styles.fieldLabel}>Tipo de Pessoa *</label>
+                  <select style={styles.inputSmall} value={fornecedorToEdit.tipo_pessoa || 'PJ'} onChange={e => setFornecedorToEdit({...fornecedorToEdit, tipo_pessoa: e.target.value})} required>
+                    <option value="PJ">Pessoa Jurídica (CNPJ)</option>
+                    <option value="PF">Pessoa Física (CPF)</option>
+                  </select>
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Nome ou Razão Social *</label>
+                  <input style={styles.inputSmall} value={fornecedorToEdit.nome_razao} onChange={e => setFornecedorToEdit({...fornecedorToEdit, nome_razao: e.target.value})} required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>{fornecedorToEdit.tipo_pessoa === 'PJ' ? 'CNPJ' : 'CPF'} (Apenas números) *</label>
+                  <input style={styles.inputSmall} value={fornecedorToEdit.documento} onChange={e => setFornecedorToEdit({...fornecedorToEdit, documento: e.target.value})} required />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>E-mail Contato</label>
+                  <input type="email" style={styles.inputSmall} value={fornecedorToEdit.email || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, email: e.target.value})} />
+                </div>
+                <div style={styles.inputGroup}>
+                  <label style={styles.fieldLabel}>Telefone</label>
+                  <input style={styles.inputSmall} value={fornecedorToEdit.telefone || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, telefone: e.target.value})} />
+                </div>
+
+                {/* ENDEREÇO */}
+                <div style={{gridColumn: 'span 2', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px'}}>
+                  <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', marginBottom: '15px'}}>Endereço</h3>
+                  <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px'}}>
+                    
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>CEP</label>
+                      <input style={styles.inputSmall} value={fornecedorToEdit.cep || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, cep: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Logradouro (Rua/Av)</label>
+                      <input style={styles.inputSmall} value={fornecedorToEdit.logradouro || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, logradouro: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Número</label>
+                      <input style={styles.inputSmall} value={fornecedorToEdit.numero || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, numero: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Complemento</label>
+                      <input style={styles.inputSmall} value={fornecedorToEdit.complemento || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, complemento: e.target.value})} />
+                    </div>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.fieldLabel}>Bairro</label>
+                      <input style={styles.inputSmall} value={fornecedorToEdit.bairro || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, bairro: e.target.value})} />
+                    </div>
+                    <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px'}}>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>Cidade</label>
+                        <input style={styles.inputSmall} value={fornecedorToEdit.cidade || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, cidade: e.target.value})} />
+                      </div>
+                      <div style={styles.inputGroup}>
+                        <label style={styles.fieldLabel}>UF</label>
+                        <input style={styles.inputSmall} maxLength="2" value={fornecedorToEdit.uf || ''} onChange={e => setFornecedorToEdit({...fornecedorToEdit, uf: e.target.value.toUpperCase()})} />
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+              
+              <div style={{display: 'flex', gap: 15, marginTop: 30}}>
+                <button type="submit" style={{...styles.exportBtn, flex: 2}} disabled={loading}>
+                  {loading ? "ATUALIZANDO..." : "SALVAR ALTERAÇÕES"}
+                </button>
+                <button type="button" style={{...styles.clearResultsBtn, flex: 1}} onClick={() => { setShowEditFornecedorModal(false); setFornecedorToEdit(null); }}>
+                  CANCELAR
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL IMPORTAÇÃO MASSA */}
       {showConfirmModal && (
         <div style={styles.modalOverlay}>
@@ -1268,7 +2644,7 @@ export default function App() {
         </div>
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR FLUTUANTE */}
       <aside style={styles.sidebar}>
         <div style={styles.sidebarLogoBox}>
             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
@@ -1277,6 +2653,7 @@ export default function App() {
         </div>
         
         <nav style={styles.nav}>
+          {/* SEÇÃO GERAL */}
           <div style={{padding: '0 20px 10px', fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold'}}>
             Geral
           </div>
@@ -1285,6 +2662,48 @@ export default function App() {
           <NavItem active={activeTab === "estoque_vendas"} onClick={() => setActiveTab("estoque_vendas")} label="Estoque de Vendas" icon="📋" />
           <NavItem active={activeTab === "estoque_locacao"} onClick={() => setActiveTab("estoque_locacao")} label="Estoque de Locação" icon="🔑" />
           
+          {/* SEÇÃO FINANCEIRO (NIBO STYLE) */}
+          <div style={{padding: '15px 20px 10px', fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold'}}>
+            Financeiro
+          </div>
+          <NavItem 
+  active={activeTab === "financeiro_dashboard"} 
+  onClick={() => { setActiveTab("financeiro_dashboard"); loadDashFin(); }} 
+  label="Dashboard Financeiro" 
+  icon="📊" 
+/>
+          <NavItem 
+            active={activeTab === "financeiro_pagar"} 
+            onClick={() => setActiveTab("financeiro_pagar")} 
+            label="Contas a Pagar" 
+            icon="💸" 
+          />
+          <NavItem 
+            active={activeTab === "financeiro_receber"} 
+            onClick={() => setActiveTab("financeiro_receber")} 
+            label="Contas a Receber" 
+            icon="🤑" 
+          />
+          <NavItem
+  active={activeTab === "contas_bancarias"}
+  onClick={() => setActiveTab("contas_bancarias")}
+  label="Contas Bancárias"
+  icon="🏦"
+/>
+          <NavItem
+            active={activeTab === "clientes"}
+            onClick={() => { setActiveTab("clientes"); loadClientes(); }}
+            label="Clientes"
+            icon="👥"
+          />
+          <NavItem
+            active={activeTab === "fornecedores"}
+            onClick={() => { setActiveTab("fornecedores"); }}
+            label="Fornecedores"
+            icon="🏢"
+          />
+          
+          {/* SEÇÃO GESTÃO (RESTRITO) */}
           {(currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
             <>
               <div style={{padding: '15px 20px 10px', fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold'}}>
@@ -1296,6 +2715,7 @@ export default function App() {
             </>
           )}
 
+          {/* SEÇÃO SISTEMA (ADMIN APENAS) */}
           {currentUser?.role === 'admin' && (
             <>
               <div style={{padding: '15px 20px 10px', fontSize: '10px', color: '#64748b', textTransform: 'uppercase', fontWeight: 'bold'}}>
@@ -1324,12 +2744,12 @@ export default function App() {
         <header style={styles.header}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <div>
-              <span style={{color: '#eab308', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px'}}>Olá, {currentUser?.name}</span>
+              <span style={{color: '#eab308', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>Olá, {currentUser?.name}</span>
               <h1 style={styles.title}>{activeTab.replace('_', ' ').toUpperCase()}</h1>
               <p style={styles.subtitle}> Sistema v3.0 • 2026</p>
             </div>
             {error && (
-              <div style={{background: '#7f1d1d', color: '#fecaca', padding: '10px 20px', borderRadius: '8px', fontSize: '12px'}}>
+              <div style={{background: 'rgba(127, 29, 29, 0.8)', backdropFilter: 'blur(10px)', color: '#fecaca', padding: '10px 20px', borderRadius: '12px', fontSize: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)', border: '1px solid #f87171'}}>
                 ⚠️ {error}
               </div>
             )}
@@ -1339,31 +2759,63 @@ export default function App() {
         <main style={styles.container}>
           
           {/* TAB: DASHBOARD */}
-          {activeTab === "dashboard" && (
+         {activeTab === "dashboard" && (
             <div style={styles.dashboardWrapper}>
               
-              <div style={styles.statsGrid}>
-                {/* Aqui usamos o fullInventory que puxa do banco sem sofrer interferência dos filtros da tela */}
-                <StatCard title="Estoque (Vendas)" value={fullInventoryVendas.length} icon="🏠" breakdown={vendasBreakdown} />
-                <StatCard title="Estoque (Locação)" value={fullInventoryLocacao.length} icon="🔑" breakdown={locacaoBreakdown} />
-                <StatCard title="Modelos Ativos" value={models.length} icon="🚗" />
-                <StatCard title="Margem Média" value={`${(percentualAplicado * 100).toFixed(1)}%`} icon="📊" />
+              {/* SEÇÃO 1: RESUMO FINANCEIRO REALIZADO (NIBO STYLE) */}
+              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Consolidado Bancário</h2>
+              <div style={{...styles.statsGrid, marginBottom: '30px'}}>
+                <StatCard 
+                  title="SALDO EM CONTA (REAL)" 
+                  value={dashboardFin?.saldo_formatado || "R$ 0,00"} 
+                  icon="🏦" 
+                />
+                <StatCard 
+                  title="ENTRADAS (MÊS)" 
+                  value={dashboardFin?.entradas_mes ? formatar_moeda_brl(dashboardFin.entradas_mes) : "R$ 0,00"} 
+                  icon="📈" 
+                />
+                <StatCard 
+                  title="SAÍDAS (MÊS)" 
+                  value={dashboardFin?.saidas_mes ? formatar_moeda_brl(dashboardFin.saidas_mes) : "R$ 0,00"} 
+                  icon="📉" 
+                />
+                <StatCard 
+                  title="DISPONIBILIDADE LÍQUIDA" 
+                  value={dashboardFin?.lucro_operacional ? formatar_moeda_brl(dashboardFin.lucro_operacional) : "R$ 0,00"} 
+                  icon="💰" 
+                />
+                {/* GRÁFICO DE FLUXO DE CAIXA */}
+                <FluxoCaixaChart data={dashboardFin?.fluxo_mensal} maxValue={dashboardFin?.max_valor_grafico} 
+                />
+              </div>
+
+              {/* SEÇÃO 2: INDICADORES DE OPERAÇÃO E FROTA */}
+              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Indicadores de Frota</h2>
+              <div style={{...styles.statsGrid, marginBottom: '30px'}}>
+                <StatCard title="Estoque (Vendas)" value={fullInventoryVendas?.length || 0} icon="🏠" breakdown={vendasBreakdown} />
+                <StatCard title="Estoque (Locação)" value={fullInventoryLocacao?.length || 0} icon="🔑" breakdown={locacaoBreakdown} />
+                <StatCard title="Modelos Ativos" value={models?.length || 0} icon="🚗" />
+                <StatCard title="Margem Média" value={`${((percentualAplicado || 0) * 100).toFixed(1)}%`} icon="📊" />
               </div>
               
-              <h2 style={styles.sectionTitle}>Ações Rápidas</h2>
+              {/* SEÇÃO 3: AÇÕES RÁPIDAS (ATALHOS) */}
+              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Ações Rápidas</h2>
               <div style={styles.actionGrid}>
                 {hasEditPermission && (
-                  <div style={styles.actionCard} onClick={() => setActiveTab("frota")}>
-                    <span style={{fontSize: 30}}>🚗</span>
-                    <h3>Gestão de Veículos</h3>
-                    <p>Cadastrar manualmente ou importar arquivos</p>
+                  <div style={{...styles.actionCard, borderLeft: '4px solid #eab308'}} onClick={() => setActiveTab("financeiro")}>
+                    <span style={{fontSize: 30}}>💸</span>
+                    <h3>Conciliação Bancária</h3>
+                    <p>Subir OFX e processar baixas rápidas</p>
                   </div>
                 )}
+                
                 <div style={styles.actionCard} onClick={() => setActiveTab("estoque_vendas")}>
                   <span style={{fontSize: 30}}>📋</span>
                   <h3>Estoque Vendas</h3>
                   <p>Consultar veículos e exportar relatórios</p>
                 </div>
+
                 <div style={styles.actionCard} onClick={() => setActiveTab("estoque_locacao")}>
                   <span style={{fontSize: 30}}>🔑</span>
                   <h3>Estoque Locação</h3>
@@ -1374,13 +2826,624 @@ export default function App() {
             </div>
           )}
 
+          {activeTab === "financeiro_dashboard" && (
+  <div style={{display:"flex",flexDirection:"column",gap:24}}>
+
+    {/* KPIs principais */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:18}}>
+      {[
+        {label:"Saldo em Conta",value:dashFin.saldo_formatado,icon:"🏦",color:"#10b981",glow:"rgba(16,185,129,0.15)"},
+        {label:"Entradas do Mês",value:`R$ ${formatBRL(dashFin.entradas_mes||0)}`,icon:"📈",color:"#3b82f6",glow:"rgba(59,130,246,0.15)"},
+        {label:"Saídas do Mês",value:`R$ ${formatBRL(dashFin.saidas_mes||0)}`,icon:"📉",color:"#ef4444",glow:"rgba(239,68,68,0.15)"},
+        {label:"Resultado Líquido",value:`R$ ${formatBRL(dashFin.lucro_operacional||0)}`,icon:"💰",
+         color:(dashFin.lucro_operacional||0)>=0?"#10b981":"#ef4444",
+         glow:(dashFin.lucro_operacional||0)>=0?"rgba(16,185,129,0.15)":"rgba(239,68,68,0.15)"},
+      ].map((k,i)=>(
+        <div key={i} style={{
+          background:"rgba(15,23,42,0.8)",backdropFilter:"blur(16px)",
+          border:`1px solid ${k.color}33`,borderRadius:20,padding:"26px 24px",
+          boxShadow:`0 0 40px ${k.glow},0 12px 40px rgba(0,0,0,0.4)`,
+          transition:"transform 0.25s,box-shadow 0.25s",
+        }}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow=`0 0 50px ${k.glow},0 20px 50px rgba(0,0,0,0.5)`;}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow=`0 0 40px ${k.glow},0 12px 40px rgba(0,0,0,0.4)`;}}
+        >
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div>
+              <div style={{fontSize:9,color:"#64748b",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:12}}>{k.label}</div>
+              <div style={{fontSize:22,fontWeight:900,color:k.color,fontFamily:"monospace",letterSpacing:"-0.02em"}}>{loadingFin?"...":(k.value)}</div>
+            </div>
+            <div style={{width:46,height:46,borderRadius:14,background:`${k.color}15`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>{k.icon}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    {/* Gráfico + Próximos vencimentos */}
+    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:18}}>
+      
+      {/* GRÁFICO FLUXO DE CAIXA */}
+      <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:20,padding:"28px 30px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24}}>
+          <div>
+            <h3 style={{margin:0,fontSize:16,fontWeight:800,borderLeft:"4px solid #eab308",paddingLeft:12}}>Fluxo de Caixa Mensal</h3>
+            <p style={{margin:"6px 0 0 16px",fontSize:12,color:"#64748b"}}>Entradas vs Saídas — últimos 6 meses</p>
+          </div>
+          <div style={{display:"flex",gap:14,alignItems:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#94a3b8"}}>
+              <div style={{width:10,height:10,borderRadius:3,background:"#10b981"}}/>Entradas
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:5,fontSize:11,color:"#94a3b8"}}>
+              <div style={{width:10,height:10,borderRadius:3,background:"#ef4444"}}/>Saídas
+            </div>
+          </div>
+        </div>
+        {dashFin.fluxo_mensal?.length>0 ? (()=>{
+          const maxV = Math.max(...dashFin.fluxo_mensal.flatMap(d=>[d.entradas||0,d.saidas||0]),1);
+          const H=140,BAR=22,GAP=8,GROUP=BAR*2+GAP+18;
+          const W=dashFin.fluxo_mensal.length*GROUP+20;
+          return (
+            <svg width="100%" viewBox={`0 0 ${W} ${H+32}`} preserveAspectRatio="xMidYMid meet">
+              {dashFin.fluxo_mensal.map((d,i)=>{
+                const x=10+i*GROUP;
+                const inH=((d.entradas||0)/maxV)*H;
+                const outH=((d.saidas||0)/maxV)*H;
+                return (
+                  <g key={i}>
+                    <rect x={x} y={H-inH} width={BAR} height={Math.max(inH,2)} fill="#10b981" opacity={0.85} rx={4}/>
+                    <rect x={x+BAR+GAP} y={H-outH} width={BAR} height={Math.max(outH,2)} fill="#ef4444" opacity={0.75} rx={4}/>
+                    <text x={x+BAR+GAP/2} y={H+20} textAnchor="middle" fill="#64748b" fontSize={10} fontFamily="system-ui">{d.mes}</text>
+                  </g>
+                );
+              })}
+              <line x1={0} y1={H} x2={W} y2={H} stroke="rgba(255,255,255,0.06)" strokeWidth={1}/>
+            </svg>
+          );
+        })() : (
+          <div style={{textAlign:"center",padding:"50px 0",color:"#475569",fontSize:13}}>
+            Nenhuma movimentação registrada para gerar o gráfico.
+          </div>
+        )}
+      </div>
+
+      {/* PAINEL LATERAL: próximas obrigações + saldo */}
+      <div style={{display:"flex",flexDirection:"column",gap:16}}>
+        
+        {/* Mini sumário */}
+        <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:20,padding:"22px"}}>
+          <h3 style={{margin:"0 0 16px 0",fontSize:13,fontWeight:800,color:"#eab308",textTransform:"uppercase",letterSpacing:"0.08em"}}>Resumo Contas a Pagar</h3>
+          {[
+            {label:"Em Aberto",count:contasPagar.filter(c=>c.status==="ABERTO").length,total:contasPagar.filter(c=>c.status==="ABERTO").reduce((s,c)=>s+(Number(c.valor)||0),0),color:"#f59e0b"},
+            {label:"Vencidos",count:contasPagar.filter(c=>{const hoje=new Date();return c.vencimento&&!["PAGO","CONCILIADO"].includes(c.status)&&new Date(c.vencimento+"T12:00:00Z")<hoje;}).length,total:contasPagar.filter(c=>{const hoje=new Date();return c.vencimento&&!["PAGO","CONCILIADO"].includes(c.status)&&new Date(c.vencimento+"T12:00:00Z")<hoje;}).reduce((s,c)=>s+(Number(c.valor)||0),0),color:"#ef4444"},
+            {label:"Pagos",count:contasPagar.filter(c=>c.status==="PAGO").length,total:contasPagar.filter(c=>c.status==="PAGO").reduce((s,c)=>s+(Number(c.valor)||0),0),color:"#10b981"},
+          ].map((row,i)=>{
+            const totPagar=contasPagar.reduce((s,c)=>s+(Number(c.valor)||0),0)||1;
+            const pct=(row.count/Math.max(contasPagar.length,1)*100);
+            return (
+              <div key={i} style={{marginBottom:12}}>
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,marginBottom:5}}>
+                  <span style={{color:"#94a3b8"}}>{row.label}</span>
+                  <span style={{fontWeight:800,color:row.color}}>{row.count} — <span style={{fontFamily:"monospace"}}>R$ {formatBRL(row.total)}</span></span>
+                </div>
+                <div style={{height:4,background:"rgba(255,255,255,0.06)",borderRadius:10,overflow:"hidden"}}>
+                  <div style={{width:`${pct}%`,height:"100%",background:row.color,borderRadius:10,transition:"width 0.6s ease"}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Ações rápidas financeiro */}
+        <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:20,padding:"22px"}}>
+          <h3 style={{margin:"0 0 14px 0",fontSize:13,fontWeight:800,color:"#eab308",textTransform:"uppercase",letterSpacing:"0.08em"}}>Ações Rápidas</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <button onClick={()=>setActiveTab("financeiro_pagar")} style={{
+              background:"rgba(59,130,246,0.08)",border:"1px solid rgba(59,130,246,0.2)",
+              color:"#93c5fd",borderRadius:10,padding:"10px 14px",cursor:"pointer",
+              textAlign:"left",fontSize:12,fontWeight:700,transition:"all 0.15s",
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(59,130,246,0.2)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(59,130,246,0.08)"}
+            >💸 Abrir Contas a Pagar</button>
+            <button onClick={()=>setActiveTab("financeiro_receber")} style={{
+              background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.2)",
+              color:"#6ee7b7",borderRadius:10,padding:"10px 14px",cursor:"pointer",
+              textAlign:"left",fontSize:12,fontWeight:700,transition:"all 0.15s",
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(16,185,129,0.2)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(16,185,129,0.08)"}
+            >🤑 Abrir Contas a Receber</button>
+            <button onClick={loadDashFin} style={{
+              background:"rgba(234,179,8,0.08)",border:"1px solid rgba(234,179,8,0.2)",
+              color:"#fde68a",borderRadius:10,padding:"10px 14px",cursor:"pointer",
+              textAlign:"left",fontSize:12,fontWeight:700,transition:"all 0.15s",
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background="rgba(234,179,8,0.2)"}
+              onMouseLeave={e=>e.currentTarget.style.background="rgba(234,179,8,0.08)"}
+            >{loadingFin?"⌛ Atualizando...":"🔄 Atualizar Dashboard"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Próximos vencimentos — tabela rápida */}
+    <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:20,padding:"24px 28px"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <h3 style={{margin:0,fontSize:15,fontWeight:800,borderLeft:"4px solid #ef4444",paddingLeft:12}}>Próximos Vencimentos</h3>
+        <button onClick={()=>setActiveTab("financeiro_pagar")} style={{
+          background:"rgba(59,130,246,0.1)",border:"1px solid rgba(59,130,246,0.25)",
+          color:"#93c5fd",borderRadius:8,padding:"7px 16px",cursor:"pointer",fontSize:11,fontWeight:700,
+        }}>Ver todos →</button>
+      </div>
+      <div style={{overflowX:"auto"}}>
+        <table style={styles.tableMassa}>
+          <thead>
+            <tr>
+              {["Vencimento","Fornecedor","Descrição","Valor","Status"].map(h=>(
+                <th key={h} style={styles.thMassa}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {contasPagar.slice(0,8).map((c,i)=>{
+              const hoje=new Date();
+              const at=c.vencimento&&!["PAGO","CONCILIADO"].includes(c.status)&&new Date(c.vencimento+"T12:00:00Z")<hoje;
+              return (
+                <tr key={i} style={styles.trBody}
+                  onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                >
+                  <td style={styles.tdMassa}>
+                    <strong style={{color:at?"#ef4444":"#f1f5f9",fontSize:12.5}}>
+                      {c.vencimento?new Date(c.vencimento+"T12:00:00Z").toLocaleDateString("pt-BR"):"-"}
+                    </strong>
+                  </td>
+                  <td style={{...styles.tdMassa,color:"#94a3b8",fontSize:12}}>{c.fornecedor||"-"}</td>
+                  <td style={{...styles.tdMassa,maxWidth:200}}>
+                    <div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:12}}>{c.descricao}</div>
+                  </td>
+                  <td style={styles.tdMassa}>
+                    <span style={{color:"#ef4444",fontWeight:900,fontFamily:"monospace"}}>R$ {formatBRL(c.valor)}</span>
+                  </td>
+                  <td style={styles.tdMassa}>
+                    <span style={{
+                      background:getStatusColor(at?"ATRASADO":c.status)+"22",
+                      color:getStatusColor(at?"ATRASADO":c.status),
+                      border:`1px solid ${getStatusColor(at?"ATRASADO":c.status)}44`,
+                      padding:"3px 8px",borderRadius:12,fontSize:10,fontWeight:800,
+                      textTransform:"uppercase",letterSpacing:"0.06em",
+                    }}>{at?"ATRASADO":c.status}</span>
+                  </td>
+                </tr>
+              );
+            })}
+            {contasPagar.length===0&&(
+              <tr><td colSpan={5} style={{...styles.tdMassa,textAlign:"center",padding:40,color:"#475569",fontSize:13}}>
+                Nenhuma conta a pagar carregada.
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+)}
+
+         {/* TAB: CONTAS A PAGAR */}
+         {activeTab === "financeiro_pagar" && (() => {
+  // Métricas derivadas do array atual
+  const totalPagar = contasPagar.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const hoje = new Date();
+  const vencidos = contasPagar.filter(c => {
+    if (!c.vencimento || ["PAGO","CONCILIADO"].includes(c.status)) return false;
+    return new Date(c.vencimento + 'T12:00:00Z') < hoje;
+  });
+  const totalVencido = vencidos.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const proximosSete = contasPagar.filter(c => {
+    if (!c.vencimento || ["PAGO","CONCILIADO"].includes(c.status)) return false;
+    const d = new Date(c.vencimento + 'T12:00:00Z');
+    const diff = (d - hoje) / 86400000;
+    return diff >= 0 && diff <= 7;
+  });
+
+  const filtrados = filtroStatusPagar === "TODOS" ? contasPagar :
+    filtroStatusPagar === "VENCIDOS" ? vencidos :
+    contasPagar.filter(c => c.status === filtroStatusPagar);
+
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:20}}>
+
+      {/* ── KPI CARDS ── */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16}}>
+        {[
+          { label:"Total Provisionado", value:`R$ ${formatBRL(totalPagar)}`, icon:"📋", color:"#ef4444", glow:"rgba(239,68,68,0.15)" },
+          { label:"Vencidos", value:`R$ ${formatBRL(totalVencido)}`, icon:"⚠️", color: totalVencido>0?"#ef4444":"#10b981", glow: totalVencido>0?"rgba(239,68,68,0.15)":"rgba(16,185,129,0.1)" },
+          { label:"Vence em 7 dias", value:proximosSete.length, icon:"📅", color:"#f59e0b", glow:"rgba(245,158,11,0.15)" },
+          { label:"Total de Registros", value:contasPagar.length, icon:"📄", color:"#3b82f6", glow:"rgba(59,130,246,0.15)" },
+        ].map((k,i)=>(
+          <div key={i} style={{
+            background:"rgba(15,23,42,0.7)", backdropFilter:"blur(12px)",
+            border:`1px solid ${k.glow.replace('0.15','0.3')}`,
+            borderRadius:16, padding:"20px 22px",
+            boxShadow:`0 0 24px ${k.glow}, 0 8px 24px rgba(0,0,0,0.3)`,
+            transition:"transform 0.2s",
+          }}
+            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
+          >
+            <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+              <div>
+                <div style={{fontSize:9, color:"#64748b", fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10}}>{k.label}</div>
+                <div style={{fontSize:20, fontWeight:900, color:k.color, fontFamily:"monospace", letterSpacing:"-0.02em"}}>{k.value}</div>
+              </div>
+              <div style={{width:40,height:40,borderRadius:12,background:`${k.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{k.icon}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── BARRA FILTROS + AÇÕES (mantém botões originais) ── */}
+      <div style={{
+        background:"rgba(15,23,42,0.7)", backdropFilter:"blur(12px)",
+        border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"20px 24px",
+      }}>
+        <div style={{display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end"}}>
+          
+          <div style={{flex:"1 1 220px"}}>
+            <label style={styles.fieldLabel}>Pesquisar</label>
+            <input
+              style={{...styles.inputSmall, borderColor:"rgba(59,130,246,0.3)"}}
+              placeholder="Fornecedor, NF, descrição..."
+              value={financeiroBuscaPagar}
+              onChange={e => setFinanceiroBuscaPagar(e.target.value)}
+            />
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Início</label>
+            <input type="date" style={styles.inputSmall} value={financeiroDataInicioPagar} onChange={e=>setFinanceiroDataInicioPagar(e.target.value)}/>
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Fim</label>
+            <input type="date" style={styles.inputSmall} value={financeiroDataFimPagar} onChange={e=>setFinanceiroDataFimPagar(e.target.value)}/>
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Status</label>
+            <select style={{...styles.inputSmall, width:140}} value={filtroStatusPagar} onChange={e=>setFiltroStatusPagar(e.target.value)}>
+              <option value="TODOS">Todos</option>
+              <option value="ABERTO">Em Aberto</option>
+              <option value="VENCIDOS">Vencidos</option>
+              <option value="PAGO">Pago</option>
+              <option value="CONCILIADO">Conciliado</option>
+            </select>
+          </div>
+          
+          <button onClick={loadContasPagar} style={{...styles.exportBtn, background:"#eab308", color:"#000", boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>
+            🔍 BUSCAR
+          </button>
+
+          {/* BOTÃO OFX — mantém comportamento original (handleImportOFX) */}
+          <div style={{position:"relative"}}>
+            <input type="file" id="ofxUploadPagar" accept=".ofx,.pdf" style={{display:"none"}} onChange={handleImportOFX}/>
+            <label htmlFor="ofxUploadPagar" style={{
+              ...styles.exportBtn, background:"#10b981",
+              display:"inline-flex", alignItems:"center", gap:8,
+              boxShadow:"0 4px 15px rgba(16,185,129,0.4)", cursor:"pointer",
+              borderRadius:12, padding:"12px 20px", fontWeight:"bold", fontSize:12, color:"#fff"
+            }}>
+              {loading ? "⌛ LENDO..." : "📥 CONCILIAR OFX"}
+            </label>
+          </div>
+
+          {hasEditPermission && (
+            <button onClick={()=>setShowAddObrigacaoModal(true)} style={{
+              ...styles.exportBtn, background:"#3b82f6",
+              boxShadow:"0 4px 15px rgba(59,130,246,0.4)",
+            }}>
+              ➕ NOVA OBRIGAÇÃO
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── ALERTA VENCIDOS ── */}
+      {vencidos.length > 0 && (
+        <div style={{
+          background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.3)",
+          borderRadius:12, padding:"12px 20px",
+          display:"flex", alignItems:"center", gap:12,
+        }}>
+          <span style={{fontSize:20}}>🚨</span>
+          <div>
+            <span style={{color:"#ef4444", fontWeight:800, fontSize:13}}>
+              {vencidos.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencido)}
+            </span>
+            <span style={{color:"#94a3b8", fontSize:12, marginLeft:8}}>— ação imediata recomendada</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── TABELA (preserva TODOS os botões originais ✏️ 🗑️ 🚨) ── */}
+      <div style={{...styles.cardFull, padding:0, overflow:"hidden"}}>
+        <div style={{padding:"18px 24px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
+          <h2 style={{...styles.cardTitle, margin:0}}>Contas a Pagar & Provisões</h2>
+          <span style={{fontSize:11, color:"#64748b"}}>{filtrados.length} registro(s)</span>
+        </div>
+        <div style={styles.tableWrapper}>
+          <table style={styles.tableMassa}>
+            <thead>
+              <tr>
+                <th style={styles.thMassa}>Vencimento</th>
+                <th style={styles.thMassa}>Fatura / Título</th>
+                <th style={styles.thMassa}>Descrição</th>
+                <th style={styles.thMassa}>Fornecedor</th>
+                <th style={styles.thMassa}>NF</th>
+                <th style={styles.thMassa}>Parcela</th>
+                <th style={styles.thMassa}>Valor (R$)</th>
+                <th style={styles.thMassa}>Status</th>
+                {hasEditPermission && <th style={{...styles.thMassa, textAlign:"center"}}>Ações</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.length > 0 ? filtrados.map((c, idx) => {
+                const atrasado = c.vencimento && !["PAGO","CONCILIADO"].includes(c.status) && new Date(c.vencimento+"T12:00:00Z") < hoje;
+                return (
+                  <tr key={idx} style={{
+                    ...styles.trBody,
+                    background: atrasado ? "rgba(239,68,68,0.06)" : "transparent",
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                    onMouseLeave={e => e.currentTarget.style.background = atrasado ? "rgba(239,68,68,0.06)" : "transparent"}
+                  >
+                    <td style={styles.tdMassa}>
+                      <strong style={{color: atrasado?"#ef4444":"#f1f5f9"}}>
+                        {c.vencimento ? new Date(c.vencimento+"T12:00:00Z").toLocaleDateString("pt-BR") : "-"}
+                      </strong>
+                      {atrasado && <span style={{display:"block",fontSize:9,color:"#ef4444",fontWeight:700}}>VENCIDO</span>}
+                    </td>
+                    <td style={styles.tdMassa}>
+                      <span style={{color:"#60a5fa",fontSize:11,fontWeight:700,display:"block"}}>{c.fatura||"FAT-000"}</span>
+                      <span style={{color:"#64748b",fontSize:10}}>{c.titulo||"TIT-000"}</span>
+                    </td>
+                    <td style={{...styles.tdMassa, maxWidth:180}}>
+                      <div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:12.5,fontWeight:500}}>{c.descricao}</div>
+                    </td>
+                    <td style={{...styles.tdMassa, color:"#94a3b8", fontSize:12}}>{c.fornecedor||"-"}</td>
+                    <td style={{...styles.tdMassa, color:"#64748b", fontSize:11}}>{c.numero_nf||"S/N"}</td>
+                    <td style={{...styles.tdMassa, textAlign:"center"}}>
+                      <span style={{background:"rgba(255,255,255,0.08)",padding:"3px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>
+                        {c.parcela_atual}/{c.qtd_parcelas}
+                      </span>
+                    </td>
+                    <td style={styles.tdMassa}>
+                      <span style={{color:"#ef4444",fontWeight:900,fontFamily:"monospace",fontSize:13}}>
+                        R$ {formatBRL(c.valor)}
+                      </span>
+                    </td>
+                    <td style={styles.tdMassa}>
+                      {/* Badge de status melhorado mas preservando cores originais */}
+                      <span style={{
+                        background: getStatusColor(atrasado?"ATRASADO":c.status)+"22",
+                        color: getStatusColor(atrasado?"ATRASADO":c.status),
+                        border:`1px solid ${getStatusColor(atrasado?"ATRASADO":c.status)}44`,
+                        padding:"4px 10px", borderRadius:20, fontSize:10, fontWeight:800,
+                        textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap",
+                      }}>
+                        {atrasado ? "ATRASADO" : c.status}
+                      </span>
+                    </td>
+                    {/* ── BOTÕES ORIGINAIS PRESERVADOS INTEGRALMENTE ── */}
+                    {hasEditPermission && (
+                      <td style={{...styles.tdMassa, textAlign:"center"}}>
+                        <div style={{display:"flex", gap:6, justifyContent:"center"}}>
+                          <button
+                            onClick={()=>{ setContaToEdit(c); setShowEditContaModal(true); }}
+                            style={{background:"rgba(59,130,246,0.15)",color:"#60a5fa",border:"1px solid rgba(59,130,246,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
+                            title="Editar Provisão"
+                            onMouseEnter={e=>e.currentTarget.style.background="rgba(59,130,246,0.3)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="rgba(59,130,246,0.15)"}
+                          >✏️</button>
+                          <button
+                            onClick={()=>handleExcluirParcela(c.id)}
+                            style={{background:"rgba(239,68,68,0.12)",color:"#f87171",border:"1px solid rgba(239,68,68,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
+                            title="Excluir APENAS esta Parcela"
+                            onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.28)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="rgba(239,68,68,0.12)"}
+                          >🗑️</button>
+                          <button
+                            onClick={()=>handleExcluirObrigacao(c.id_obrigacao, c.descricao)}
+                            style={{background:"rgba(127,29,29,0.2)",color:"#fca5a5",border:"1px solid rgba(127,29,29,0.4)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
+                            title="Excluir OBRIGAÇÃO INTEIRA e todas as parcelas"
+                            onMouseEnter={e=>e.currentTarget.style.background="rgba(127,29,29,0.4)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="rgba(127,29,29,0.2)"}
+                          >🚨</button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              }) : (
+                <tr><td colSpan={hasEditPermission?9:8} style={{...styles.tdMassa,textAlign:"center",color:"#475569",padding:50,fontSize:13}}>
+                  Nenhuma conta a pagar encontrada.
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  );
+})()}
+
+          {/* TAB: CONTAS A RECEBER */}
+          {activeTab === "financeiro_receber" && (() => {
+  const hoje = new Date();
+  const totalReceber = contasReceber.reduce((s,c)=>s+(Number(c.valor)||0),0);
+  const vencidosR = contasReceber.filter(c=>{
+    if(!c.vencimento||["RECEBIDO","CONCILIADO"].includes(c.status)) return false;
+    return new Date(c.vencimento+"T12:00:00Z")<hoje;
+  });
+  const totalVencidoR = vencidosR.reduce((s,c)=>s+(Number(c.valor)||0),0);
+  const filtradosR = filtroStatusReceber==="TODOS"?contasReceber:
+    filtroStatusReceber==="VENCIDOS"?vencidosR:
+    contasReceber.filter(c=>c.status===filtroStatusReceber);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+
+      {/* KPI CARDS */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16}}>
+        {[
+          {label:"Total a Receber",value:`R$ ${formatBRL(totalReceber)}`,icon:"💰",color:"#10b981",glow:"rgba(16,185,129,0.15)"},
+          {label:"Vencidos",value:`R$ ${formatBRL(totalVencidoR)}`,icon:"⚠️",color:totalVencidoR>0?"#ef4444":"#10b981",glow:totalVencidoR>0?"rgba(239,68,68,0.15)":"rgba(16,185,129,0.1)"},
+          {label:"Em Aberto",value:contasReceber.filter(c=>c.status==="A RECEBER").length,icon:"📋",color:"#f59e0b",glow:"rgba(245,158,11,0.15)"},
+          {label:"Recebidos",value:contasReceber.filter(c=>c.status==="RECEBIDO").length,icon:"✅",color:"#3b82f6",glow:"rgba(59,130,246,0.15)"},
+        ].map((k,i)=>(
+          <div key={i} style={{
+            background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",
+            border:`1px solid ${k.glow.replace("0.15","0.3")}`,borderRadius:16,
+            padding:"20px 22px",boxShadow:`0 0 24px ${k.glow},0 8px 24px rgba(0,0,0,0.3)`,
+            transition:"transform 0.2s",
+          }}
+            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
+          >
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+              <div>
+                <div style={{fontSize:9,color:"#64748b",fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",marginBottom:10}}>{k.label}</div>
+                <div style={{fontSize:20,fontWeight:900,color:k.color,fontFamily:"monospace"}}>{k.value}</div>
+              </div>
+              <div style={{width:40,height:40,borderRadius:12,background:`${k.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{k.icon}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* FILTROS */}
+      <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:"20px 24px"}}>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"flex-end"}}>
+          <div style={{flex:"1 1 220px"}}>
+            <label style={styles.fieldLabel}>Pesquisar</label>
+            <input style={{...styles.inputSmall,borderColor:"rgba(16,185,129,0.3)"}} placeholder="Cliente, NF..." value={financeiroBuscaReceber} onChange={e=>setFinanceiroBuscaReceber(e.target.value)}/>
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Início</label>
+            <input type="date" style={styles.inputSmall} value={financeiroDataInicioReceber} onChange={e=>setFinanceiroDataInicioReceber(e.target.value)}/>
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Fim</label>
+            <input type="date" style={styles.inputSmall} value={financeiroDataFimReceber} onChange={e=>setFinanceiroDataFimReceber(e.target.value)}/>
+          </div>
+          <div>
+            <label style={styles.fieldLabel}>Status</label>
+            <select style={{...styles.inputSmall,width:140}} value={filtroStatusReceber} onChange={e=>setFiltroStatusReceber(e.target.value)}>
+              <option value="TODOS">Todos</option>
+              <option value="A RECEBER">A Receber</option>
+              <option value="VENCIDOS">Vencidos</option>
+              <option value="RECEBIDO">Recebido</option>
+              <option value="CONCILIADO">Conciliado</option>
+            </select>
+          </div>
+          <button onClick={loadContasReceber} style={{...styles.exportBtn,background:"#eab308",color:"#000",boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>🔍 BUSCAR</button>
+          <div>
+            <input type="file" id="ofxUploadReceber" accept=".ofx,.pdf" style={{display:"none"}} onChange={handleImportOFXReceber}/>
+            <label htmlFor="ofxUploadReceber" style={{...styles.exportBtn,background:"#10b981",display:"inline-flex",alignItems:"center",gap:8,boxShadow:"0 4px 15px rgba(16,185,129,0.4)",cursor:"pointer",borderRadius:12,padding:"12px 20px",fontWeight:"bold",fontSize:12,color:"#fff"}}>
+              {loading?"⌛ IMPORTANDO...":"📥 IMPORTAR OFX"}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* TABELA */}
+      <div style={{...styles.cardFull,padding:0,overflow:"hidden"}}>
+        <div style={{padding:"18px 24px",borderBottom:"1px solid rgba(255,255,255,0.06)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <h2 style={{...styles.cardTitle,margin:0}}>Contas a Receber & Faturas</h2>
+          <span style={{fontSize:11,color:"#64748b"}}>{filtradosR.length} registro(s)</span>
+        </div>
+        <div style={styles.tableWrapper}>
+          <table style={styles.tableMassa}>
+            <thead>
+              <tr>
+                <th style={styles.thMassa}>Vencimento</th>
+                <th style={styles.thMassa}>Fatura / Título</th>
+                <th style={styles.thMassa}>Descrição</th>
+                <th style={styles.thMassa}>Cliente</th>
+                <th style={styles.thMassa}>NF</th>
+                <th style={styles.thMassa}>Parcela</th>
+                <th style={styles.thMassa}>Valor (R$)</th>
+                <th style={styles.thMassa}>Status</th>
+                {hasEditPermission && <th style={{...styles.thMassa,textAlign:"center"}}>Ações</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {filtradosR.length>0?filtradosR.map((c,idx)=>{
+                const atrasadoR=c.vencimento&&!["RECEBIDO","CONCILIADO"].includes(c.status)&&new Date(c.vencimento+"T12:00:00Z")<hoje;
+                return (
+                  <tr key={idx} style={{...styles.trBody,background:atrasadoR?"rgba(239,68,68,0.04)":"transparent"}}
+                    onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.04)"}
+                    onMouseLeave={e=>e.currentTarget.style.background=atrasadoR?"rgba(239,68,68,0.04)":"transparent"}
+                  >
+                    <td style={styles.tdMassa}>
+                      <strong style={{color:atrasadoR?"#ef4444":"#f1f5f9"}}>{c.vencimento?new Date(c.vencimento+"T12:00:00Z").toLocaleDateString("pt-BR"):"-"}</strong>
+                      {atrasadoR&&<span style={{display:"block",fontSize:9,color:"#ef4444",fontWeight:700}}>VENCIDO</span>}
+                    </td>
+                    <td style={styles.tdMassa}>
+                      <span style={{color:"#34d399",fontSize:11,fontWeight:700,display:"block"}}>{c.fatura||"FAT-000"}</span>
+                      <span style={{color:"#64748b",fontSize:10}}>{c.titulo||"TIT-000"}</span>
+                    </td>
+                    <td style={{...styles.tdMassa,maxWidth:180}}>
+                      <div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:12.5,fontWeight:500}}>{c.descricao}</div>
+                    </td>
+                    <td style={{...styles.tdMassa,color:"#94a3b8",fontSize:12}}>{c.cliente||"-"}</td>
+                    <td style={{...styles.tdMassa,color:"#64748b",fontSize:11}}>{c.numero_nf||"S/N"}</td>
+                    <td style={{...styles.tdMassa,textAlign:"center"}}>
+                      <span style={{background:"rgba(255,255,255,0.08)",padding:"3px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>{c.parcela_atual}/{c.qtd_parcelas}</span>
+                    </td>
+                    <td style={styles.tdMassa}>
+                      <span style={{color:"#4ade80",fontWeight:900,fontFamily:"monospace",fontSize:13}}>R$ {formatBRL(c.valor)}</span>
+                    </td>
+                    <td style={styles.tdMassa}>
+                      <span style={{
+                        background:getStatusColor(atrasadoR?"ATRASADO":c.status)+"22",
+                        color:getStatusColor(atrasadoR?"ATRASADO":c.status),
+                        border:`1px solid ${getStatusColor(atrasadoR?"ATRASADO":c.status)}44`,
+                        padding:"4px 10px",borderRadius:20,fontSize:10,fontWeight:800,
+                        textTransform:"uppercase",letterSpacing:"0.06em",whiteSpace:"nowrap",
+                      }}>{atrasadoR?"ATRASADO":c.status}</span>
+                    </td>
+                    {/* BOTÕES ORIGINAIS PRESERVADOS ✏️ 💲 */}
+                    {hasEditPermission&&(
+                      <td style={{...styles.tdMassa,textAlign:"center"}}>
+                        <div style={{display:"flex",gap:6,justifyContent:"center"}}>
+                          <button style={{background:"rgba(59,130,246,0.12)",color:"#60a5fa",border:"1px solid rgba(59,130,246,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14}} title="Editar">✏️</button>
+                          <button style={{background:"rgba(16,185,129,0.12)",color:"#34d399",border:"1px solid rgba(16,185,129,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14}} title="Baixar/Receber">💲</button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                );
+              }):(
+                <tr><td colSpan={hasEditPermission?9:8} style={{...styles.tdMassa,textAlign:"center",color:"#475569",padding:50,fontSize:13}}>
+                  Nenhuma conta a receber encontrada.
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  );
+})()}
+
           {/* TAB: ESTOQUE DE VENDAS */}
           {activeTab === "estoque_vendas" && (
             <div style={styles.cardFull}>
-              
+
               <div style={styles.resultsHeader}>
                 <h2 style={styles.cardTitle}>Estoque de Veículos (Vendas)</h2>
-                
+
                 <div style={{display: 'flex', gap: 15, alignItems: 'flex-end', flexWrap: 'wrap'}}>
                   <div style={{textAlign: 'left'}}>
                     <label style={styles.fieldLabel}>Pesquisar</label>
@@ -1413,8 +3476,8 @@ export default function App() {
                     <label style={styles.fieldLabel}>Fim</label>
                     <input type="date" style={styles.inputSmall} value={filterEnd} onChange={e => setFilterEnd(e.target.value)} />
                   </div>
-                  <button onClick={loadInventoryVendas} style={{...styles.exportBtn, background: '#eab308', color: '#000'}}>🔍 PESQUISAR</button>
-                  <button onClick={() => exportInventoryXLSX('venda')} style={styles.exportBtn}>📥 XLSX</button>
+                  <button onClick={loadInventoryVendas} style={{...styles.exportBtn, background: '#eab308', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
+                  <button onClick={() => exportInventoryXLSX('venda')} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 XLSX</button>
                 </div>
               </div>
 
@@ -1465,14 +3528,15 @@ export default function App() {
                   </thead>
                   <tbody>
                     {paginatedInventory.length > 0 ? paginatedInventory.map((v, idx) => (
-                      <tr key={idx} style={{...styles.trBody, backgroundColor: selectedInventoryItems.includes(v.placa) ? 'rgba(234, 179, 8, 0.05)' : 'transparent'}}>
-                        
+                      <tr key={idx} style={{...styles.trBody, backgroundColor: selectedInventoryItems.includes(v.placa) ? 'rgba(234, 179, 8, 0.1)' : 'transparent'}}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = selectedInventoryItems.includes(v.placa) ? 'rgba(234, 179, 8, 0.1)' : 'rgba(255,255,255,0.03)'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = selectedInventoryItems.includes(v.placa) ? 'rgba(234, 179, 8, 0.1)' : 'transparent'}
+                      >
                         {hasEditPermission && (
                           <td style={{...styles.tdMassa, textAlign: 'center'}}>
                             <input type="checkbox" checked={selectedInventoryItems.includes(v.placa)} onChange={() => toggleInventorySelection(v.placa)} />
                           </td>
                         )}
-                        
                         <td style={styles.tdMassa}><strong>{v.placa}</strong></td>
                         <td style={styles.tdMassa}>{v.marca}</td>
                         <td style={styles.tdMassa}>{v.modelo}</td>
@@ -1487,9 +3551,12 @@ export default function App() {
                         <td style={styles.tdMassa}>R$ {formatBRL(v.valor_fipe || 0)}</td>
                         <td style={styles.tdMassa}>{v.hodometro ? Number(v.hodometro).toLocaleString('pt-BR') : 0} KM</td>
                         <td style={styles.tdMassa}>
-                          <span style={{color: getStatusColor(v.status), fontWeight: 'bold'}}>{v.status}</span>
+                          <span style={{
+                            background: v.status === 'Disponível' ? 'rgba(16,185,129,0.15)' : v.status === 'Vendido' ? 'rgba(59,130,246,0.15)' : v.status === 'Manutenção' ? 'rgba(234,179,8,0.15)' : 'rgba(148,163,184,0.1)',
+                            color: v.status === 'Disponível' ? '#10b981' : v.status === 'Vendido' ? '#3b82f6' : v.status === 'Manutenção' ? '#eab308' : '#94a3b8',
+                            padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 800
+                          }}>{v.status}</span>
                         </td>
-                        
                         {hasEditPermission && (
                           <td style={{...styles.tdMassa, textAlign: 'center'}}>
                             <button onClick={() => openEditModal(v, "Venda")} style={{background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px', marginRight: '10px'}} title="Editar">✏️</button>
@@ -1507,16 +3574,16 @@ export default function App() {
                   </tbody>
                 </table>
               </div>
-              
+
               <div style={{display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px', alignItems: 'center'}}>
                 <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} style={styles.clearResultsBtn}>Anterior</button>
-                <span style={{fontSize: '13px', color: '#94a3b8'}}>Página {currentPage} de {totalPages || 1}</span>
+                <span style={{fontSize: '13px', color: '#94a3b8', background: 'rgba(0,0,0,0.3)', padding: '8px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)'}}>Página {currentPage} de {totalPages || 1}</span>
                 <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => prev + 1)} style={styles.clearResultsBtn}>Próxima</button>
               </div>
             </div>
           )}
 
-          {/* TAB: ESTOQUE DE LOCAÇÃO */}
+                    {/* TAB: ESTOQUE DE LOCAÇÃO */}
           {activeTab === "estoque_locacao" && (
             <div style={styles.cardFull}>
               
@@ -1555,8 +3622,8 @@ export default function App() {
                     <label style={styles.fieldLabel}>Fim</label>
                     <input type="date" style={styles.inputSmall} value={filterEndLocacao} onChange={e => setFilterEndLocacao(e.target.value)} />
                   </div>
-                  <button onClick={loadInventoryLocacao} style={{...styles.exportBtn, background: '#eab308', color: '#000'}}>🔍 PESQUISAR</button>
-                  <button onClick={() => exportInventoryXLSX('locacao')} style={styles.exportBtn}>📥 XLSX</button>
+                  <button onClick={loadInventoryLocacao} style={{...styles.exportBtn, background: '#eab308', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
+                  <button onClick={() => exportInventoryXLSX('locacao')} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 XLSX</button>
                 </div>
               </div>
 
@@ -1607,7 +3674,7 @@ export default function App() {
                   </thead>
                   <tbody>
                     {paginatedInventoryLocacao.length > 0 ? paginatedInventoryLocacao.map((v, idx) => (
-                      <tr key={idx} style={{...styles.trBody, backgroundColor: selectedInventoryItemsLocacao.includes(v.placa) ? 'rgba(234, 179, 8, 0.05)' : 'transparent'}}>
+                      <tr key={idx} style={{...styles.trBody, backgroundColor: selectedInventoryItemsLocacao.includes(v.placa) ? 'rgba(234, 179, 8, 0.1)' : 'transparent'}}>
                         
                         {hasEditPermission && (
                           <td style={{...styles.tdMassa, textAlign: 'center'}}>
@@ -1652,10 +3719,25 @@ export default function App() {
               
               <div style={{display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '10px', alignItems: 'center'}}>
                 <button disabled={currentPageLocacao === 1} onClick={() => setCurrentPageLocacao(prev => prev - 1)} style={styles.clearResultsBtn}>Anterior</button>
-                <span style={{fontSize: '13px', color: '#94a3b8'}}>Página {currentPageLocacao} de {totalPagesLocacao || 1}</span>
+                <span style={{fontSize: '13px', color: '#94a3b8', background: 'rgba(0,0,0,0.3)', padding: '8px 15px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)'}}>Página {currentPageLocacao} de {totalPagesLocacao || 1}</span>
                 <button disabled={currentPageLocacao >= totalPagesLocacao} onClick={() => setCurrentPageLocacao(prev => prev + 1)} style={styles.clearResultsBtn}>Próxima</button>
               </div>
             </div>
+          )}
+
+          {/* TAB: CONTAS BANCÁRIAS */}
+          {activeTab === "contas_bancarias" && (
+            <ContasBancarias fornecedores={fornecedores} />
+          )}
+
+          {/* TAB: CLIENTES */}
+          {activeTab === "clientes" && (
+            <Clientes />
+          )}
+
+          {/* TAB: FORNECEDORES */}
+          {activeTab === "fornecedores" && (
+            <Fornecedores />
           )}
 
           {/* TAB: GESTÃO DE FROTA (CADASTRO MANUAL E IMPORTAÇÃO) */}
@@ -1667,7 +3749,7 @@ export default function App() {
                     <h2 style={styles.cardTitle}>Cadastro de Estoque Real</h2>
                     <form onSubmit={handleManualSubmit} style={styles.inventoryGrid}>
                       
-                      <div style={{...styles.inputGroup, gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.1)', padding: 15, borderRadius: 10, border: '1px solid #eab308'}}>
+                      <div style={{...styles.inputGroup, gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', padding: 15, borderRadius: 12, border: '1px solid #eab308'}}>
                         <label style={{...styles.fieldLabel, color: '#eab308'}}>ESTOQUE DE DESTINO DO VEÍCULO:</label>
                         <select style={{...styles.inputSmall, border: '1px solid #eab308'}} value={newVehicle.tipo_estoque} onChange={e => setNewVehicle({...newVehicle, tipo_estoque: e.target.value})} required>
                           <option value="Venda">ESTOQUE DE VENDAS</option>
@@ -1764,7 +3846,7 @@ export default function App() {
                           📥 BAIXAR MODELO XLSX
                        </button>
                        
-                       <div style={{border: '2px dashed #334155', padding: '40px', borderRadius: '20px'}}>
+                       <div style={{border: '2px dashed rgba(255,255,255,0.2)', padding: '40px', borderRadius: '24px', background: 'rgba(0,0,0,0.2)'}}>
                           <div style={{marginBottom: '20px', textAlign: 'left'}}>
                             <label style={{...styles.fieldLabel, color: '#fff'}}>Destino do Lote Importado:</label>
                             <select style={{...styles.inputSmall, marginTop: 5}} value={importTipoEstoque} onChange={e => setImportTipoEstoque(e.target.value)}>
@@ -1804,8 +3886,7 @@ export default function App() {
                <h2 style={styles.cardTitle}>Gestão de Usuários</h2>
                <div style={{display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start'}}>
                  
-                 {/* Formulário Novo Usuário */}
-                 <div style={{flex: 1, background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '15px'}}>
+                 <div style={{flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', padding: '25px', borderRadius: '20px'}}>
                      <h3 style={{fontSize: '14px', marginBottom: '15px', color: '#eab308'}}>Novo Acesso</h3>
                      <form onSubmit={handleAddUser}>
                         <div style={styles.inputGroup}>
@@ -1833,7 +3914,6 @@ export default function App() {
                      </form>
                  </div>
 
-                 {/* Lista de Usuários */}
                  <div style={{flex: 2, overflowX: 'auto'}}>
                      <table style={{...styles.tableMassa}}>
                         <thead>
@@ -1851,9 +3931,10 @@ export default function App() {
                                  <td style={styles.tdMassa}>{u.email}</td>
                                  <td style={styles.tdMassa}>
                                    <span style={{
-                                     background: '#1e293b', 
+                                     background: 'rgba(0,0,0,0.5)', 
+                                     border: '1px solid rgba(255,255,255,0.1)',
                                      padding: '5px 10px', 
-                                     borderRadius: '6px', 
+                                     borderRadius: '8px', 
                                      fontSize: '10px', 
                                      textTransform: 'uppercase', 
                                      color: u.role==='admin' ? '#f87171' : u.role==='gestor' ? '#60a5fa' : '#94a3b8'
@@ -1869,10 +3950,11 @@ export default function App() {
                                             color: u.canEdit ? '#fff' : '#f87171', 
                                             border: 'none', 
                                             padding: '6px 12px', 
-                                            borderRadius: '6px', 
+                                            borderRadius: '8px', 
                                             fontSize: '10px', 
                                             fontWeight: 'bold', 
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            boxShadow: u.canEdit ? '0 2px 8px rgba(16, 185, 129, 0.4)' : 'none'
                                          }}>
                                             {u.canEdit ? "✔ EDIÇÃO" : "✖ BLOQUEADO"}
                                          </button>
@@ -1880,7 +3962,6 @@ export default function App() {
                                         <span style={{fontSize: '11px', color: '#64748b'}}>Permissão Nativa</span>
                                       )}
                                       
-                                      {/* BOTÃO DE RESETAR SENHA (Para admin ou gestor resetando consultor) */}
                                       {(currentUser?.role === 'admin' || (currentUser?.role === 'gestor' && u.role === 'consultor')) && (
                                         <button 
                                           onClick={() => handleResetUserPassword(u.id)} 
@@ -1910,7 +3991,7 @@ export default function App() {
                  Histórico de todas as ações de cadastro, edição e exclusão no sistema.
                </p>
                
-               <div style={{maxHeight: '600px', overflowY: 'auto', border: '1px solid #1e293b', borderRadius: '15px'}}>
+               <div style={{maxHeight: '600px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '15px', background: 'rgba(0,0,0,0.2)'}}>
                   <table style={styles.tableMassa}>
                      <thead>
                         <tr>
@@ -1932,7 +4013,7 @@ export default function App() {
                                   textTransform: 'uppercase', 
                                   background: 'rgba(255,255,255,0.1)', 
                                   padding: '3px 8px', 
-                                  borderRadius: '4px'
+                                  borderRadius: '6px'
                                 }}>
                                   {log.role}
                                 </span>
@@ -1953,7 +4034,7 @@ export default function App() {
              </div>
           )}
 
-          {/* TAB: ATUALIZAR FIPE (Ajustado com Dicionário Dinâmico de Marcas) */}
+          {/* TAB: ATUALIZAR FIPE */}
           {activeTab === "fipe" && currentUser?.role === 'admin' && (
             <div style={styles.cardFull}>
               <h2 style={styles.cardTitle}>Sincronizador FIPE Inteligente (2023-2026)</h2>
@@ -1990,29 +4071,29 @@ export default function App() {
               </div>
 
               {syncingFipe && (
-                <div style={{marginBottom: '20px', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '15px'}}>
+                <div style={{marginBottom: '20px', background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px'}}>
                     <span style={{fontSize: '12px', color: '#eab308', fontWeight: 'bold'}}>Status do Sincronizador Estrito:</span>
                     <span style={{fontSize: '12px', color: '#eab308', fontWeight: 'bold'}}>{syncProgress}%</span>
                   </div>
-                  <div style={{width: '100%', height: '12px', background: '#1e293b', borderRadius: '10px', overflow: 'hidden'}}>
-                    <div style={{width: `${syncProgress}%`, height: '100%', background: '#eab308', transition: 'width 0.4s ease'}}></div>
+                  <div style={{width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden'}}>
+                    <div style={{width: `${syncProgress}%`, height: '100%', background: '#eab308', transition: 'width 0.4s ease', boxShadow: '0 0 10px rgba(234, 179, 8, 0.5)'}}></div>
                   </div>
                 </div>
               )}
 
-              {/* TERMINAL DE ATUALIZAÇÃO (Mostrando a gravação real com os modelos corretos) */}
               <div style={{
-                background: '#000', 
-                color: '#0f0', 
+                background: '#020617', 
+                color: '#4ade80', 
                 fontFamily: 'monospace', 
                 padding: '15px', 
-                borderRadius: '8px', 
+                borderRadius: '12px', 
                 height: '200px', 
                 overflowY: 'auto', 
                 marginBottom: '20px',
                 fontSize: '12px',
-                border: '1px solid #334155'
+                border: '1px solid rgba(255,255,255,0.05)',
+                boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.5)'
               }}>
                 {syncLogs.length === 0 ? "> Aguardando comando para gravar registros..." : syncLogs.map((log, i) => (
                   <div key={i}> {`> ${log}`}</div>
@@ -2041,10 +4122,11 @@ export default function App() {
                     onClick={handleStopSync}
                     style={{
                       ...styles.clearResultsBtn,
-                      background: '#7f1d1d',
+                      background: 'rgba(127, 29, 29, 0.8)',
                       color: '#fff',
                       border: 'none',
-                      padding: '0 30px'
+                      padding: '0 30px',
+                      boxShadow: '0 4px 15px rgba(127, 29, 29, 0.4)'
                     }}
                   >
                     ⏹️ INTERROMPER
@@ -2056,11 +4138,12 @@ export default function App() {
                 <div style={{
                   marginTop: 25, 
                   padding: 20, 
-                  background: 'rgba(16, 185, 129, 0.1)', 
+                  background: 'rgba(16, 185, 129, 0.15)', 
                   borderRadius: 15, 
-                  border: '1px solid #10b981'
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.1)'
                 }}>
-                  <h4 style={{margin: '0 0 5px 0', color: '#10b981'}}>✅ Gravação PostgreSQL Finalizada</h4>
+                  <h4 style={{margin: '0 0 5px 0', color: '#4ade80'}}>✅ Gravação PostgreSQL Finalizada</h4>
                   <p style={{margin: 0, color: '#cbd5e1', fontSize: '13px'}}>
                     {syncSummary || "Todos os registros foram gravados e normalizados."}
                   </p>
@@ -2082,31 +4165,31 @@ export default function App() {
                
                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginTop: '30px'}}>
                  
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '15px', textAlign: 'center', border: '1px solid #1e293b'}}>
+                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
                      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Tela de Login</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#0f172a', borderRadius: '10px'}}>
+                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)'}}>
                         <img src={sysLogos.login} alt="Login Logo" style={{maxHeight: '60px', maxWidth: '80%'}} />
                      </div>
                      <input type="file" id="logoLogin" accept=".jpg, .png, .jpeg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'login')} />
-                     <label htmlFor="logoLogin" style={{...styles.clearBtn, color: '#fff', border: '1px solid #334155', cursor: 'pointer', display: 'block', padding: '10px'}}>Substituir Imagem</label>
+                     <label htmlFor="logoLogin" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px'}}>Substituir Imagem</label>
                   </div>
 
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '15px', textAlign: 'center', border: '1px solid #1e293b'}}>
+                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
                      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Sidebar (Menu Lateral)</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#0f172a', borderRadius: '10px'}}>
+                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)'}}>
                         <img src={sysLogos.sidebar} alt="Sidebar Logo" style={{maxHeight: '40px', maxWidth: '80%'}} />
                      </div>
                      <input type="file" id="logoSidebar" accept=".jpg, .png, .jpeg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'sidebar')} />
-                     <label htmlFor="logoSidebar" style={{...styles.clearBtn, color: '#fff', border: '1px solid #334155', cursor: 'pointer', display: 'block', padding: '10px'}}>Substituir Imagem</label>
+                     <label htmlFor="logoSidebar" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px'}}>Substituir Imagem</label>
                   </div>
 
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '15px', textAlign: 'center', border: '1px solid #1e293b'}}>
+                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
                      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Proposta PDF (Download)</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#fff', borderRadius: '10px'}}>
+                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)'}}>
                         <img src={sysLogos.pdf} alt="PDF Logo" style={{maxHeight: '60px', maxWidth: '80%'}} />
                      </div>
                      <input type="file" id="logoPdf" accept=".jpg, .png, .jpeg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'pdf')} />
-                     <label htmlFor="logoPdf" style={{...styles.clearBtn, color: '#fff', border: '1px solid #334155', cursor: 'pointer', display: 'block', padding: '10px'}}>Substituir Imagem</label>
+                     <label htmlFor="logoPdf" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px'}}>Substituir Imagem</label>
                   </div>
 
                </div>
@@ -2126,7 +4209,6 @@ export default function App() {
                     </button>
                   </div>
                   
-                  {/* Filtro de Marca */}
                   <div style={{marginBottom: '15px'}}>
                     <select 
                       style={styles.inputSearch} 
@@ -2174,7 +4256,6 @@ export default function App() {
                   </div>
                   
                   <div style={styles.formGrid}>
-                    {/* Novos Campos Arquitetura Espacial */}
                     <Field label="Valor Financiado (R$)" value={valorFinanciado} setValue={setValorFinanciado} />
                     <Field label="Prazo Financ. (Meses)" value={nperFinanciamento} setValue={setNperFinanciamento} />
                     
@@ -2214,18 +4295,42 @@ export default function App() {
                   <div style={styles.resultsHeader}>
                     <div>
                       <h2 style={styles.cardTitle}>Resultado do Comparativo</h2>
-                      <div style={{marginTop: 10}}>
-                        <input 
-                          style={{...styles.inputSearch, width: '300px', height: '38px', fontSize: '13px', border: '1px solid #eab308'}} 
-                          placeholder="Nome do Cliente..." 
-                          value={clienteNome} 
-                          onChange={(e) => setClienteNome(e.target.value)} 
-                        />
+                      <div style={{marginTop: 10, display: 'flex', gap: 8, alignItems: 'center'}}>
+                        <div style={{position: 'relative'}}>
+                          <select
+                            style={{...styles.inputSearch, width: '280px', height: '38px', fontSize: '13px', border: '1px solid #eab308', background: 'rgba(0,0,0,0.3)', paddingRight: 30}}
+                            value={clienteSelecionado?.id || ""}
+                            onChange={(e) => {
+                              const c = clientes.find(cl => String(cl.id) === e.target.value);
+                              setClienteSelecionado(c || null);
+                              if (c) setClienteNome(c.nome);
+                            }}
+                          >
+                            <option value="">👤 Selecionar cliente...</option>
+                            {clientes.map(c => (
+                              <option key={c.id} value={c.id}>{c.nome}{c.empresa ? ` (${c.empresa})` : ""}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {!clienteSelecionado && (
+                          <input
+                            style={{...styles.inputSearch, width: '180px', height: '38px', fontSize: '13px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.3)'}}
+                            placeholder="Ou digitar nome..."
+                            value={clienteNome}
+                            onChange={(e) => setClienteNome(e.target.value)}
+                          />
+                        )}
+                        {clienteSelecionado && (
+                          <button onClick={() => { setClienteSelecionado(null); setClienteNome(""); }}
+                            style={{background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '0 10px', height: 38, cursor: 'pointer', fontSize: 13}}>
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                     <div style={{display: 'flex', gap: '10px', alignItems: 'flex-end'}}>
                       <button onClick={clearResults} style={styles.clearResultsBtn}>🗑️ LIMPAR</button>
-                      <button onClick={exportToCSV} style={styles.exportBtn}>📥 EXCEL</button>
+                      <button onClick={exportToCSV} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 EXCEL</button>
                     </div>
                   </div>
                   
@@ -2264,8 +4369,9 @@ export default function App() {
                                     fontSize: '10px',
                                     fontWeight: 'bold',
                                     padding: '3px 8px',
-                                    borderRadius: '4px',
+                                    borderRadius: '6px',
                                     color: '#fff',
+                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
                                     backgroundColor: p.status === 'APROVAR' ? '#10b981' : p.status === 'AJUSTAR' ? '#f59e0b' : '#ef4444'
                                   }}>
                                     {p.status}
@@ -2288,7 +4394,7 @@ export default function App() {
                             <button 
                               onClick={() => handleDownloadPDF(vKey)} 
                               disabled={isPdfLoading} 
-                              style={{...styles.pdfCardBtn, background: isPdfLoading ? '#334155' : '#fde68a'}}
+                              style={{...styles.pdfCardBtn, background: isPdfLoading ? 'rgba(255,255,255,0.1)' : '#fde68a', color: isPdfLoading ? '#fff' : '#000'}}
                             >
                               {isPdfLoading ? "⌛ GERANDO..." : "📄 BAIXAR PROPOSTA PDF"}
                             </button>
@@ -2330,7 +4436,102 @@ export default function App() {
             </div>
           )}
           
-        </main>
+       </main>
+
+      {/* ============================================================ */}
+      {/* MODAL DE CONCILIAÇÃO BANCÁRIA (MATCHING IA)                  */}
+      {/* ============================================================ */}
+      {showConciliacaoModal && (
+        <div style={styles.modalOverlay}>
+          <div style={{...styles.modalContent, maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto'}}>
+            <h2 style={styles.cardTitle}>Conciliação Bancária Inteligente</h2>
+            <p style={{color: '#94a3b8', fontSize: '13px', marginBottom: '20px'}}>As transações abaixo foram identificadas no extrato. O sistema sugere o vínculo com as obrigações pendentes.</p>
+            
+            {conciliacaoData.length > 0 ? conciliacaoData.map((item, index) => (
+              <div key={index} style={{border: '1px solid rgba(255,255,255,0.1)', padding: '15px', borderRadius: '8px', marginBottom: '15px', background: 'rgba(0,0,0,0.3)'}}>
+                
+                {/* CABEÇALHO DA TRANSAÇÃO (DINÂMICO PARA ENTRADA/SAÍDA) */}
+                <div style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '10px'}}>
+                  <div>
+                    <span style={{color: '#94a3b8', fontSize: '11px', display: 'block'}}>
+                      {item.tipo === 'credito' ? 'Entrada no Extrato (Crédito)' : 'Saída do Extrato (Débito)'}
+                    </span>
+                    <strong style={{color: item.tipo === 'credito' ? '#10b981' : '#f87171', fontSize: '18px', display: 'block', marginTop: '4px'}}>
+                      {item.tipo === 'credito' ? '+' : '-'} R$ {item.extrato_valor}
+                    </strong>
+                    <span style={{color: '#cbd5e1', fontSize: '12px', fontStyle: 'italic', marginTop: '4px', display: 'block'}}>
+                      "{item.extrato_descricao}"
+                    </span>
+                  </div>
+                  <div style={{textAlign: 'right'}}>
+                    <span style={{color: '#94a3b8', fontSize: '11px', display: 'block'}}>Data do Extrato</span>
+                    <strong style={{color: '#fff', fontSize: '15px', marginTop: '4px', display: 'block'}}>{item.extrato_data}</strong>
+                  </div>
+                </div>
+
+                <h4 style={{color: '#eab308', fontSize: '12px', marginBottom: '10px', textTransform: 'uppercase'}}>
+                  Status da Conciliação:
+                </h4>
+                
+                {item.sugestoes_vinculo && item.sugestoes_vinculo.length > 0 ? (
+                  // CASO 1: AVISO VERDE - PARCELA ENCONTRADA
+                  item.sugestoes_vinculo.map((sug, sIdx) => (
+                    <div key={sIdx} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16,185,129,0.1)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.3)', marginBottom: '5px'}}>
+                      <div>
+                        <strong style={{color: '#fff', display: 'block', fontSize: '14px'}}>{sug.fornecedor} - {sug.descricao}</strong>
+                        <span style={{color: '#4ade80', fontSize: '12px', marginTop: '4px', display: 'block'}}>
+                          Valor no Sistema: R$ {sug.valor_sistema} | Vencimento: {sug.vencimento_sistema}
+                        </span>
+                      </div>
+                      <button onClick={() => handleAprovarConciliacao(sug.id_parcela, item.id_transacao)} style={{background: '#10b981', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '12px'}}>
+                        ✅ CONFIRMAR MATCH
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  // CASO 2: AVISO LARANJA - LANÇAMENTO RÁPIDO E MEMÓRIA
+                  <div style={{background: 'rgba(234, 179, 8, 0.05)', padding: '15px', borderRadius: '12px', border: '1px dashed #eab308'}}>
+                    <p style={{color: '#eab308', fontSize: '12px', marginBottom: '12px', fontWeight: 'bold'}}>
+                      {item.sugestao_regra 
+                        ? `✨ MEMÓRIA DO SISTEMA: Identificamos que "${item.extrato_descricao}" costuma ser da empresa ${item.sugestao_regra.fornecedor_nome}.`
+                        : `⚡ LANÇAMENTO RÁPIDO: Não encontramos uma provisão de R$ ${item.extrato_valor}. Selecione quem pagou/recebeu para baixar na hora:`}
+                    </p>
+                    <div style={{display: 'flex', gap: '15px'}}>
+                      <select 
+                        id={`forn_rapido_${index}`} 
+                        style={{...styles.inputSmall, flex: 1, height: '40px', background: 'rgba(0,0,0,0.5)', borderColor: item.sugestao_regra ? '#eab308' : 'rgba(255,255,255,0.1)'}}
+                        defaultValue={item.sugestao_regra ? item.sugestao_regra.id_fornecedor : ""}
+                      >
+                        <option value="">-- Selecionar Empresa / Cliente --</option>
+                        {fornecedores.map(f => (
+                          <option key={f.id} value={f.id}>{f.nome_razao || f.razao_social}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={() => handleLancarEConciliar(item, index)}
+                        style={{background: '#eab308', color: '#000', padding: '0 25px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '900', fontSize: '12px'}}
+                      >
+                        {item.sugestao_regra ? "CONFIRMAR E BAIXAR" : "CRIAR E CONCILIAR"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )) : (
+              <div style={{padding: '40px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: '16px'}}>
+                <span style={{fontSize: '40px', display: 'block', marginBottom: '15px'}}>🎉</span>
+                <p style={{color: '#fff', fontSize: '16px', fontWeight: 'bold'}}>Nenhuma transação pendente!</p>
+                <p style={{color: '#94a3b8', fontSize: '14px', marginTop: '5px'}}>O seu extrato está 100% conciliado com o sistema.</p>
+              </div>
+            )}
+
+            <button onClick={() => setShowConciliacaoModal(false)} style={{...styles.clearBtn, width: '100%', marginTop: '30px', padding: '15px', fontSize: '14px'}}>
+              FECHAR TELA DE CONCILIAÇÃO
+            </button>
+          </div>
+        </div>
+      )}
+
       </div>
     </div>
   );
@@ -2338,11 +4539,79 @@ export default function App() {
 
 // --- SUB-COMPONENTES ---
 
+function FluxoCaixaChart({ data, maxValue }) {
+  if (!data || data.length === 0) {
+    return (
+      <div style={{...styles.cardFull, textAlign: 'center', color: '#94a3b8', padding: '50px', marginTop: '20px'}}>
+        Nenhuma movimentação financeira consolidada nos últimos meses para gerar o gráfico.
+      </div>
+    );
+  }
+
+  // Aumenta a escala em 15% para a coluna mais alta não bater no teto do gráfico
+  const scaleMax = maxValue * 1.15;
+
+  return (
+    <div style={{...styles.cardFull, marginTop: '20px', marginBottom: '30px', padding: '30px'}}>
+      <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '30px'}}>
+        Fluxo de Caixa Mensal
+      </h2>
+      
+      {/* Container Principal do Gráfico */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', height: '250px', gap: '15px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        {data.map((item, index) => {
+          // Calcula a percentagem de altura para cada coluna baseada no valor máximo
+          const alturaEntrada = (item.entradas / scaleMax) * 100;
+          const alturaSaida = (item.saidas / scaleMax) * 100;
+
+          return (
+            <div key={index} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              
+              {/* As duas colunas lado a lado */}
+              <div style={{ display: 'flex', gap: '6px', height: '100%', alignItems: 'flex-end', width: '100%', justifyContent: 'center' }}>
+                
+                {/* Coluna Verde (Entradas) */}
+                <div 
+                  style={{ width: '35%', height: `${alturaEntrada}%`, background: 'linear-gradient(to top, #047857, #10b981)', borderRadius: '4px 4px 0 0', position: 'relative', minHeight: item.entradas > 0 ? '5px' : '0', transition: 'height 1s ease-out' }} 
+                  title={`Entradas: R$ ${item.entradas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
+                ></div>
+
+                {/* Coluna Vermelha (Saídas) */}
+                <div 
+                  style={{ width: '35%', height: `${alturaSaida}%`, background: 'linear-gradient(to top, #991b1b, #f87171)', borderRadius: '4px 4px 0 0', position: 'relative', minHeight: item.saidas > 0 ? '5px' : '0', transition: 'height 1s ease-out' }} 
+                  title={`Saídas: R$ ${item.saidas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`}
+                ></div>
+
+              </div>
+
+              {/* Rótulo do Mês debaixo das colunas */}
+              <span style={{ marginTop: '15px', fontSize: '11px', color: '#94a3b8', fontWeight: 'bold' }}>{item.mes}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legenda do Gráfico */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginTop: '25px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '14px', height: '14px', background: '#10b981', borderRadius: '4px' }}></div>
+          <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>Entradas Realizadas</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ width: '14px', height: '14px', background: '#f87171', borderRadius: '4px' }}></div>
+          <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>Saídas Realizadas</span>
+        </div>
+      </div>
+      <p style={{textAlign: 'center', fontSize: '10px', color: '#64748b', marginTop: '15px'}}>*Passe o mouse por cima das colunas para ver o valor exato</p>
+    </div>
+  );
+}
+
 function StatCard({ title, value, icon, breakdown }) {
   return (
     <div style={{...styles.statCard, flexDirection: 'column', alignItems: 'flex-start'}}>
       <div style={{display: 'flex', alignItems: 'center', gap: '15px', width: '100%'}}>
-        <span style={{fontSize: 24}}>{icon}</span>
+        <span style={{fontSize: 28, textShadow: '0 4px 10px rgba(0,0,0,0.5)'}}>{icon}</span>
         <div>
           <div style={styles.statLabel}>{title}</div>
           <div style={styles.statValue}>{value}</div>
@@ -2354,7 +4623,7 @@ function StatCard({ title, value, icon, breakdown }) {
           width: '100%', 
           marginTop: '15px', 
           paddingTop: '10px', 
-          borderTop: '1px solid #1e293b', 
+          borderTop: '1px solid rgba(255,255,255,0.05)', 
           display: 'flex', 
           flexDirection: 'column', 
           gap: '6px'
@@ -2362,7 +4631,7 @@ function StatCard({ title, value, icon, breakdown }) {
           {breakdown.map((b, i) => (
             <div key={i} style={{display: 'flex', justifyContent: 'space-between', fontSize: '11px', alignItems: 'center'}}>
                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
-                  <div style={{width: 8, height: 8, borderRadius: '50%', backgroundColor: b.color}}></div>
+                  <div style={{width: 8, height: 8, borderRadius: '50%', backgroundColor: b.color, boxShadow: `0 0 5px ${b.color}`}}></div>
                   <span style={{color: '#cbd5e1'}}>{b.status}</span>
                </div>
                <span style={{fontWeight: 'bold', color: '#94a3b8'}}>
@@ -2382,8 +4651,9 @@ function NavItem({ active, onClick, label, icon }) {
       onClick={onClick} 
       style={{ 
         ...styles.navItem, 
-        backgroundColor: active ? "#eab308" : "transparent", 
-        color: active ? "#000" : "#94a3b8" 
+        backgroundColor: active ? "rgba(234, 179, 8, 0.9)" : "transparent", 
+        color: active ? "#000" : "#94a3b8",
+        boxShadow: active ? '0 4px 15px rgba(234, 179, 8, 0.3)' : 'none'
       }}
     >
       <span style={{marginRight: 10}}>{icon}</span> 
@@ -2407,7 +4677,7 @@ function Field({ label, value, setValue, step = "1" }) {
   ); 
 }
 
-// --- ESTILOS COMPLETOS ---
+// --- ESTILOS COMPLETOS MODERNO (GLASSMORPHISM / TELAS FLUTUANTES) ---
 const styles = {
   inventoryGrid: { 
     display: "grid", 
@@ -2422,26 +4692,30 @@ const styles = {
     left: 0, 
     right: 0, 
     bottom: 0, 
-    backgroundColor: 'rgba(0,0,0,0.85)', 
+    backgroundColor: 'rgba(2, 6, 23, 0.75)', 
+    backdropFilter: 'blur(10px)',
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center', 
     zIndex: 9999 
   },
   modalContent: { 
-    backgroundColor: '#0f172a', 
+    backgroundColor: 'rgba(15, 23, 42, 0.85)', 
+    backdropFilter: 'blur(20px)',
     padding: '40px', 
     borderRadius: '25px', 
     width: '80%', 
     maxWidth: '900px', 
-    border: '1px solid #1e293b' 
+    border: '1px solid rgba(255,255,255,0.1)',
+    boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 20px rgba(234, 179, 8, 0.05)'
   },
   modalTableBox: { 
     maxHeight: '400px', 
     overflowY: 'auto', 
     marginTop: 20, 
-    border: '1px solid #1e293b', 
-    borderRadius: '12px' 
+    border: '1px solid rgba(255,255,255,0.05)', 
+    borderRadius: '12px',
+    background: 'rgba(0,0,0,0.2)'
   },
   bulkActionBox: { 
     display: 'flex', 
@@ -2449,9 +4723,10 @@ const styles = {
     gap: 15, 
     background: 'rgba(234, 179, 8, 0.1)', 
     padding: '15px 20px', 
-    borderRadius: '12px', 
+    borderRadius: '16px', 
     marginBottom: '20px', 
-    border: '1px solid #eab308' 
+    border: '1px solid rgba(234, 179, 8, 0.3)',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
   },
   unselectBtn: { 
     background: 'none', 
@@ -2472,7 +4747,8 @@ const styles = {
     marginTop: '12px', 
     padding: '10px', 
     background: 'rgba(0,0,0,0.3)', 
-    borderRadius: '12px' 
+    borderRadius: '12px',
+    border: '1px solid rgba(255,255,255,0.05)'
   },
   qtyLabel: { 
     fontSize: '8px', 
@@ -2489,7 +4765,7 @@ const styles = {
     gap: '8px' 
   },
   qtyBtn: { 
-    background: '#334155', 
+    background: 'rgba(255,255,255,0.1)', 
     border: 'none', 
     color: '#fff', 
     width: '32px', 
@@ -2504,7 +4780,7 @@ const styles = {
     lineHeight: 1 
   },
   qtyValBox: { 
-    background: 'rgba(255,255,255,0.05)', 
+    background: 'rgba(0,0,0,0.4)', 
     color: '#fff', 
     fontWeight: 'bold', 
     fontSize: '15px', 
@@ -2514,7 +4790,7 @@ const styles = {
     alignItems: 'center', 
     justifyContent: 'center', 
     borderRadius: '6px', 
-    border: '1px solid rgba(255,255,255,0.1)' 
+    border: '1px solid rgba(255,255,255,0.05)' 
   },
   fleetTotal: { 
     fontSize: '10px', 
@@ -2529,31 +4805,35 @@ const styles = {
     background: '#fde68a', 
     color: '#000', 
     border: 'none', 
-    borderRadius: '10px', 
+    borderRadius: '12px', 
     fontWeight: 'bold', 
     fontSize: '11px', 
     cursor: 'pointer', 
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    gap: '8px' 
+    gap: '8px',
+    boxShadow: '0 4px 15px rgba(253, 230, 138, 0.3)'
   },
   page: { 
     display: "flex", 
     minHeight: "100vh", 
     width: "100vw", 
-    backgroundColor: "#080c14", 
+    background: "radial-gradient(circle at top right, #1e293b, #020617)",
     color: "#f1f5f9", 
     fontFamily: "'Inter', sans-serif", 
     overflowX: 'hidden' 
   },
   sidebar: { 
     width: "260px", 
-    backgroundColor: "#0f172a", 
-    borderRight: "1px solid #1e293b", 
+    backgroundColor: "rgba(15, 23, 42, 0.7)", 
+    backdropFilter: "blur(15px)",
+    borderRight: "1px solid rgba(255,255,255,0.05)", 
     flexShrink: 0, 
     display: 'flex', 
-    flexDirection: 'column' 
+    flexDirection: 'column',
+    boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+    zIndex: 10
   },
   sidebarLogoBox: { 
     padding: "45px 20px", 
@@ -2575,14 +4855,15 @@ const styles = {
     fontWeight: 700, 
     fontSize: "14px", 
     display: 'flex', 
-    alignItems: 'center' 
+    alignItems: 'center',
+    transition: 'background 0.2s, box-shadow 0.2s'
   },
   logoutBtn: { 
     margin: "20px", 
     padding: "12px", 
-    borderRadius: "10px", 
-    border: "1px solid #334155", 
-    background: "transparent", 
+    borderRadius: "12px", 
+    border: "1px solid rgba(248, 113, 113, 0.3)", 
+    background: "rgba(248, 113, 113, 0.05)", 
     color: "#f87171", 
     cursor: "pointer" 
   },
@@ -2594,7 +4875,13 @@ const styles = {
   },
   header: { 
     padding: "20px 40px", 
-    borderBottom: "1px solid #1e293b" 
+    background: "rgba(15, 23, 42, 0.5)",
+    backdropFilter: "blur(10px)",
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+    boxShadow: "0 4px 30px rgba(0,0,0,0.2)",
+    position: 'sticky',
+    top: 0,
+    zIndex: 5
   },
   title: { 
     margin: 0, 
@@ -2602,7 +4889,7 @@ const styles = {
     fontWeight: 900 
   },
   subtitle: { 
-    color: "#64748b", 
+    color: "#94a3b8", 
     fontSize: 12 
   },
   container: { 
@@ -2620,21 +4907,25 @@ const styles = {
     gap: '20px' 
   },
   statCard: { 
-    background: '#0f172a', 
-    padding: '20px', 
-    borderRadius: '16px', 
-    border: '1px solid #1e293b', 
+    background: 'rgba(30, 41, 59, 0.6)', 
+    backdropFilter: 'blur(12px)',
+    padding: '25px', 
+    borderRadius: '20px', 
+    border: '1px solid rgba(255,255,255,0.08)', 
     display: 'flex', 
     alignItems: 'center', 
-    gap: '15px' 
+    gap: '15px',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    transform: 'translateY(-2px)'
   },
   statLabel: { 
     fontSize: '9px', 
-    color: '#64748b', 
-    textTransform: 'uppercase' 
+    color: '#94a3b8', 
+    textTransform: 'uppercase',
+    letterSpacing: '1px'
   },
   statValue: { 
-    fontSize: '16px', 
+    fontSize: '20px', 
     fontWeight: 800 
   },
   actionGrid: { 
@@ -2643,11 +4934,14 @@ const styles = {
     gap: '20px' 
   },
   actionCard: { 
-    background: 'rgba(30, 41, 59, 0.4)', 
+    background: 'rgba(30, 41, 59, 0.6)', 
+    backdropFilter: 'blur(12px)',
     padding: '25px', 
     borderRadius: '20px', 
-    border: '1px solid #1e293b', 
-    cursor: 'pointer' 
+    border: '1px solid rgba(255,255,255,0.08)', 
+    cursor: 'pointer',
+    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    transform: 'translateY(-2px)'
   },
   calculatorWrapper: { 
     display: 'flex', 
@@ -2656,50 +4950,56 @@ const styles = {
   },
   configSection: { 
     display: 'flex', 
-    gap: '20px', 
+    gap: '25px', 
     alignItems: 'stretch' 
   },
   cardVehicles: { 
     flex: 1.2, 
     minWidth: 0, 
-    background: "rgba(30, 41, 59, 0.4)", 
-    borderRadius: "20px", 
-    padding: "25px", 
-    border: "1px solid rgba(255,255,255,0.08)" 
+    background: "rgba(30, 41, 59, 0.45)", 
+    backdropFilter: "blur(16px)",
+    borderRadius: "24px", 
+    padding: "30px", 
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
   },
   cardParams: { 
     flex: 1, 
     minWidth: 0, 
-    background: "rgba(30, 41, 59, 0.4)", 
-    borderRadius: "20px", 
-    padding: "25px", 
-    border: "1px solid rgba(255,255,255,0.08)" 
+    background: "rgba(30, 41, 59, 0.45)", 
+    backdropFilter: "blur(16px)",
+    borderRadius: "24px", 
+    padding: "30px", 
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
   },
   headerTitleAction: { 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
-    marginBottom: 20 
+    marginBottom: 25 
   },
   cardTitle: { 
     marginTop: 0, 
-    fontSize: 17, 
+    fontSize: 18, 
     fontWeight: 800, 
     borderLeft: "4px solid #eab308", 
-    paddingLeft: 12 
+    paddingLeft: 12,
+    textShadow: '0 2px 5px rgba(0,0,0,0.5)'
   },
   modelsBox: { 
-    height: "240px", 
+    height: "300px", 
     overflowY: "auto", 
-    background: "rgba(0,0,0,0.2)", 
-    padding: 10, 
-    borderRadius: "12px", 
-    marginTop: 15 
+    background: "rgba(0,0,0,0.3)", 
+    padding: 15, 
+    borderRadius: "16px", 
+    marginTop: 15,
+    border: "1px solid rgba(255,255,255,0.05)"
   },
   modelItem: { 
     display: "flex", 
     alignItems: "center", 
-    padding: "10px", 
+    padding: "12px", 
     borderBottom: "1px solid rgba(255,255,255,0.05)", 
     cursor: 'pointer' 
   },
@@ -2712,33 +5012,36 @@ const styles = {
   },
   inputSearch: { 
     width: "100%", 
-    padding: "12px", 
-    borderRadius: "10px", 
-    border: "1px solid #334155", 
-    background: "#0f172a", 
+    padding: "14px", 
+    borderRadius: "12px", 
+    border: "1px solid rgba(255,255,255,0.1)", 
+    background: "rgba(15, 23, 42, 0.6)", 
     color: "white", 
-    boxSizing: 'border-box' 
+    boxSizing: 'border-box',
+    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)"
   },
   buttonProcess: { 
     width: '100%', 
-    marginTop: '15px', 
+    marginTop: '20px', 
     padding: "16px", 
-    borderRadius: "12px", 
+    borderRadius: "14px", 
     background: "#eab308", 
     color: "#000", 
     fontWeight: 900, 
     cursor: "pointer", 
     border: 'none',
-    textAlign: 'center'
+    textAlign: 'center',
+    boxShadow: '0 8px 20px rgba(234, 179, 8, 0.4)'
   },
   clearBtn: { 
     background: 'rgba(248, 113, 113, 0.1)', 
     color: '#f87171', 
-    border: 'none', 
-    padding: '5px 10px', 
-    borderRadius: '6px', 
-    fontSize: '10px', 
-    fontWeight: 'bold' 
+    border: '1px solid rgba(248, 113, 113, 0.2)', 
+    padding: '6px 12px', 
+    borderRadius: '8px', 
+    fontSize: '11px', 
+    fontWeight: 'bold',
+    cursor: 'pointer'
   },
   resultsWrapper: { 
     width: '100%' 
@@ -2750,21 +5053,22 @@ const styles = {
     marginBottom: 20 
   },
   exportBtn: { 
-    padding: '10px 18px', 
+    padding: '12px 20px', 
     background: '#10b981', 
     color: '#fff', 
     border: 'none', 
-    borderRadius: '8px', 
+    borderRadius: '12px', 
     fontWeight: 'bold', 
     cursor: 'pointer', 
-    fontSize: 12 
+    fontSize: 12,
+    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
   },
   clearResultsBtn: { 
-    padding: '10px 18px', 
-    background: 'rgba(248, 113, 113, 0.1)', 
+    padding: '12px 20px', 
+    background: 'rgba(248, 113, 113, 0.15)', 
     color: '#f87171', 
-    border: '1px solid #f87171', 
-    borderRadius: '8px', 
+    border: '1px solid rgba(248, 113, 113, 0.3)', 
+    borderRadius: '12px', 
     fontWeight: 'bold', 
     cursor: 'pointer', 
     fontSize: 12 
@@ -2772,23 +5076,25 @@ const styles = {
   compareGridWrap: { 
     display: 'flex', 
     flexWrap: 'wrap', 
-    gap: '20px' 
+    gap: '25px' 
   },
   compareCardItem: { 
     flex: '1 1 300px', 
     maxWidth: 'calc(25% - 15px)', 
-    background: '#0f172a', 
-    borderRadius: '20px', 
-    border: '1px solid #1e293b', 
+    background: 'rgba(15, 23, 42, 0.8)', 
+    backdropFilter: 'blur(20px)',
+    borderRadius: '24px', 
+    border: '1px solid rgba(255,255,255,0.1)', 
     overflow: 'hidden', 
     display: 'flex', 
-    flexDirection: 'column' 
+    flexDirection: 'column',
+    boxShadow: '0 15px 35px rgba(0,0,0,0.4)'
   },
   compareHeader: { 
-    padding: '15px', 
+    padding: '20px 15px', 
     textAlign: 'center', 
-    background: 'rgba(255,255,255,0.02)', 
-    borderBottom: '1px solid #1e293b' 
+    background: 'rgba(255,255,255,0.03)', 
+    borderBottom: '1px solid rgba(255,255,255,0.05)' 
   },
   vehicleTitle: { 
     fontSize: 14, 
@@ -2796,36 +5102,43 @@ const styles = {
     minHeight: '40px', 
     display: 'flex', 
     alignItems: 'center', 
-    justifyContent: 'center' 
+    justifyContent: 'center',
+    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
   },
   compareBody: { 
-    padding: '10px', 
+    padding: '15px', 
     flex: 1 
   },
   compareRow: { 
-    padding: '12px', 
+    padding: '15px 10px', 
     borderBottom: '1px solid rgba(255,255,255,0.03)', 
     textAlign: 'center' 
   },
   prazoBadge: { 
-    fontSize: '9px', 
+    fontSize: '10px', 
     color: '#eab308', 
     fontWeight: 900 
   },
   mainValue: { 
-    fontSize: '19px', 
+    fontSize: '22px', 
     fontWeight: 900, 
-    color: '#fff' 
+    color: '#fff',
+    marginTop: '10px'
   },
   cardFull: { 
-    background: "rgba(30, 41, 59, 0.4)", 
-    borderRadius: "20px", 
-    padding: "30px", 
-    border: "1px solid rgba(255,255,255,0.08)" 
+    background: "rgba(30, 41, 59, 0.45)", 
+    backdropFilter: 'blur(16px)',
+    borderRadius: "24px", 
+    padding: "35px", 
+    border: "1px solid rgba(255,255,255,0.08)",
+    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
   },
   tableWrapper: { 
     overflowX: 'auto', 
-    marginTop: 20 
+    marginTop: 20,
+    background: 'rgba(0,0,0,0.2)',
+    borderRadius: '16px',
+    border: '1px solid rgba(255,255,255,0.05)'
   },
   tableMassa: { 
     width: '100%', 
@@ -2833,15 +5146,20 @@ const styles = {
   },
   thMassa: { 
     textAlign: 'left', 
-    padding: '15px', 
-    background: '#1e293b', 
+    padding: '18px 15px', 
+    background: 'rgba(15, 23, 42, 0.6)', 
     color: '#94a3b8', 
-    fontSize: 11 
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   },
   tdMassa: { 
     padding: '15px', 
-    borderBottom: '1px solid #1e293b', 
+    borderBottom: '1px solid rgba(255,255,255,0.05)', 
     fontSize: 13 
+  },
+  trBody: {
+    transition: 'background 0.2s',
   },
   loginPage: { 
     height: "100vh", 
@@ -2849,16 +5167,17 @@ const styles = {
     display: "flex", 
     alignItems: "center", 
     justifyContent: "center", 
-    background: "#080c14" 
+    background: "linear-gradient(135deg, #0f172a 0%, #020617 100%)"
   },
   loginCard: { 
     width: "500px", 
     padding: "60px 40px", 
-    borderRadius: "40px", 
-    background: "#0f172a", 
-    border: "1px solid #1e293b", 
+    borderRadius: "32px", 
+    background: "rgba(15, 23, 42, 0.6)", 
+    backdropFilter: "blur(20px)",
+    border: "1px solid rgba(255,255,255,0.1)", 
     textAlign: "center", 
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.8)" 
+    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.05)"
   },
   loginLogoContainer: { 
     display: "flex", 
@@ -2877,30 +5196,33 @@ const styles = {
     marginBottom: 40, 
     color: "#fde68a", 
     letterSpacing: "1px", 
-    textTransform: 'uppercase' 
+    textTransform: 'uppercase',
+    textShadow: '0 4px 10px rgba(0,0,0,0.5)'
   },
   loginButton: { 
     width: "100%", 
     padding: "18px", 
-    borderRadius: "12px", 
+    borderRadius: "14px", 
     background: "#eab308", 
     fontWeight: 900, 
     border: 'none', 
     cursor: 'pointer', 
     fontSize: '15px', 
-    color: '#000' 
+    color: '#000',
+    boxShadow: '0 10px 25px rgba(234, 179, 8, 0.4)'
   },
   input: { 
     width: "100%", 
-    padding: "14px", 
-    borderRadius: "10px", 
-    background: "#080c14", 
-    border: "1px solid #334155", 
+    padding: "16px", 
+    borderRadius: "12px", 
+    background: "rgba(0,0,0,0.3)", 
+    border: "1px solid rgba(255,255,255,0.1)", 
     color: "#fff", 
-    boxSizing: 'border-box' 
+    boxSizing: 'border-box',
+    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
   },
   inputGroup: { 
-    marginBottom: 15, 
+    marginBottom: 18, 
     textAlign: 'left' 
   },
   label: { 
@@ -2908,27 +5230,31 @@ const styles = {
     color: '#94a3b8', 
     textTransform: 'uppercase', 
     display: 'block', 
-    marginBottom: 5 
+    marginBottom: 8,
+    fontWeight: 'bold',
+    letterSpacing: '0.5px'
   },
   formGrid: { 
     display: "grid", 
     gridTemplateColumns: "1fr 1fr", 
-    gap: "12px" 
+    gap: "15px" 
   },
   inputSmall: { 
     width: "100%", 
-    padding: "10px", 
-    borderRadius: "8px", 
-    background: "#080c14", 
-    border: "1px solid #334155", 
+    padding: "12px", 
+    borderRadius: "10px", 
+    background: "rgba(0,0,0,0.3)", 
+    border: "1px solid rgba(255,255,255,0.1)", 
     color: "#fff", 
-    boxSizing: 'border-box' 
+    boxSizing: 'border-box',
+    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
   },
   fieldLabel: { 
-    fontSize: 9, 
-    color: '#94a3b8', 
+    fontSize: 10, 
+    color: '#cbd5e1', 
     textTransform: 'uppercase', 
     display: 'block', 
-    marginBottom: 5 
+    marginBottom: 6,
+    fontWeight: 'bold'
   }
 };
