@@ -434,15 +434,15 @@ export default function ContasBancarias({ fornecedores = [] }) {
   const loadContas = useCallback(async () => {
     setLoading(true);
     try {
-      const [cRes, dRes] = await Promise.all([
-        api.get("/conciliacao/contas-bancarias"),
-        api.get("/conciliacao/dashboard"),
-      ]);
-      setContas(cRes.data);
-      setDashboard(dRes.data);
+      const cRes = await api.get("/conciliacao/contas-bancarias");
+      setContas(Array.isArray(cRes.data) ? cRes.data : []);
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao carregar contas:", e);
     } finally { setLoading(false); }
+    // Dashboard separado — falha não bloqueia a lista
+    api.get("/conciliacao/dashboard")
+      .then(dRes => setDashboard(dRes.data))
+      .catch(() => {});
   }, []);
 
   const loadTransacoes = useCallback(async (idConta) => {
