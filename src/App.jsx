@@ -3,6 +3,9 @@ import { api } from "./api";
 import ContasBancarias from "./ContasBancarias";
 import Clientes from "./Clientes";
 import Fornecedores from "./Fornecedores";
+import FinanceiroPagar from "./FinanceiroPagar";
+import Calculadora from "./Calculadora";
+import ConfigSistema from "./ConfigSistema";
 
 // LOGO PADRÃO DO SISTEMA (Omni26)
 const OMNI26_DEFAULT_LOGO = "data:image/png;base64,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";
@@ -218,23 +221,8 @@ export default function App() {
     return DEFAULT_COLOR_PALETTE;
   });
 
-  const savePalette = (newPalette) => {
-    setColorPalette(newPalette);
-    try { sessionStorage.setItem('omni26_palette', JSON.stringify(newPalette)); } catch(e) {}
-  };
+  // savePalette e handleLogoChange movidos para ConfigSistema.jsx
 
-  const handleLogoChange = (e, key) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const updated = { ...sysLogos, [key]: reader.result };
-        setSysLogos(updated);
-        try { sessionStorage.setItem('omni26_logos', JSON.stringify(updated)); } catch(e) {}
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   // Permissão de Edição Derivada
   const hasEditPermission = currentUser?.role === 'admin' || currentUser?.role === 'gestor' || currentUser?.canEdit;
@@ -3191,250 +3179,33 @@ const [filtroStatusReceber, setFiltroStatusReceber] = useState("TODOS");
 )}
 
          {/* TAB: CONTAS A PAGAR */}
-         {activeTab === "financeiro_pagar" && (() => {
-  // Métricas derivadas do array atual
-  const totalPagar = contasPagar.reduce((s, c) => s + (Number(c.valor) || 0), 0);
-  const hoje = new Date();
-  const vencidos = contasPagar.filter(c => {
-    if (!c.vencimento || ["PAGO","CONCILIADO"].includes(c.status)) return false;
-    return new Date(c.vencimento + 'T12:00:00Z') < hoje;
-  });
-  const totalVencido = vencidos.reduce((s, c) => s + (Number(c.valor) || 0), 0);
-  const proximosSete = contasPagar.filter(c => {
-    if (!c.vencimento || ["PAGO","CONCILIADO"].includes(c.status)) return false;
-    const d = new Date(c.vencimento + 'T12:00:00Z');
-    const diff = (d - hoje) / 86400000;
-    return diff >= 0 && diff <= 7;
-  });
-
-  const filtrados = filtroStatusPagar === "TODOS" ? contasPagar :
-    filtroStatusPagar === "VENCIDOS" ? vencidos :
-    contasPagar.filter(c => c.status === filtroStatusPagar);
-
-  return (
-    <div style={{display:'flex', flexDirection:'column', gap:20}}>
-
-      {/* ── KPI CARDS ── */}
-      <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16}}>
-        {[
-          { label:"Total Provisionado", value:`R$ ${formatBRL(totalPagar)}`, icon:"📋", color:"#ef4444", glow:"rgba(239,68,68,0.15)" },
-          { label:"Vencidos", value:`R$ ${formatBRL(totalVencido)}`, icon:"⚠️", color: totalVencido>0?"#ef4444":"#10b981", glow: totalVencido>0?"rgba(239,68,68,0.15)":"rgba(16,185,129,0.1)" },
-          { label:"Vence em 7 dias", value:proximosSete.length, icon:"📅", color:"#f59e0b", glow:"rgba(245,158,11,0.15)" },
-          { label:"Total de Registros", value:contasPagar.length, icon:"📄", color:"#3b82f6", glow:"rgba(59,130,246,0.15)" },
-        ].map((k,i)=>(
-          <div key={i} style={{
-            background:"rgba(15,23,42,0.7)", backdropFilter:"blur(12px)",
-            border:`1px solid ${k.glow.replace('0.15','0.3')}`,
-            borderRadius:16, padding:"20px 22px",
-            boxShadow:`0 0 24px ${k.glow}, 0 8px 24px rgba(0,0,0,0.3)`,
-            transition:"transform 0.2s",
-          }}
-            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
-            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
-          >
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
-              <div>
-                <div style={{fontSize:9, color:"#64748b", fontWeight:800, textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10}}>{k.label}</div>
-                <div style={{fontSize:20, fontWeight:900, color:k.color, fontFamily:"monospace", letterSpacing:"-0.02em"}}>{k.value}</div>
-              </div>
-              <div style={{width:40,height:40,borderRadius:12,background:`${k.color}18`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{k.icon}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── BARRA FILTROS + AÇÕES (mantém botões originais) ── */}
-      <div style={{
-        background:"rgba(15,23,42,0.7)", backdropFilter:"blur(12px)",
-        border:"1px solid rgba(255,255,255,0.07)", borderRadius:16, padding:"20px 24px",
-      }}>
-        <div style={{display:"flex", gap:12, flexWrap:"wrap", alignItems:"flex-end"}}>
-          
-          <div style={{flex:"1 1 220px"}}>
-            <label style={styles.fieldLabel}>Pesquisar</label>
-            <input
-              style={{...styles.inputSmall, borderColor:"rgba(59,130,246,0.3)"}}
-              placeholder="Fornecedor, NF, descrição..."
-              value={financeiroBuscaPagar}
-              onChange={e => setFinanceiroBuscaPagar(e.target.value)}
-            />
-          </div>
-          <div>
-            <label style={styles.fieldLabel}>Início</label>
-            <input type="date" style={styles.inputSmall} value={financeiroDataInicioPagar} onChange={e=>setFinanceiroDataInicioPagar(e.target.value)}/>
-          </div>
-          <div>
-            <label style={styles.fieldLabel}>Fim</label>
-            <input type="date" style={styles.inputSmall} value={financeiroDataFimPagar} onChange={e=>setFinanceiroDataFimPagar(e.target.value)}/>
-          </div>
-          <div>
-            <label style={styles.fieldLabel}>Status</label>
-            <select style={{...styles.inputSmall, width:140}} value={filtroStatusPagar} onChange={e=>setFiltroStatusPagar(e.target.value)}>
-              <option value="TODOS">Todos</option>
-              <option value="ABERTO">Em Aberto</option>
-              <option value="VENCIDOS">Vencidos</option>
-              <option value="PAGO">Pago</option>
-              <option value="CONCILIADO">Conciliado</option>
-            </select>
-          </div>
-          
-          <button onClick={loadContasPagar} style={{...styles.exportBtn, background:"#eab308", color:"#000", boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>
-            🔍 BUSCAR
-          </button>
-
-          {/* BOTÃO OFX — mantém comportamento original (handleImportOFX) */}
-          <div style={{position:"relative"}}>
-            <input type="file" id="ofxUploadPagar" accept=".ofx,.pdf" style={{display:"none"}} onChange={handleImportOFX}/>
-            <label htmlFor="ofxUploadPagar" style={{
-              ...styles.exportBtn, background:"#10b981",
-              display:"inline-flex", alignItems:"center", gap:8,
-              boxShadow:"0 4px 15px rgba(16,185,129,0.4)", cursor:"pointer",
-              borderRadius:12, padding:"12px 20px", fontWeight:"bold", fontSize:12, color:"#fff"
-            }}>
-              {loading ? "⌛ LENDO..." : "📥 CONCILIAR OFX"}
-            </label>
-          </div>
-
-          {hasEditPermission && (
-            <button onClick={()=>setShowAddObrigacaoModal(true)} style={{
-              ...styles.exportBtn, background:"#3b82f6",
-              boxShadow:"0 4px 15px rgba(59,130,246,0.4)",
-            }}>
-              ➕ NOVA OBRIGAÇÃO
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── ALERTA VENCIDOS ── */}
-      {vencidos.length > 0 && (
-        <div style={{
-          background:"rgba(239,68,68,0.08)", border:"1px solid rgba(239,68,68,0.3)",
-          borderRadius:12, padding:"12px 20px",
-          display:"flex", alignItems:"center", gap:12,
-        }}>
-          <span style={{fontSize:20}}>🚨</span>
-          <div>
-            <span style={{color:"#ef4444", fontWeight:800, fontSize:13}}>
-              {vencidos.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencido)}
-            </span>
-            <span style={{color:"#94a3b8", fontSize:12, marginLeft:8}}>— ação imediata recomendada</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── TABELA (preserva TODOS os botões originais ✏️ 🗑️ 🚨) ── */}
-      <div style={{...styles.cardFull, padding:0, overflow:"hidden"}}>
-        <div style={{padding:"18px 24px", borderBottom:"1px solid rgba(255,255,255,0.06)", display:"flex", justifyContent:"space-between", alignItems:"center"}}>
-          <h2 style={{...styles.cardTitle, margin:0}}>Contas a Pagar & Provisões</h2>
-          <span style={{fontSize:11, color:"#64748b"}}>{filtrados.length} registro(s)</span>
-        </div>
-        <div style={styles.tableWrapper}>
-          <table style={styles.tableMassa}>
-            <thead>
-              <tr>
-                <th style={styles.thMassa}>Vencimento</th>
-                <th style={styles.thMassa}>Fatura / Título</th>
-                <th style={styles.thMassa}>Descrição</th>
-                <th style={styles.thMassa}>Fornecedor</th>
-                <th style={styles.thMassa}>NF</th>
-                <th style={styles.thMassa}>Parcela</th>
-                <th style={styles.thMassa}>Valor (R$)</th>
-                <th style={styles.thMassa}>Status</th>
-                {hasEditPermission && <th style={{...styles.thMassa, textAlign:"center"}}>Ações</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.length > 0 ? filtrados.map((c, idx) => {
-                const atrasado = c.vencimento && !["PAGO","CONCILIADO"].includes(c.status) && new Date(c.vencimento+"T12:00:00Z") < hoje;
-                return (
-                  <tr key={idx} style={{
-                    ...styles.trBody,
-                    background: atrasado ? "rgba(239,68,68,0.06)" : "transparent",
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
-                    onMouseLeave={e => e.currentTarget.style.background = atrasado ? "rgba(239,68,68,0.06)" : "transparent"}
-                  >
-                    <td style={styles.tdMassa}>
-                      <strong style={{color: atrasado?"#ef4444":"#f1f5f9"}}>
-                        {c.vencimento ? new Date(c.vencimento+"T12:00:00Z").toLocaleDateString("pt-BR") : "-"}
-                      </strong>
-                      {atrasado && <span style={{display:"block",fontSize:9,color:"#ef4444",fontWeight:700}}>VENCIDO</span>}
-                    </td>
-                    <td style={styles.tdMassa}>
-                      <span style={{color:"#60a5fa",fontSize:11,fontWeight:700,display:"block"}}>{c.fatura||"FAT-000"}</span>
-                      <span style={{color:"#64748b",fontSize:10}}>{c.titulo||"TIT-000"}</span>
-                    </td>
-                    <td style={{...styles.tdMassa, maxWidth:180}}>
-                      <div style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:12.5,fontWeight:500}}>{c.descricao}</div>
-                    </td>
-                    <td style={{...styles.tdMassa, color:"#94a3b8", fontSize:12}}>{c.fornecedor||"-"}</td>
-                    <td style={{...styles.tdMassa, color:"#64748b", fontSize:11}}>{c.numero_nf||"S/N"}</td>
-                    <td style={{...styles.tdMassa, textAlign:"center"}}>
-                      <span style={{background:"rgba(255,255,255,0.08)",padding:"3px 8px",borderRadius:6,fontSize:11,fontWeight:700}}>
-                        {c.parcela_atual}/{c.qtd_parcelas}
-                      </span>
-                    </td>
-                    <td style={styles.tdMassa}>
-                      <span style={{color:"#ef4444",fontWeight:900,fontFamily:"monospace",fontSize:13}}>
-                        R$ {formatBRL(c.valor)}
-                      </span>
-                    </td>
-                    <td style={styles.tdMassa}>
-                      {/* Badge de status melhorado mas preservando cores originais */}
-                      <span style={{
-                        background: getStatusColor(atrasado?"ATRASADO":c.status)+"22",
-                        color: getStatusColor(atrasado?"ATRASADO":c.status),
-                        border:`1px solid ${getStatusColor(atrasado?"ATRASADO":c.status)}44`,
-                        padding:"4px 10px", borderRadius:20, fontSize:10, fontWeight:800,
-                        textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap",
-                      }}>
-                        {atrasado ? "ATRASADO" : c.status}
-                      </span>
-                    </td>
-                    {/* ── BOTÕES ORIGINAIS PRESERVADOS INTEGRALMENTE ── */}
-                    {hasEditPermission && (
-                      <td style={{...styles.tdMassa, textAlign:"center"}}>
-                        <div style={{display:"flex", gap:6, justifyContent:"center"}}>
-                          <button
-                            onClick={()=>{ setContaToEdit(c); setShowEditContaModal(true); }}
-                            style={{background:"rgba(59,130,246,0.15)",color:"#60a5fa",border:"1px solid rgba(59,130,246,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
-                            title="Editar Provisão"
-                            onMouseEnter={e=>e.currentTarget.style.background="rgba(59,130,246,0.3)"}
-                            onMouseLeave={e=>e.currentTarget.style.background="rgba(59,130,246,0.15)"}
-                          >✏️</button>
-                          <button
-                            onClick={()=>handleExcluirParcela(c.id)}
-                            style={{background:"rgba(239,68,68,0.12)",color:"#f87171",border:"1px solid rgba(239,68,68,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
-                            title="Excluir APENAS esta Parcela"
-                            onMouseEnter={e=>e.currentTarget.style.background="rgba(239,68,68,0.28)"}
-                            onMouseLeave={e=>e.currentTarget.style.background="rgba(239,68,68,0.12)"}
-                          >🗑️</button>
-                          <button
-                            onClick={()=>handleExcluirObrigacao(c.id_obrigacao, c.descricao)}
-                            style={{background:"rgba(127,29,29,0.2)",color:"#fca5a5",border:"1px solid rgba(127,29,29,0.4)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:14,transition:"all 0.15s"}}
-                            title="Excluir OBRIGAÇÃO INTEIRA e todas as parcelas"
-                            onMouseEnter={e=>e.currentTarget.style.background="rgba(127,29,29,0.4)"}
-                            onMouseLeave={e=>e.currentTarget.style.background="rgba(127,29,29,0.2)"}
-                          >🚨</button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                );
-              }) : (
-                <tr><td colSpan={hasEditPermission?9:8} style={{...styles.tdMassa,textAlign:"center",color:"#475569",padding:50,fontSize:13}}>
-                  Nenhuma conta a pagar encontrada.
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-  );
-})()}
+         {/* TAB: CONTAS A PAGAR — extraído para FinanceiroPagar.jsx */}
+         {activeTab === "financeiro_pagar" && (
+  <FinanceiroPagar 
+    styles={styles}
+    contasPagar={contasPagar}
+    loadContasPagar={loadContasPagar}
+    handleExcluirObrigacao={handleExcluirObrigacao}
+    handleExcluirParcela={handleExcluirParcela}
+    setShowAddObrigacaoModal={setShowAddObrigacaoModal}
+    setContaToEdit={setContaToEdit}
+    setShowEditContaModal={setShowEditContaModal}
+    financeiroBuscaPagar={financeiroBuscaPagar}
+    setFinanceiroBuscaPagar={setFinanceiroBuscaPagar}
+    financeiroDataInicioPagar={financeiroDataInicioPagar}
+    setFinanceiroDataInicioPagar={setFinanceiroDataInicioPagar}
+    financeiroDataFimPagar={financeiroDataFimPagar}
+    setFinanceiroDataFimPagar={setFinanceiroDataFimPagar}
+    filtroStatusPagar={filtroStatusPagar}
+    setFiltroStatusPagar={setFiltroStatusPagar}
+    handleImportOFXPagar={handleImportOFXPagar}
+    loading={loading}
+    // 👇 AS 3 PROPS NOVAS QUE RESOLVEM A TELA BRANCA:
+    formatBRL={formatBRL}
+    hasEditPermission={hasEditPermission}
+    getStatusColor={getStatusColor}
+  />
+)}
 
           {/* TAB: CONTAS A RECEBER */}
           {activeTab === "financeiro_receber" && (() => {
@@ -4328,324 +4099,88 @@ const [filtroStatusReceber, setFiltroStatusReceber] = useState("TODOS");
           )}
 
           {/* TAB: CONFIGS SISTEMA (LOGOS + PALETA DE CORES) */}
-          {activeTab === "config_sistema" && currentUser?.role === 'admin' && (
-             <div style={styles.cardFull}>
-               <h2 style={styles.cardTitle}>Personalização Visual do Sistema</h2>
-               <p style={{color: '#94a3b8', fontSize: 13, marginBottom: 30}}>
-                 Somente administradores podem alterar logos e paleta de cores. As configurações se aplicam a todo o sistema.
-               </p>
-
-               {/* LOGOS */}
-               <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', borderLeft: '3px solid #eab308', paddingLeft: '10px', marginBottom: '20px'}}>Logos do Sistema</h3>
-               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '40px'}}>
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-                     <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Tela de Login</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)'}}>
-                        <img src={sysLogos.login} alt="Login Logo" style={{maxHeight: '60px', maxWidth: '80%', objectFit: 'contain'}} />
-                     </div>
-                     <input type="file" id="logoLogin" accept=".jpg, .png, .jpeg, .svg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'login')} />
-                     <label htmlFor="logoLogin" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px', marginBottom: '8px'}}>📁 Substituir Imagem</label>
-                     <button onClick={() => { const u = {...sysLogos, login: OMNI26_DEFAULT_LOGO}; setSysLogos(u); try{sessionStorage.setItem('omni26_logos', JSON.stringify(u));}catch(e){} }} style={{...styles.clearBtn, color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', cursor: 'pointer', display: 'block', width: '100%', padding: '8px', borderRadius: '10px', fontSize: '11px'}}>↺ Restaurar Padrão</button>
-                  </div>
-
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-                     <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Sidebar (Menu Lateral)</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)'}}>
-                        <img src={sysLogos.sidebar} alt="Sidebar Logo" style={{maxHeight: '40px', maxWidth: '80%', objectFit: 'contain'}} />
-                     </div>
-                     <input type="file" id="logoSidebar" accept=".jpg, .png, .jpeg, .svg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'sidebar')} />
-                     <label htmlFor="logoSidebar" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px', marginBottom: '8px'}}>📁 Substituir Imagem</label>
-                     <button onClick={() => { const u = {...sysLogos, sidebar: OMNI26_DEFAULT_LOGO}; setSysLogos(u); try{sessionStorage.setItem('omni26_logos', JSON.stringify(u));}catch(e){} }} style={{...styles.clearBtn, color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', cursor: 'pointer', display: 'block', width: '100%', padding: '8px', borderRadius: '10px', fontSize: '11px'}}>↺ Restaurar Padrão</button>
-                  </div>
-
-                  <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-                     <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Proposta PDF (Download)</h3>
-                     <div style={{height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)'}}>
-                        <img src={sysLogos.pdf} alt="PDF Logo" style={{maxHeight: '60px', maxWidth: '80%', objectFit: 'contain'}} />
-                     </div>
-                     <input type="file" id="logoPdf" accept=".jpg, .png, .jpeg, .svg" style={{display: 'none'}} onChange={(e) => handleLogoChange(e, 'pdf')} />
-                     <label htmlFor="logoPdf" style={{...styles.clearBtn, color: '#fff', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', display: 'block', padding: '12px', borderRadius: '10px', marginBottom: '8px'}}>📁 Substituir Imagem</label>
-                     <button onClick={() => { const u = {...sysLogos, pdf: OMNI26_DEFAULT_LOGO}; setSysLogos(u); try{sessionStorage.setItem('omni26_logos', JSON.stringify(u));}catch(e){} }} style={{...styles.clearBtn, color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', cursor: 'pointer', display: 'block', width: '100%', padding: '8px', borderRadius: '10px', fontSize: '11px'}}>↺ Restaurar Padrão</button>
-                  </div>
-               </div>
-
-               {/* PALETA DE CORES */}
-               <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', borderLeft: '3px solid #eab308', paddingLeft: '10px', marginBottom: '20px'}}>Paleta de Cores do Sistema</h3>
-               <p style={{color: '#64748b', fontSize: 12, marginBottom: '20px'}}>Defina a identidade visual do sistema. Suporta nomes de cores (ex: <code style={{color:'#f97316'}}>orange</code>), hex (ex: <code style={{color:'#f97316'}}>#FF6600</code>) e RGB (ex: <code style={{color:'#f97316'}}>rgb(255,102,0)</code>).</p>
-               <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px'}}>
-                 {[
-                   {key: 'primary', label: 'Cor Primária (botões, destaque)', hint: 'Ex: #f97316 ou rgb(249,115,22)'},
-                   {key: 'accent', label: 'Cor de Acento (títulos, bordas)', hint: 'Ex: #eab308'},
-                   {key: 'success', label: 'Cor de Sucesso', hint: 'Ex: #10b981'},
-                   {key: 'danger', label: 'Cor de Erro/Perigo', hint: 'Ex: #f87171'},
-                   {key: 'info', label: 'Cor Informativa', hint: 'Ex: #3b82f6'},
-                   {key: 'navActive', label: 'Cor do Item Ativo no Menu', hint: 'Ex: #f97316'},
-                 ].map(({key, label, hint}) => (
-                   <div key={key} style={{background: 'rgba(0,0,0,0.3)', padding: '18px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)'}}>
-                     <label style={{fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', display: 'block', marginBottom: '10px', fontWeight: 'bold'}}>{label}</label>
-                     <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px'}}>
-                       <input
-                         type="color"
-                         value={(() => { try { const c = colorPalette[key]; if (c && c.startsWith('#') && c.length === 7) return c; return '#f97316'; } catch(e) { return '#f97316'; } })()}
-                         onChange={(e) => savePalette({...colorPalette, [key]: e.target.value})}
-                         style={{width: '44px', height: '36px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', background: 'none', padding: '2px'}}
-                       />
-                       <input
-                         type="text"
-                         value={colorPalette[key] || ''}
-                         onChange={(e) => savePalette({...colorPalette, [key]: e.target.value})}
-                         placeholder={hint}
-                         style={{flex: 1, padding: '8px 12px', borderRadius: '8px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '12px'}}
-                       />
-                     </div>
-                     <div style={{height: '6px', borderRadius: '3px', background: colorPalette[key] || '#f97316', marginTop: '6px', border: '1px solid rgba(255,255,255,0.1)'}} />
-                   </div>
-                 ))}
-               </div>
-               <div style={{display: 'flex', gap: '12px', marginTop: '10px'}}>
-                 <button
-                   onClick={() => { savePalette(DEFAULT_COLOR_PALETTE); alert('Paleta restaurada para o padrão Omni26!'); }}
-                   style={{...styles.clearResultsBtn, padding: '12px 24px'}}
-                 >↺ Restaurar Paleta Padrão</button>
-                 <button
-                   onClick={() => alert('Paleta salva e aplicada ao sistema!')}
-                   style={{...styles.exportBtn, background: colorPalette.primary || '#f97316', boxShadow: `0 4px 15px ${colorPalette.primary || '#f97316'}66`}}
-                 >✔ Confirmar Paleta</button>
-               </div>
-
-             </div>
-          )}
+           {/* TAB: PERSONALIZAÇÃO — extraído para ConfigSistema.jsx */}
+           {(activeTab === "config_sistema" || activeTab === "config") && currentUser?.role === "admin" && (
+             <ConfigSistema
+               styles={styles}
+               currentUser={currentUser}
+               sysLogos={sysLogos}
+               setSysLogos={setSysLogos}
+               OMNI26_DEFAULT_LOGO={OMNI26_DEFAULT_LOGO}
+               colorPalette={colorPalette}
+               setColorPalette={setColorPalette}
+               savedScenarios={savedScenarios}
+               setTaxaJurosMensal={setTaxaJurosMensal}
+               setPercentualAplicado={setPercentualAplicado}
+               logAction={logAction}
+               activeTab={activeTab}
+             />
+           )}
 
           {/* TAB: CALCULADORA */}
-          {activeTab === "calculadora" && (
-            <div style={styles.calculatorWrapper}>
-              <div style={styles.configSection}>
-                
-                <section style={styles.cardVehicles}>
-                  <div style={styles.headerTitleAction}>
-                    <h2 style={styles.cardTitle}>1. Seleção de Veículos</h2>
-                    <button onClick={resetVehicles} style={styles.clearBtn}>
-                      Limpar ({selectedVehicles.length})
-                    </button>
-                  </div>
-                  
-                  <div style={{marginBottom: '15px'}}>
-                    <select 
-                      style={styles.inputSearch} 
-                      value={selectedBrand} 
-                      onChange={(e) => setSelectedBrand(e.target.value)}
-                    >
-                      {availableBrands.map(brand => (
-                        <option key={brand} value={brand}>{brand}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <input 
-                    style={styles.inputSearch} 
-                    placeholder="Filtrar por nome ou grupo..." 
-                    value={search} 
-                    onChange={(e) => setSearch(e.target.value)} 
-                  />
-                  
-                  <div style={styles.modelsBox}>
-                    {loading && models.length === 0 && (
-                      <p style={{textAlign: 'center', fontSize: 12, padding: 20}}>Aguarde...</p>
-                    )}
-                    {filteredModels.map(m => (
-                      <label key={m.model_name_clean} style={styles.modelItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedVehicles.includes(m.model_name_clean)} 
-                          onChange={() => setSelectedVehicles(prev => prev.includes(m.model_name_clean) ? prev.filter(x => x !== m.model_name_clean) : [...prev, m.model_name_clean])} 
-                        />
-                        <div style={styles.modelText}>
-                          <span style={styles.modelName}>
-                            {m.brand_name?.toUpperCase() || 'N/A'} - {String(m.model_name || '').trim()} - { (m.year_model === 32000 || m.year === 32000) ? 2026 : (m.year_model || m.year || '')}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </section>
-                
-                <section style={styles.cardParams}>
-                  <div style={styles.headerTitleAction}>
-                    <h2 style={styles.cardTitle}>2. Ajuste de Parâmetros</h2>
-                    <button onClick={resetParams} style={styles.clearBtn}>Resetar</button>
-                  </div>
-                  
-                  <div style={{marginBottom: '12px', padding: '12px 15px', borderRadius: '10px', background: valorFinanciado > 0 ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${valorFinanciado > 0 ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.05)'}`, transition: 'all 0.2s'}}>
-                    <div style={{fontSize: '10px', color: valorFinanciado > 0 ? '#f97316' : '#64748b', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      {valorFinanciado > 0 ? '🟠 BASE DO CÁLCULO: VALOR FINANCIADO (PRIORITÁRIO)' : '⚪ BASE DO CÁLCULO: FIPE (preencha abaixo para usar valor financiado)'}
-                    </div>
-                  </div>
-                  <div style={styles.formGrid}>
-                    <Field label="Valor Financiado (R$) — Prioritário" value={valorFinanciado} setValue={setValorFinanciado} />
-                    <Field label="Prazo Financ. (Meses)" value={nperFinanciamento} setValue={setNperFinanciamento} />
-                    
-                    <div style={styles.inputGroup}>
-                      <label style={styles.fieldLabel}>Franquia KM/mês</label>
-                      <select style={styles.inputSmall} value={franquiaKm} onChange={(e) => setFranquiaKm(Number(e.target.value))}>
-                        <option value={1000}>1.000 km</option>
-                        <option value={2000}>2.000 km</option>
-                        <option value={2500}>2.500 km</option>
-                        <option value={3000}>3.000 km</option>
-                      </select>
-                    </div>
-
-                    <Field label="Proj. Revenda (Opcional R$)" value={projecaoRevenda} setValue={setProjecaoRevenda} />
-                    <Field label="Ano Modelo" value={yearNum} setValue={setYearNum} />
-                    <Field label="Taxa Juros Mensal" value={taxaJurosMensal} setValue={setTaxaJurosMensal} step="0.0001" />
-                    <Field label="Manutenção/mês" value={revisaoMensal} setValue={setRevisaoMensal} />
-                    <Field label="Custo Pneus (Jogo)" value={custoPneus} setValue={setCustoPneus} />
-                    <Field label="Seguro Anual" value={seguroAnual} setValue={setSeguroAnual} />
-                    <Field label="Margem Net (Legado)" value={percentualAplicado} setValue={setPercentualAplicado} step="0.0001" />
-                  </div>
-                  
-                  <button 
-                    style={{...styles.buttonProcess, opacity: loading ? 0.7 : 1}} 
-                    onClick={handleCalculate} 
-                    disabled={loading}
-                  >
-                    {loading ? "CALCULANDO..." : "GERAR ESTUDO COMPARATIVO"}
-                  </button>
-                </section>
-                
-              </div>
-
-              {results?.compare && (
-                <div style={styles.resultsWrapper}>
-                  
-                  <div style={styles.resultsHeader}>
-                    <div>
-                      <h2 style={styles.cardTitle}>Resultado do Comparativo</h2>
-                      <div style={{marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap'}}>
-                        {/* Dropdown customizado de clientes */}
-                        <ClienteDropdown
-                          clientes={clientes}
-                          clienteSelecionado={clienteSelecionado}
-                          onSelect={(c) => { setClienteSelecionado(c || null); setClienteNome(c ? c.nome : ''); }}
-                          onClear={() => { setClienteSelecionado(null); setClienteNome(''); }}
-                        />
-                        {!clienteSelecionado && (
-                          <input
-                            style={{...styles.inputSearch, width: '180px', height: '40px', fontSize: '13px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.45)', color: '#f1f5f9', borderRadius: 10}}
-                            placeholder="Ou digitar nome..."
-                            value={clienteNome}
-                            onChange={(e) => setClienteNome(e.target.value)}
-                          />
-                        )}
-                      </div>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px', alignItems: 'flex-end'}}>
-                      <button onClick={clearResults} style={styles.clearResultsBtn}>🗑️ LIMPAR</button>
-                      <button onClick={exportToCSV} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 EXCEL</button>
-                    </div>
-                  </div>
-                  
-                  <div style={styles.compareGridWrap}>
-                    {results.compare.map((item, idx) => {
-                      const vKey = item.vehicle.model_name_clean; 
-                      const q = quantidades[vKey] || 1; 
-                      const isPdfLoading = pdfLoadingMap[vKey] || false;
-                      
-                      return (
-                        <div key={idx} style={styles.compareCardItem}>
-                          
-                          <div style={styles.compareHeader}>
-                            <span style={styles.brandTag}>
-                              {item.vehicle?.brand_name?.toUpperCase() || "VEÍCULO"}
-                            </span>
-                            <div style={styles.vehicleTitle}>
-                              {String(item.vehicle?.model_name).trim()}
-                            </div>
-                            <div style={styles.qtyContainer}>
-                              <label style={styles.qtyLabel}>QUANTIDADE DE VEÍCULOS:</label>
-                              <div style={styles.qtySelector}>
-                                <button style={styles.qtyBtn} onClick={() => setQuantidades({...quantidades, [vKey]: Math.max(1, q - 1)})}>-</button>
-                                <div style={styles.qtyValBox}>{q}</div>
-                                <button style={styles.qtyBtn} onClick={() => setQuantidades({...quantidades, [vKey]: q + 1})}>+</button>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div style={styles.compareBody}>
-                            {item.pricing?.map(p => (
-                              <div key={p.prazo_meses} style={{...styles.compareRow, borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                  <div style={styles.prazoBadge}>{p.prazo_meses} MESES</div>
-                                  <div style={{
-                                    fontSize: '10px',
-                                    fontWeight: 'bold',
-                                    padding: '3px 8px',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                    backgroundColor: p.status === 'APROVAR' ? '#10b981' : p.status === 'AJUSTAR' ? '#f59e0b' : '#ef4444'
-                                  }}>
-                                    {p.status}
-                                  </div>
-                                </div>
-                                
-                                <div style={styles.mainValue}>R$ {formatBRL(p.mensalidade_final || p.mensalidade)}</div>
-                                {q > 1 && <div style={styles.fleetTotal}>Frota: R$ {formatBRL((p.mensalidade_final || p.mensalidade) * q)}</div>}
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '10px', color: '#94a3b8'}}>
-                                   <span>Técnica: R$ {formatBRL(p.mensalidade_tecnica)}</span>
-                                   <span>Piso: R$ {formatBRL(p.mensalidade_piso)}</span>
-                                </div>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '10px', color: '#94a3b8'}}>
-                                   <span>ROI: {p.roi_percentual}%</span>
-                                   <span>Payback: {p.payback_meses}m</span>
-                                </div>
-                              </div>
-                            ))}
-                            <button 
-                              onClick={() => handleDownloadPDF(vKey)} 
-                              disabled={isPdfLoading} 
-                              style={{...styles.pdfCardBtn, background: isPdfLoading ? 'rgba(255,255,255,0.1)' : '#fde68a', color: isPdfLoading ? '#fff' : '#000'}}
-                            >
-                              {isPdfLoading ? "⌛ GERANDO..." : "📄 BAIXAR PROPOSTA PDF"}
-                            </button>
-                          </div>
-                          
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                </div>
-              )}
-            </div>
-          )}
+           {/* TAB: CALCULADORA — extraído para Calculadora.jsx */}
+           {activeTab === "calculadora" && (
+             <Calculadora
+               styles={styles}
+               models={models}
+               filteredModels={filteredModels}
+               availableBrands={availableBrands}
+               clientes={clientes}
+               savedScenarios={savedScenarios}
+               results={results}
+               quantidades={quantidades}
+               setQuantidades={setQuantidades}
+               selectedVehicles={selectedVehicles}
+               setSelectedVehicles={setSelectedVehicles}
+               selectedBrand={selectedBrand}
+               setSelectedBrand={setSelectedBrand}
+               search={search}
+               setSearch={setSearch}
+               yearNum={yearNum}
+               setYearNum={setYearNum}
+               kmMensal={kmMensal}
+               setKmMensal={setKmMensal}
+               taxaJurosMensal={taxaJurosMensal}
+               setTaxaJurosMensal={setTaxaJurosMensal}
+               percentualAplicado={percentualAplicado}
+               setPercentualAplicado={setPercentualAplicado}
+               revisaoMensal={revisaoMensal}
+               setRevisaoMensal={setRevisaoMensal}
+               valorFinanciado={valorFinanciado}
+               setValorFinanciado={setValorFinanciado}
+               nperFinanciamento={nperFinanciamento}
+               setNperFinanciamento={setNperFinanciamento}
+               franquiaKm={franquiaKm}
+               setFranquiaKm={setFranquiaKm}
+               custoPneus={custoPneus}
+               setCustoPneus={setCustoPneus}
+               seguroAnual={seguroAnual}
+               setSeguroAnual={setSeguroAnual}
+               impostosMensais={impostosMensais}
+               setImpostosMensais={setImpostosMensais}
+               rastreamentoMensal={rastreamentoMensal}
+               setRastreamentoMensal={setRastreamentoMensal}
+               projecaoRevenda={projecaoRevenda}
+               setProjecaoRevenda={setProjecaoRevenda}
+               clienteSelecionado={clienteSelecionado}
+               setClienteSelecionado={setClienteSelecionado}
+               clienteNome={clienteNome}
+               setClienteNome={setClienteNome}
+               loading={loading}
+               pdfLoadingMap={pdfLoadingMap}
+               error={error}
+               handleDownloadPDF={handleDownloadPDF}
+               exportToCSV={exportToCSV}
+               clearResults={clearResults}
+               resetParams={resetParams}
+               resetVehicles={resetVehicles}
+               ClienteDropdown={ClienteDropdown}
+             />
+           )}
 
           {/* TAB: CONFIG DE CENÁRIOS */}
-          {activeTab === "config" && currentUser?.role === 'admin' && (
-            <div style={styles.cardFull}>
-              <h2 style={styles.cardTitle}>Cenários de Mercado</h2>
-              <div style={styles.actionGrid}>
-                {savedScenarios.map(s => (
-                  <div 
-                    key={s.id} 
-                    style={styles.actionCard} 
-                    onClick={() => { 
-                      setTaxaJurosMensal(s.taxa); 
-                      setPercentualAplicado(s.margem); 
-                      logAction("Cenários", `Aplicou cenário: ${s.name}`); 
-                      alert(`Cenário ${s.name} aplicado!`); 
-                    }}
-                  >
-                    <h3 style={{color: '#eab308'}}>{s.name}</h3>
-                    <p style={{fontSize: 12, color: '#94a3b8'}}>
-                      Taxa: {(s.taxa*100).toFixed(2)}% | Margem: {(s.margem*100).toFixed(1)}%
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
+           {/* cenarios movido para ConfigSistema.jsx */}
+
        </main>
 
       {/* ============================================================ */}
