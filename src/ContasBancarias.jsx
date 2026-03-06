@@ -11,15 +11,15 @@ import { api } from "./api";
 
 // ── Paleta e utilitários ──────────────────────────────────
 const C = {
-  bg: "#080d16",
-  surface: "rgba(15,23,42,0.8)",
-  border: "rgba(255,255,255,0.07)",
+  bg: "#f0f4f8",
+  surface: "#ffffff",
+  border: "#e2e8f0",
   blue: "#3b82f6",
   green: "#10b981",
   red: "#ef4444",
-  yellow: "#eab308",
+  yellow: "#f59e0b",
   purple: "#8b5cf6",
-  text: "#f1f5f9",
+  text: "#1e293b",
   muted: "#64748b",
   subtle: "#94a3b8",
 };
@@ -434,16 +434,28 @@ export default function ContasBancarias({ fornecedores = [] }) {
   const loadContas = useCallback(async () => {
     setLoading(true);
     try {
-      const cRes = await api.get("/conciliacao/contas-bancarias");
-      setContas(Array.isArray(cRes.data) ? cRes.data : []);
+      const [cRes, dRes] = await Promise.all([
+        api.get("/conciliacao/contas-bancarias"),
+        api.get("/conciliacao/dashboard"),
+      ]);
+      setContas(cRes.data);
+      setDashboard(dRes.data);
     } catch (e) {
-      console.error("Erro ao carregar contas:", e);
+      console.error(e);
     } finally { setLoading(false); }
-    // Dashboard separado — falha não bloqueia a lista
-    api.get("/conciliacao/dashboard")
-      .then(dRes => setDashboard(dRes.data))
-      .catch(() => {});
   }, []);
+
+  const handleDeleteConta = async (conta) => {
+    if (!window.confirm(`Excluir a conta "${conta.nome}"?\n\nTodas as transações serão removidas.`)) return;
+    try {
+      await api.delete(`/conciliacao/contas-bancarias/${conta.id}`);
+      alert("Conta excluída.");
+      loadContas();
+      if (activeContaId === conta.id) setActiveContaId(null);
+    } catch (e) {
+      alert("Erro ao excluir: " + (e.response?.data?.detail || e.message));
+    }
+  };
 
   const loadTransacoes = useCallback(async (idConta) => {
     setLoadingTx(true);
@@ -544,6 +556,9 @@ export default function ContasBancarias({ fornecedores = [] }) {
 
               {/* Ações */}
               <div style={{ display: "flex", gap: 8 }} onClick={e => e.stopPropagation()}>
+                <Btn size="sm" color={C.red} onClick={(e) => { e.stopPropagation(); handleDeleteConta(c); }} style={{ padding:'7px 12px', minWidth:0 }} title="Excluir conta">
+                  🗑️
+                </Btn>
                 <Btn size="sm" color={C.green} onClick={() => setConciliacaoConta(c)} style={{ flex: 1, textAlign: "center" }}>
                   📥 OFX
                 </Btn>
