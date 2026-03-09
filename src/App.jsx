@@ -2036,7 +2036,7 @@ useEffect(() => {
           <div style={styles.loginLogoContainer}>
             <img src={sysLogos.login || LogoOmni} alt="Logo Login" style={{ width: '100%', maxWidth: '320px', height: 'auto', objectFit: 'contain', marginBottom: '10px' }} />
           </div>
-          <h2 style={styles.loginTitle}>Gestão e Controle de Frota</h2>
+          {/* <h2 style={styles.loginTitle}>Gestão e Controle de Frota</h2> Comentada para visualização somente da logo na área de login*/} 
           <form onSubmit={handleLogin} style={styles.loginForm}>
             <div style={styles.inputGroup}>
               <label style={styles.label}>E-mail Corporativo</label>
