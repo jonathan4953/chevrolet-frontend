@@ -1,3 +1,11 @@
+/* RESET GLOBAL */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* CONFIGURAÇÃO BASE */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -13,56 +21,107 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+
+/* BODY */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+
+  width: 100%;
+  height: 100%;
+
+  overflow-x: hidden;
+}
+
+
+/* ROOT APP */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+}
+
+
+/* LINKS */
 a {
   font-weight: 500;
   color: #646cff;
   text-decoration: inherit;
 }
+
 a:hover {
   color: #535bf2;
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
 
+/* TITULOS */
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 2rem;
+  line-height: 1.2;
 }
 
+
+/* BOTÕES */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+  padding: 8px 16px;
+  font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: all 0.2s;
 }
+
 button:hover {
   border-color: #646cff;
 }
+
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 3px auto -webkit-focus-ring-color;
 }
 
+
+/* IMAGENS RESPONSIVAS */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+
+/* TABELAS RESPONSIVAS */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+
+/* INPUTS RESPONSIVOS */
+input,
+select,
+textarea {
+  max-width: 100%;
+  font-family: inherit;
+}
+
+
+/* LIGHT MODE */
 @media (prefers-color-scheme: light) {
+
   :root {
     color: #213547;
     background-color: #ffffff;
   }
+
   a:hover {
     color: #747bff;
   }
+
   button {
     background-color: #f9f9f9;
   }
+
 }

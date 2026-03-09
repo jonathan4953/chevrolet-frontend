@@ -1,25 +1,18 @@
-// ============================================================
-// ContasBancarias.jsx — Tela completa de Contas Bancárias
-// Adicione este arquivo na pasta do seu projeto React.
-// No app.jsx:
-//   import ContasBancarias from './ContasBancarias';
-//   // Adicione NavItem: "contas_bancarias" → <ContasBancarias />
-// ============================================================
-
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./api";
+import ConfirmModal from './components/ConfirmModal';
 
 // ── Paleta e utilitários ──────────────────────────────────
 const C = {
-  bg: "#f0f4f8",
-  surface: "#ffffff",
-  border: "#e2e8f0",
+  bg: "transparent",
+  surface: "rgba(30, 41, 59, 0.6)",
+  border: "rgba(255,255,255,0.08)",
   blue: "#3b82f6",
   green: "#10b981",
   red: "#ef4444",
   yellow: "#f59e0b",
   purple: "#8b5cf6",
-  text: "#1e293b",
+  text: "#e2e8f0",
   muted: "#64748b",
   subtle: "#94a3b8",
 };
@@ -43,18 +36,18 @@ const bancosBR = [
 // ── Componentes base ──────────────────────────────────────
 const Card = ({ children, style = {}, glow = C.blue }) => (
   <div style={{
-    background: C.surface, backdropFilter: "blur(16px)",
-    border: `1px solid ${glow}33`, borderRadius: 20,
-    boxShadow: `0 0 30px ${glow}12, 0 8px 32px rgba(0,0,0,0.4)`,
+    background: "rgba(30, 41, 59, 0.45)", backdropFilter: "blur(16px)",
+    border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 20,
+    boxShadow: `0 12px 30px rgba(0,0,0,0.3)`,
     ...style
   }}>{children}</div>
 );
 
 const KPI = ({ label, value, icon, color = C.blue, sub }) => (
   <div style={{
-    background: C.surface, backdropFilter: "blur(16px)",
-    border: `1px solid ${color}33`, borderRadius: 18, padding: "22px 24px",
-    boxShadow: `0 0 28px ${color}14, 0 8px 24px rgba(0,0,0,0.4)`,
+    background: "rgba(30, 41, 59, 0.6)", backdropFilter: "blur(12px)",
+    border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 18, padding: "22px 24px",
+    boxShadow: `0 10px 30px rgba(0,0,0,0.3)`,
     transition: "transform 0.2s",
     cursor: "default",
   }}
@@ -478,7 +471,7 @@ export default function ContasBancarias({ fornecedores = [] }) {
   const txConciliadas = dashboard?.transacoes?.conciliadas || 0;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, color: C.text, fontFamily: "'IBM Plex Mono', monospace, system-ui" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, color: C.text, fontFamily: "'Inter', sans-serif" }}>
 
       {/* ── HEADER ── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -508,14 +501,14 @@ export default function ContasBancarias({ fornecedores = [] }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
         {loading ? (
           [1, 2, 3].map(i => (
-            <div key={i} style={{ background: C.surface, borderRadius: 20, padding: "28px 24px", border: `1px solid ${C.border}`, animation: "pulse 1.5s infinite" }}>
+            <div key={i} style={{ background: "rgba(30, 41, 59, 0.45)", borderRadius: 20, padding: "28px 24px", border: `1px solid rgba(255,255,255,0.08)`, animation: "pulse 1.5s infinite" }}>
               <div style={{ height: 16, background: "rgba(255,255,255,0.05)", borderRadius: 8, marginBottom: 12, width: "60%" }} />
               <div style={{ height: 28, background: "rgba(255,255,255,0.05)", borderRadius: 8, marginBottom: 8 }} />
               <div style={{ height: 12, background: "rgba(255,255,255,0.03)", borderRadius: 6, width: "40%" }} />
             </div>
           ))
         ) : contas.length === 0 ? (
-          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 20 }}>
+          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px", background: "rgba(30, 41, 59, 0.45)", border: `1px solid rgba(255,255,255,0.08)`, borderRadius: 20 }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏦</div>
             <h3 style={{ margin: "0 0 8px", fontWeight: 800 }}>Nenhuma conta cadastrada</h3>
             <p style={{ color: C.muted, fontSize: 13 }}>Cadastre sua primeira conta bancária para começar a conciliar.</p>
@@ -524,14 +517,14 @@ export default function ContasBancarias({ fornecedores = [] }) {
           const isActive = c.id === activeContaId;
           return (
             <div key={c.id} onClick={() => setActiveContaId(isActive ? null : c.id)} style={{
-              background: isActive ? `rgba(59,130,246,0.12)` : C.surface,
-              border: `1px solid ${isActive ? C.blue + "60" : C.border}`,
+              background: isActive ? `rgba(59,130,246,0.12)` : "rgba(30, 41, 59, 0.45)",
+              border: `1px solid ${isActive ? C.blue + "60" : "rgba(255,255,255,0.08)"}`,
               borderRadius: 20, padding: "24px 22px", cursor: "pointer",
               transition: "all 0.2s", position: "relative",
               boxShadow: isActive ? `0 0 30px ${C.blue}20` : "none",
             }}
               onMouseEnter={e => !isActive && (e.currentTarget.style.borderColor = `${C.blue}40`)}
-              onMouseLeave={e => !isActive && (e.currentTarget.style.borderColor = C.border)}
+              onMouseLeave={e => !isActive && (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
             >
               {/* Badge do banco */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
@@ -578,14 +571,14 @@ export default function ContasBancarias({ fornecedores = [] }) {
       {/* ── EXTRATO DA CONTA SELECIONADA ── */}
       {activeContaId && contaAtiva && (
         <Card glow={C.blue} style={{ padding: 0, overflow: "hidden" }}>
-          <div style={{ padding: "18px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ padding: "18px 24px", borderBottom: `1px solid rgba(255,255,255,0.05)`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800 }}>Extrato — {contaAtiva.nome}</h3>
               <p style={{ margin: "4px 0 0 0", color: C.muted, fontSize: 12 }}>Transações importadas via OFX</p>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{
-                background: "rgba(0,0,0,0.4)", border: `1px solid ${C.border}`,
+                background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`,
                 borderRadius: 8, padding: "7px 12px", color: C.text, fontSize: 12,
               }}>
                 <option value="TODOS">Todos os status</option>
@@ -607,7 +600,7 @@ export default function ContasBancarias({ fornecedores = [] }) {
               <thead>
                 <tr>
                   {["Data", "Descrição", "Tipo", "Valor", "Status", ""].map(h => (
-                    <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 9, color: C.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderBottom: `1px solid ${C.border}`, background: "rgba(0,0,0,0.2)" }}>{h}</th>
+                    <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 9, color: C.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", borderBottom: `1px solid rgba(255,255,255,0.05)`, background: "rgba(15, 23, 42, 0.6)" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -651,7 +644,7 @@ export default function ContasBancarias({ fornecedores = [] }) {
           </div>
 
           {transacoes.length > 0 && (
-            <div style={{ padding: "12px 24px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
+            <div style={{ padding: "12px 24px", borderTop: `1px solid rgba(255,255,255,0.05)`, display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted }}>
               <span>{transacoes.length} transação(ões)</span>
               <span>
                 {transacoes.filter(t => t.status_conciliacao === "CONCILIADO").length} conciliadas ·&nbsp;
