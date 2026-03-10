@@ -123,18 +123,33 @@ export default function Clientes() {
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const abrirNovo = () => { setEditId(null); setForm(VAZIO); setShowModal(true); };
+const abrirEdit = (c) => {
+  setEditId(c.id);
   
-  const abrirEdit = (c) => {
-    setEditId(c.id);
-    // CORRIGIDO AQUI (Carregar formulário de edição)
-    setForm({ nome: c.nome_razao || c.nome || "", documento:c.documento||"", tipo_pessoa:c.tipo_pessoa||"F",
-      empresa:c.empresa||"", email:c.email||"", telefone:c.telefone||"",
-      cep:c.cep||"", logradouro:c.logradouro||"", numero:c.numero||"",
-      complemento:c.complemento||"", bairro:c.bairro||"", cidade:c.cidade||"",
-      uf:c.uf||"", observacoes:c.observacoes||"", status:c.status||"Ativo" });
-    setShowModal(true);
-  };
-
+  // Aqui dizemos ao formulário para pegar cada dado específico que veio do banco
+  setForm({
+    nome: c.nome_razao || c.nome || "",
+    documento: c.documento || c.cpf_cnpj || "",
+    tipo_pessoa: c.tipo_pessoa || "F",
+    empresa: c.empresa || "",
+    email: c.email || "",
+    telefone: c.telefone || "",
+    
+    // CAMPOS DE ENDEREÇO (Certifique-se que estes nomes são iguais aos do banco)
+    cep: c.cep || "",
+    logradouro: c.logradouro || "",
+    numero: c.numero || "",
+    complemento: c.complemento || "",
+    bairro: c.bairro || "",
+    cidade: c.cidade || "",
+    uf: c.uf || "",
+    
+    observacoes: c.observacoes || "",
+    status: c.status || "Ativo"
+  });
+  
+  setShowModal(true);
+};
   const buscarCep = async () => {
     const cep = (form.cep||"").replace(/\D/g,"");
     if (cep.length !== 8) return;
