@@ -161,6 +161,13 @@ export default function Sidebar({
           label="Contas Bancárias"
           icon="🏦"
         />
+     <NavItem
+  styles={styles}
+  active={activeTab === "config_contabil"} // Tem que ser idêntico
+  onClick={() => setActiveTab("config_contabil")} // Tem que ser idêntico
+  label="Plano de Contas"
+  icon="📊"
+/>
         <NavItem
           styles={styles}
           active={activeTab === "clientes"}

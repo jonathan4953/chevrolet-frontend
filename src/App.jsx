@@ -13,6 +13,8 @@ import ConfirmModal from './components/ConfirmModal'; // ajuste o caminho confor
 import Categorias from "./Categorias";
 import ModalAddReceber from "./ModalAddReceber";
 import Relatorios from "./modules/relatorios/Relatorios";
+import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for diferente
+import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -135,6 +137,23 @@ const [drillDownMes, setDrillDownMes] = useState(null);
       ...prev
     ]);
   };
+
+
+ // --- SISTEMA DE NOTIFICAÇÃO (TOAST) ---
+  const showToast = (message, type = "success") => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+  };
+
+  //RENDERIZAR PLANO DE CONTAS
+
+  {activeTab === "plano_contas" && (
+    <PlanoDeContas 
+        styles={styles} 
+        showToast={showToast} 
+    />
+)}
 
   // CARREGAR DADOS AO ABRIR A ABA RECEBER
   useEffect(() => {
@@ -671,7 +690,8 @@ const handleExcluirFornecedor = (id, nome) => {
   const [receberToEdit, setReceberToEdit] = useState(null);
   const [showBaixaReceberModal, setShowBaixaReceberModal] = useState(false);
   const [receberToBaixa, setReceberToBaixa] = useState(null);
-  const [baixaReceberData, setBaixaReceberData] = useState({ data_recebimento: new Date().toISOString().split('T')[0], id_conta_bancaria: "" });
+  const [baixaReceberData, setBaixaReceberData] = useState({ data_recebimento: new Date().toISOString().split('T')[0], id_conta_bancaria: "", valor_recebido: "", tipo_baixa: "total" });
+  const [contasBancariasBaixa, setContasBancariasBaixa] = useState([]);
 
   const handleEditReceber = (conta) => {
     setReceberToEdit({
@@ -709,7 +729,7 @@ const handleExcluirFornecedor = (id, nome) => {
   };
 
   const handleExcluirReceber = async (id_receber, descricao) => {
-    if (!window.confirm(`Excluir a conta a receber "${descricao || id_receber}"?`)) return;
+    const ok1 = await styledConfirm("Excluir Conta", `Excluir "${descricao || id_receber}"?`); if (!ok1) return;
     setLoading(true);
     try {
       await api.delete(`/financeiro/contas-receber/${id_receber}`);
@@ -723,9 +743,10 @@ const handleExcluirFornecedor = (id, nome) => {
     }
   };
 
-  const handleBaixaReceber = (conta) => {
+  const handleBaixaReceber = async (conta) => {
     setReceberToBaixa(conta);
-    setBaixaReceberData({ data_recebimento: new Date().toISOString().split('T')[0], id_conta_bancaria: "" });
+    setBaixaReceberData({ data_recebimento: new Date().toISOString().split('T')[0], id_conta_bancaria: "", valor_recebido: "", tipo_baixa: "total" });
+    try { const r = await api.get("/conciliacao/contas-bancarias"); setContasBancariasBaixa(Array.isArray(r.data)?r.data:[]); } catch(e) { setContasBancariasBaixa([]); }
     setShowBaixaReceberModal(true);
   };
 
@@ -733,18 +754,20 @@ const handleExcluirFornecedor = (id, nome) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await api.put(`/financeiro/contas-receber/${receberToBaixa.id_receber}/baixar`, {
+      const res = await api.put(`/financeiro/contas-receber/${receberToBaixa.id_receber}/baixar`, {
         data_recebimento: baixaReceberData.data_recebimento,
         id_conta_bancaria: baixaReceberData.id_conta_bancaria ? parseInt(baixaReceberData.id_conta_bancaria) : null,
+        tipo_baixa: baixaReceberData.tipo_baixa,
+        valor_recebido: baixaReceberData.tipo_baixa === "parcial" && baixaReceberData.valor_recebido ? parseFloat(baixaReceberData.valor_recebido) : null,
       });
-      showToast(`Recebimento de ${formatar_moeda_brl(receberToBaixa.valor)} registrado com sucesso!`, "success");
-      logAction("Contas a Receber", `Baixa manual do recebível #${receberToBaixa.id_receber} — ${formatar_moeda_brl(receberToBaixa.valor)}`);
+      showToast(res?.data?.message || "Recebimento registrado!", "success");
+      logAction("Contas a Receber", `Baixa ${baixaReceberData.tipo_baixa} #${receberToBaixa.id_receber}`);
       setShowBaixaReceberModal(false);
       setReceberToBaixa(null);
       loadContasReceber();
       if (typeof loadDashFin === 'function') loadDashFin();
     } catch (err) {
-      showToast("Erro ao registrar recebimento.", "error");
+      showToast(`Erro: ${err?.response?.data?.detail || "Erro desconhecido"}`, "error");
     } finally {
       setLoading(false);
     }
@@ -770,7 +793,7 @@ const handleExcluirFornecedor = (id, nome) => {
   };
 
   const handleExcluirObrigacao = async (id_obrigacao, descricao) => {
-    if (!window.confirm(`Excluir TODA a obrigação "${descricao}" e todas as suas parcelas?`)) return;
+    const ok2 = await styledConfirm("Excluir Obrigação", `Excluir "${descricao}" e todas as parcelas?`); if (!ok2) return;
     setLoading(true);
     try {
       await api.delete(`/financeiro/obrigacoes/${id_obrigacao}`);
@@ -785,7 +808,7 @@ const handleExcluirFornecedor = (id, nome) => {
   };
 
   const handleExcluirParcela = async (id_parcela) => {
-    if (!window.confirm(`Excluir APENAS a parcela #${id_parcela}?`)) return;
+    const ok3 = await styledConfirm("Excluir Parcela", `Excluir apenas a parcela #${id_parcela}?`); if (!ok3) return;
     setLoading(true);
     try {
       await api.delete(`/financeiro/parcelas/${id_parcela}`);
@@ -819,7 +842,7 @@ const handleExcluirFornecedor = (id, nome) => {
   };
 
   const handleAprovarConciliacao = async (idParcela, idTransacaoExtrato) => {
-    if(!window.confirm("Aprovar conciliação (A parcela será dada como Paga)?")) return;
+    const ok4 = await styledConfirm("Aprovar Conciliação", "A parcela será dada como Paga. Confirmar?"); if (!ok4) return;
     setLoading(true);
     try {
       await api.put(`/financeiro/parcelas/${idParcela}`, { 
@@ -874,14 +897,7 @@ const handleExcluirFornecedor = (id, nome) => {
     }
   };
 
-  // --- SISTEMA DE NOTIFICAÇÃO (TOAST) ---
-  const showToast = (message, type = "success") => {
-    const id = Date.now();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-  };
-
-  // --- NOVA FUNÇÃO: LANÇAMENTO DIRETO BIDIRECIONAL (ESTILO NIBO) ---
+   // --- NOVA FUNÇÃO: LANÇAMENTO DIRETO BIDIRECIONAL (ESTILO NIBO) ---
   const handleLancarEConciliar = async (item, index) => {
     // Captura o fornecedor/cliente selecionado no select específico daquela linha
     const fornecedorId = fornRapidoSelecionado[index] !== undefined
@@ -1106,6 +1122,9 @@ useEffect(() => {
     loadDashFin();
     loadContasPagar();
   }
+  if (activeTab === "calculadora") {
+    loadClientes();
+  }
 }, [activeTab, isLoggedIn]);
 
   // --- LOGICA DE EDIÇÃO E EXCLUSÃO (FRONTEND) ---
@@ -1147,7 +1166,7 @@ useEffect(() => {
     if(!hasEditPermission) {
       return alert("Sem permissão para excluir veículos.");
     }
-    if (!window.confirm(`Deseja realmente excluir o veículo de placa ${placa}?`)) {
+    const okV = await styledConfirm("Excluir Veículo", `Excluir o veículo ${placa}?`); if (!okV) {
       return;
     }
     
@@ -1187,7 +1206,7 @@ useEffect(() => {
   };
   
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Deseja excluir os ${selectedInventoryItems.length} veículos selecionados?`)) {
+    const okB = await styledConfirm("Excluir Selecionados", `Excluir ${selectedInventoryItems.length} veículos?`); if (!okB) {
       return;
     }
     setLoading(true);
@@ -1251,7 +1270,7 @@ useEffect(() => {
   };
   
   const handleBulkDeleteLocacao = async () => {
-    if (!window.confirm(`Deseja realmente excluir os ${selectedInventoryItemsLocacao.length} veículos de locação?`)) {
+    const okL = await styledConfirm("Excluir Locação", `Excluir ${selectedInventoryItemsLocacao.length} veículos?`); if (!okL) {
       return;
     }
     setLoading(true);
@@ -1555,7 +1574,7 @@ useEffect(() => {
   };
 
   const handleResetUserPassword = async (userId) => {
-    if (!window.confirm("Deseja redefinir a senha deste usuário para '123' e forçar a troca no próximo login?")) {
+    const okP = await styledConfirm("Redefinir Senha", "Redefinir a senha para '123' e forçar troca no próximo login?"); if (!okP) {
       return;
     }
     try {
@@ -2328,18 +2347,35 @@ useEffect(() => {
       {/* MODAL BAIXA MANUAL - CONTA A RECEBER */}
       {showBaixaReceberModal && receberToBaixa && (
         <div style={styles.modalOverlay}>
-          <div style={{...styles.modalContent, maxWidth: 480}}>
+          <div style={{...styles.modalContent, maxWidth: 520, maxHeight:"90vh", overflowY:"auto"}}>
             <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
               <div style={{width:4,height:28,borderRadius:2,background:"linear-gradient(to bottom,#10b981,#059669)"}}/>
               <h2 style={styles.cardTitle}>Baixa Manual — Recebimento</h2>
             </div>
             <div style={{background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.25)",borderRadius:12,padding:16,marginBottom:20}}>
-              <div style={{fontSize:11,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Valor a Receber</div>
+              <div style={{fontSize:10,color:"#64748b",textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Valor Total</div>
               <div style={{fontSize:24,fontWeight:900,color:"#10b981",fontFamily:"monospace"}}>{formatar_moeda_brl(receberToBaixa.valor)}</div>
               <div style={{fontSize:12,color:"#94a3b8",marginTop:4}}>{receberToBaixa.descricao} — {receberToBaixa.cliente || "Cliente"}</div>
             </div>
             <form onSubmit={handleConfirmarBaixaReceber}>
               <div style={{display:"grid",gap:14}}>
+                <div>
+                  <label style={styles.fieldLabel}>Tipo de Baixa</label>
+                  <div style={{display:"flex",gap:10,marginTop:4}}>
+                    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"8px 16px",borderRadius:10,border:`1px solid ${baixaReceberData.tipo_baixa==="total"?"rgba(16,185,129,0.5)":"rgba(255,255,255,0.1)"}`,background:baixaReceberData.tipo_baixa==="total"?"rgba(16,185,129,0.12)":"transparent",color:baixaReceberData.tipo_baixa==="total"?"#34d399":"#94a3b8",fontSize:12,fontWeight:700}}>
+                      <input type="radio" name="tipobx" value="total" checked={baixaReceberData.tipo_baixa==="total"} onChange={e=>setBaixaReceberData({...baixaReceberData, tipo_baixa:"total", valor_recebido:""})} style={{accentColor:"#10b981"}} /> Total
+                    </label>
+                    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"8px 16px",borderRadius:10,border:`1px solid ${baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.5)":"rgba(255,255,255,0.1)"}`,background:baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.12)":"transparent",color:baixaReceberData.tipo_baixa==="parcial"?"#eab308":"#94a3b8",fontSize:12,fontWeight:700}}>
+                      <input type="radio" name="tipobx" value="parcial" checked={baixaReceberData.tipo_baixa==="parcial"} onChange={e=>setBaixaReceberData({...baixaReceberData, tipo_baixa:"parcial"})} style={{accentColor:"#eab308"}} /> Parcial
+                    </label>
+                  </div>
+                </div>
+                {baixaReceberData.tipo_baixa === "parcial" && (
+                  <div>
+                    <label style={styles.fieldLabel}>Valor Recebido (R$)</label>
+                    <input type="number" step="0.01" min="0.01" max={receberToBaixa.valor} style={styles.inputSmall} placeholder={`Máx: ${Number(receberToBaixa.valor).toFixed(2)}`} value={baixaReceberData.valor_recebido} onChange={e=>setBaixaReceberData({...baixaReceberData, valor_recebido: e.target.value})} required />
+                  </div>
+                )}
                 <div>
                   <label style={styles.fieldLabel}>Data do Recebimento</label>
                   <input type="date" style={styles.inputSmall} value={baixaReceberData.data_recebimento} onChange={e=>setBaixaReceberData({...baixaReceberData, data_recebimento: e.target.value})} required />
@@ -2348,12 +2384,13 @@ useEffect(() => {
                   <label style={styles.fieldLabel}>Conta Bancária (opcional)</label>
                   <select style={{...styles.inputSmall, background:"rgba(15,23,42,0.9)", color:"#f1f5f9"}} value={baixaReceberData.id_conta_bancaria} onChange={e=>setBaixaReceberData({...baixaReceberData, id_conta_bancaria: e.target.value})}>
                     <option value="">Selecione...</option>
+                    {contasBancariasBaixa.map(cb => <option key={cb.id} value={cb.id}>{cb.nome} ({cb.banco})</option>)}
                   </select>
                 </div>
               </div>
               <div style={{display:"flex",gap:12,marginTop:20}}>
-                <button type="submit" disabled={loading} style={{...styles.exportBtn, flex:1, background:"linear-gradient(135deg,#059669,#10b981)", color:"#fff", border:"none"}}>
-                  {loading ? "⌛ PROCESSANDO..." : "✅ CONFIRMAR RECEBIMENTO"}
+                <button type="submit" disabled={loading} style={{...styles.exportBtn, flex:1, background:baixaReceberData.tipo_baixa==="parcial"?"linear-gradient(135deg,#b45309,#eab308)":"linear-gradient(135deg,#059669,#10b981)", color:baixaReceberData.tipo_baixa==="parcial"?"#000":"#fff", border:"none"}}>
+                  {loading ? "⌛ PROCESSANDO..." : baixaReceberData.tipo_baixa === "parcial" ? "📊 REGISTRAR PARCIAL" : "✅ CONFIRMAR RECEBIMENTO"}
                 </button>
                 <button type="button" style={{...styles.clearResultsBtn, flex:1}} onClick={()=>{setShowBaixaReceberModal(false);setReceberToBaixa(null);}}>CANCELAR</button>
               </div>
@@ -4203,7 +4240,7 @@ useEffect(() => {
                   
                   <div style={{marginBottom: '15px'}}>
                     <select 
-                      style={styles.inputSearch} 
+                      style={{...styles.inputSearch, overflow:"visible", position:"relative", zIndex:10}} 
                       value={selectedBrand} 
                       onChange={(e) => setSelectedBrand(e.target.value)}
                     >
@@ -4220,7 +4257,7 @@ useEffect(() => {
                     onChange={(e) => setSearch(e.target.value)} 
                   />
                   
-                  <div style={styles.modelsBox}>
+                  <div style={{...styles.modelsBox, flex:1, maxHeight:"none", minHeight:300}}>
                     {loading && models.length === 0 && (
                       <p style={{textAlign: 'center', fontSize: 12, padding: 20}}>Aguarde...</p>
                     )}
@@ -4293,19 +4330,19 @@ useEffect(() => {
                     <div>
                       <h2 style={styles.cardTitle}>Resultado do Comparativo</h2>
                       <div style={{marginTop: 10, display: 'flex', gap: 8, alignItems: 'center'}}>
-                        <div style={{position: 'relative'}}>
+                        <div style={{position: 'relative', zIndex:10}}>
                           <select
-                            style={{...styles.inputSearch, width: '280px', height: '38px', fontSize: '13px', border: '1px solid #eab308', background: 'rgba(0,0,0,0.3)', paddingRight: 30}}
+                            style={{...styles.inputSearch, width: '280px', height: '38px', fontSize: '13px', border: '1px solid #eab308', background: 'rgba(0,0,0,0.3)', paddingRight: 30, overflow:"visible"}}
                             value={clienteSelecionado?.id || ""}
                             onChange={(e) => {
                               const c = clientes.find(cl => String(cl.id) === e.target.value);
                               setClienteSelecionado(c || null);
-                              if (c) setClienteNome(c.nome);
+                              if (c) setClienteNome(c.nome_razao || c.nome || "");
                             }}
                           >
                             <option value="">👤 Selecionar cliente...</option>
                             {clientes.map(c => (
-                              <option key={c.id} value={c.id}>{c.nome}{c.empresa ? ` (${c.empresa})` : ""}</option>
+                              <option key={c.id} value={c.id}>{c.nome_razao || c.nome}{c.empresa ? ` (${c.empresa})` : ""}</option>
                             ))}
                           </select>
                         </div>
@@ -4433,153 +4470,12 @@ useEffect(() => {
             </div>
           )}
 
-          {/* ============================================================ */}
-          {/* TAB: CONFIGURAÇÃO CONTÁBIL (Plano de Contas + Centros de Custo) */}
-          {/* ============================================================ */}
-          {activeTab === "config_contabil" && (() => {
-            const handleSavePlano = async (e) => {
-              e.preventDefault();
-              try {
-                if (editPlano) {
-                  await api.put(`/financeiro/plano-contas/${editPlano.id}`, { codigo_contabil: editPlano.codigo_contabil, nome: editPlano.nome, tipo: editPlano.tipo });
-                  showToast("Plano atualizado!", "success"); setEditPlano(null);
-                } else {
-                  if (!novoPlano.nome.trim()) return showToast("Informe o nome.", "error");
-                  await api.post("/financeiro/plano-contas", novoPlano);
-                  showToast("Plano criado!", "success"); setNovoPlano({ codigo_contabil: "", nome: "", tipo: "DESPESA" });
-                }
-                loadEstruturaContabil();
-              } catch(err) { showToast(err?.response?.data?.detail || "Erro.", "error"); }
-            };
-            const handleSaveCentro = async (e) => {
-              e.preventDefault();
-              try {
-                if (editCentro) {
-                  await api.put(`/financeiro/centros-custo/${editCentro.id}`, { nome: editCentro.nome });
-                  showToast("Centro atualizado!", "success"); setEditCentro(null);
-                } else {
-                  if (!novoCentro.nome.trim()) return showToast("Informe o nome.", "error");
-                  await api.post("/financeiro/centros-custo", novoCentro);
-                  showToast("Centro criado!", "success"); setNovoCentro({ nome: "" });
-                }
-                loadEstruturaContabil();
-              } catch(err) { showToast(err?.response?.data?.detail || "Erro.", "error"); }
-            };
-            const handleDeletePlano = async (p) => {
-              const ok = await styledConfirm("Desativar Plano de Contas", `Deseja desativar "${p.nome}"?\nO plano não será excluído permanentemente.`);
-              if (!ok) return;
-              try { await api.delete(`/financeiro/plano-contas/${p.id}`); showToast("Plano desativado!", "success"); loadEstruturaContabil(); }
-              catch(err) { showToast(err?.response?.data?.detail || "Erro.", "error"); }
-            };
-            const handleDeleteCentro = async (cc) => {
-              const ok = await styledConfirm("Excluir Centro de Custo", `Deseja excluir "${cc.nome}"?`);
-              if (!ok) return;
-              try { await api.delete(`/financeiro/centros-custo/${cc.id}`); showToast("Excluído!", "success"); loadEstruturaContabil(); }
-              catch(err) { showToast(err?.response?.data?.detail || "Erro.", "error"); }
-            };
-            return (
-              <div style={{display:"flex",flexDirection:"column",gap:24}}>
-                <div style={{display:"flex",alignItems:"center",gap:14}}>
-                  <div style={{width:5,height:36,borderRadius:3,background:"linear-gradient(to bottom,#f97316,#eab308)"}}/>
-                  <div>
-                    <h2 style={{...styles.cardTitle,margin:0}}>Configuração Contábil</h2>
-                    <p style={{color:"#64748b",fontSize:12,margin:"4px 0 0"}}>Plano de Contas e Centros de Custo para DRE, Balancete e classificação financeira.</p>
-                  </div>
-                </div>
-
-                {/* === PLANO DE CONTAS === */}
-                <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:24}}>
-                  <h3 style={{color:"#f97316",fontSize:15,fontWeight:800,margin:"0 0 16px"}}>📊 Plano de Contas (Categorias)</h3>
-                  <form onSubmit={handleSavePlano} style={{display:"flex",gap:10,alignItems:"flex-end",marginBottom:18,flexWrap:"wrap",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:16}}>
-                    <div style={{flex:"0 0 120px"}}>
-                      <label style={styles.fieldLabel}>Código</label>
-                      <input style={styles.inputSmall} placeholder="3.1.01" value={editPlano ? editPlano.codigo_contabil : novoPlano.codigo_contabil} onChange={e => editPlano ? setEditPlano({...editPlano, codigo_contabil: e.target.value}) : setNovoPlano({...novoPlano, codigo_contabil: e.target.value})} />
-                    </div>
-                    <div style={{flex:"1 1 200px"}}>
-                      <label style={styles.fieldLabel}>Nome da Conta *</label>
-                      <input style={styles.inputSmall} placeholder="Ex: Receita de Locação" required value={editPlano ? editPlano.nome : novoPlano.nome} onChange={e => editPlano ? setEditPlano({...editPlano, nome: e.target.value}) : setNovoPlano({...novoPlano, nome: e.target.value})} />
-                    </div>
-                    <div style={{flex:"0 0 140px"}}>
-                      <label style={styles.fieldLabel}>Tipo *</label>
-                      <select style={styles.inputSmall} value={editPlano ? editPlano.tipo : novoPlano.tipo} onChange={e => editPlano ? setEditPlano({...editPlano, tipo: e.target.value}) : setNovoPlano({...novoPlano, tipo: e.target.value})}>
-                        <option value="DESPESA">Despesa</option>
-                        <option value="RECEITA">Receita</option>
-                      </select>
-                    </div>
-                    <button type="submit" style={{background:editPlano?"linear-gradient(135deg,#3b82f6,#2563eb)":"linear-gradient(135deg,#f97316,#ea580c)",color:"#fff",border:"none",padding:"10px 20px",borderRadius:10,fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
-                      {editPlano ? "💾 Salvar Alteração" : "➕ Adicionar Plano"}
-                    </button>
-                    {editPlano && <button type="button" onClick={()=>setEditPlano(null)} style={{background:"rgba(255,255,255,0.06)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",padding:"10px 16px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer"}}>Cancelar</button>}
-                  </form>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.tableMassa}>
-                      <thead><tr><th style={styles.thMassa}>Código</th><th style={styles.thMassa}>Nome</th><th style={styles.thMassa}>Tipo</th><th style={{...styles.thMassa,textAlign:"center"}}>Ações</th></tr></thead>
-                      <tbody>
-                        {planosContas.length > 0 ? planosContas.map((p,i)=>(
-                          <tr key={i} style={styles.trBody} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                            <td style={{...styles.tdMassa,fontFamily:"monospace",color:"#eab308",fontWeight:700}}>{p.codigo_contabil || "-"}</td>
-                            <td style={styles.tdMassa}>{p.nome}</td>
-                            <td style={styles.tdMassa}><span style={{background:p.tipo==="RECEITA"?"rgba(16,185,129,0.15)":"rgba(239,68,68,0.15)",color:p.tipo==="RECEITA"?"#34d399":"#f87171",border:`1px solid ${p.tipo==="RECEITA"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,padding:"4px 12px",borderRadius:20,fontSize:10,fontWeight:800}}>{p.tipo}</span></td>
-                            <td style={{...styles.tdMassa,textAlign:"center"}}>
-                              <div style={{display:"flex",gap:6,justifyContent:"center"}}>
-                                <button onClick={()=>setEditPlano({...p})} style={{background:"rgba(59,130,246,0.12)",color:"#60a5fa",border:"1px solid rgba(59,130,246,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}} title="Editar">✏️</button>
-                                <button onClick={()=>handleDeletePlano(p)} style={{background:"rgba(239,68,68,0.12)",color:"#f87171",border:"1px solid rgba(239,68,68,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}} title="Desativar">🗑️</button>
-                              </div>
-                            </td>
-                          </tr>
-                        )) : <tr><td colSpan={4} style={{...styles.tdMassa,textAlign:"center",color:"#475569",padding:40}}>Nenhum plano cadastrado.</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* === CENTROS DE CUSTO === */}
-                <div style={{background:"rgba(15,23,42,0.7)",backdropFilter:"blur(12px)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:16,padding:24}}>
-                  <h3 style={{color:"#3b82f6",fontSize:15,fontWeight:800,margin:"0 0 16px"}}>🏢 Centros de Custo</h3>
-                  <form onSubmit={handleSaveCentro} style={{display:"flex",gap:10,alignItems:"flex-end",marginBottom:18,flexWrap:"wrap",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:16}}>
-                    <div style={{flex:"1 1 300px"}}>
-                      <label style={styles.fieldLabel}>Nome do Centro de Custo *</label>
-                      <input style={styles.inputSmall} placeholder="Ex: Administrativo, Frota, Vendas..." required value={editCentro ? editCentro.nome : novoCentro.nome} onChange={e => editCentro ? setEditCentro({...editCentro, nome: e.target.value}) : setNovoCentro({...novoCentro, nome: e.target.value})} />
-                    </div>
-                    <button type="submit" style={{background:editCentro?"linear-gradient(135deg,#3b82f6,#2563eb)":"linear-gradient(135deg,#3b82f6,#1d4ed8)",color:"#fff",border:"none",padding:"10px 20px",borderRadius:10,fontSize:12,fontWeight:800,cursor:"pointer",whiteSpace:"nowrap"}}>
-                      {editCentro ? "💾 Salvar Alteração" : "➕ Adicionar Centro"}
-                    </button>
-                    {editCentro && <button type="button" onClick={()=>setEditCentro(null)} style={{background:"rgba(255,255,255,0.06)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",padding:"10px 16px",borderRadius:10,fontSize:12,fontWeight:700,cursor:"pointer"}}>Cancelar</button>}
-                  </form>
-                  <div style={styles.tableWrapper}>
-                    <table style={styles.tableMassa}>
-                      <thead><tr><th style={styles.thMassa}>ID</th><th style={styles.thMassa}>Nome</th><th style={{...styles.thMassa,textAlign:"center"}}>Ações</th></tr></thead>
-                      <tbody>
-                        {centrosCusto.length > 0 ? centrosCusto.map((cc,i)=>(
-                          <tr key={i} style={styles.trBody} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.03)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
-                            <td style={{...styles.tdMassa,fontFamily:"monospace",color:"#94a3b8"}}>{cc.id}</td>
-                            <td style={styles.tdMassa}>{cc.nome}</td>
-                            <td style={{...styles.tdMassa,textAlign:"center"}}>
-                              <div style={{display:"flex",gap:6,justifyContent:"center"}}>
-                                <button onClick={()=>setEditCentro({...cc})} style={{background:"rgba(59,130,246,0.12)",color:"#60a5fa",border:"1px solid rgba(59,130,246,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}}>✏️</button>
-                                <button onClick={()=>handleDeleteCentro(cc)} style={{background:"rgba(239,68,68,0.12)",color:"#f87171",border:"1px solid rgba(239,68,68,0.25)",borderRadius:8,padding:"6px 10px",cursor:"pointer",fontSize:13}}>🗑️</button>
-                              </div>
-                            </td>
-                          </tr>
-                        )) : <tr><td colSpan={3} style={{...styles.tdMassa,textAlign:"center",color:"#475569",padding:40}}>Nenhum centro cadastrado.</td></tr>}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div style={{background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.2)",borderRadius:12,padding:18}}>
-                  <div style={{display:"flex",alignItems:"flex-start",gap:10}}>
-                    <span style={{fontSize:20}}>💡</span>
-                    <p style={{color:"#94a3b8",fontSize:12,lineHeight:1.6,margin:0}}>
-                      O <strong style={{color:"#f97316"}}>Plano de Contas</strong> classifica receitas e despesas (DRE, Balancete).
-                      Os <strong style={{color:"#3b82f6"}}>Centros de Custo</strong> alocam por setor/veículo/projeto.
-                      Ambos aparecem nos dropdowns de Contas a Pagar e Contas a Receber.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+          {activeTab === "config_contabil" && (
+    <ConfigContabil 
+        styles={styles} 
+        showToast={showToast} 
+    />
+)}
 
           {/* TAB: RELATÓRIOS DINÂMICOS */}
           {activeTab === "relatorios" && (

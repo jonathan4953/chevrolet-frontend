@@ -110,7 +110,7 @@ export default function Clientes() {
     if (!busca.trim()) return lista;
     const s = busca.toLowerCase();
     return lista.filter(c =>
-      (c.nome||"").toLowerCase().includes(s) ||
+      ((c.nome_razao || c.nome) || "").toLowerCase().includes(s) || // CORRIGIDO AQUI (Busca)
       (c.empresa||"").toLowerCase().includes(s) ||
       (c.email||"").toLowerCase().includes(s) ||
       (c.documento||"").includes(s)
@@ -123,9 +123,11 @@ export default function Clientes() {
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const abrirNovo = () => { setEditId(null); setForm(VAZIO); setShowModal(true); };
+  
   const abrirEdit = (c) => {
     setEditId(c.id);
-    setForm({ nome:c.nome||"", documento:c.documento||"", tipo_pessoa:c.tipo_pessoa||"F",
+    // CORRIGIDO AQUI (Carregar formulário de edição)
+    setForm({ nome: c.nome_razao || c.nome || "", documento:c.documento||"", tipo_pessoa:c.tipo_pessoa||"F",
       empresa:c.empresa||"", email:c.email||"", telefone:c.telefone||"",
       cep:c.cep||"", logradouro:c.logradouro||"", numero:c.numero||"",
       complemento:c.complemento||"", bairro:c.bairro||"", cidade:c.cidade||"",
@@ -211,7 +213,10 @@ export default function Clientes() {
                 <tr key={c.id}
                   onMouseEnter={e => e.currentTarget.style.background="rgba(249,115,22,0.04)"}
                   onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                  <td style={{...S.td,fontWeight:700,color:"#f1f5f9"}}>{c.nome}</td>
+                  
+                  {/* CORRIGIDO AQUI (Exibição na tabela) */}
+                  <td style={{...S.td,fontWeight:700,color:"#f1f5f9"}}>{c.nome_razao || c.nome || "—"}</td>
+                  
                   <td style={S.td}>{c.empresa||"—"}</td>
                   <td style={{...S.td,fontFamily:"monospace",fontSize:12}}>{c.documento||"—"}</td>
                   <td style={S.td}>
@@ -230,7 +235,7 @@ export default function Clientes() {
                   <td style={{...S.td,textAlign:"center"}}>
                     <div style={{display:"flex",gap:6,justifyContent:"center"}}>
                       <button onClick={() => abrirEdit(c)} style={btnSm()}>✏️</button>
-                      <button onClick={() => excluir(c.id,c.nome)} style={btnSm("rgba(248,113,113,0.1)","#f87171")}>🗑️</button>
+                      <button onClick={() => excluir(c.id, c.nome_razao || c.nome)} style={btnSm("rgba(248,113,113,0.1)","#f87171")}>🗑️</button>
                     </div>
                   </td>
                 </tr>
@@ -383,7 +388,7 @@ export default function Clientes() {
       {propCliente && (
         <div style={S.overlay} onClick={e => e.target===e.currentTarget && setPropCliente(null)}>
           <div style={{...S.modal,maxWidth:620}}>
-            <h3 style={{...S.title,marginBottom:4}}>Propostas — {propCliente.nome}</h3>
+            <h3 style={{...S.title,marginBottom:4}}>Propostas — {propCliente.nome_razao || propCliente.nome}</h3>
             <p style={S.sub}>Histórico de propostas geradas para este cliente.</p>
             {loadProp ? (
               <div style={{textAlign:"center",padding:40,color:"#64748b"}}>Carregando…</div>
