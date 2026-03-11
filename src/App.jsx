@@ -15,6 +15,7 @@ import ModalAddReceber from "./ModalAddReceber";
 import Relatorios from "./modules/relatorios/Relatorios";
 import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for diferente
 import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
+import Calculadora from "./Calculadora";
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -295,13 +296,20 @@ const [drillDownMes, setDrillDownMes] = useState(null);
   const [revisaoMensal, setRevisaoMensal] = useState(56.88);
   const [prazos] = useState([12, 24, 36]); // Ajustado para regra Espacial
   
-  // Novos Parâmetros Espacial Car Rental
+// Novos Parâmetros Espacial Car Rental
   const [valorFinanciado, setValorFinanciado] = useState(0);
   const [nperFinanciamento, setNperFinanciamento] = useState(48);
   const [franquiaKm, setFranquiaKm] = useState(1000);
   const [projecaoRevenda, setProjecaoRevenda] = useState("");
   const [custoPneus, setCustoPneus] = useState(880.00);
   const [seguroAnual, setSeguroAnual] = useState(2100.00);
+  
+  // 👇 NOMES CORRIGIDOS PARA A NOVA CALCULADORA 👇
+  const [descontoPct, setDescontoPct] = useState(0);
+  const [valorUsuario, setValorUsuario] = useState("");
+  const [prazoContrato, setPrazoContrato] = useState(24);
+  const [impostosCustom, setImpostosCustom] = useState("");
+  const [seguroCustom, setSeguroCustom] = useState("");
   
   // Parâmetros mantidos por compatibilidade
   const [impostosMensais, setImpostosMensais] = useState(195.00);
@@ -1773,11 +1781,19 @@ useEffect(() => {
     }
   };
 
-  // --- DOWNLOAD PDF ---
+ // --- DOWNLOAD PDF ---
   const handleDownloadPDF = async (vehicleCleanName) => {
     try {
       setPdfLoadingMap(prev => ({ ...prev, [vehicleCleanName]: true })); 
       const qtdSelecionada = quantidades[vehicleCleanName] || 1;
+      
+// 1. Extrai os dados corrigindo a chave do documento
+const clienteDadosExtras = clienteSelecionado ? {
+  // Agora priorizamos 'documento', que é onde está o dado na sua base
+  cpf_cnpj: clienteSelecionado.documento || clienteSelecionado.cpf_cnpj || clienteSelecionado.cpf || "",
+  telefone: clienteSelecionado.telefone || "",
+  email: clienteSelecionado.email || ""
+} : null;
       
       const payload = { 
         model_name_clean: vehicleCleanName, 
@@ -1790,15 +1806,26 @@ useEffect(() => {
         seguro_anual: Number(seguroAnual), 
         impostos_mensais: Number(impostosMensais), 
         rastreamento_mensal: Number(rastreamentoMensal), 
-        cliente_nome: clienteSelecionado ? clienteSelecionado.nome : (clienteNome || "Proposta Comercial"), 
+        cliente_nome: clienteSelecionado ? (clienteSelecionado.nome_razao || clienteSelecionado.nome) : (clienteNome || "Proposta Comercial"), 
         cliente_id: clienteSelecionado?.id || null,
+        
+        // Injeção dos dados extras
+        cliente_dados: clienteDadosExtras, 
+        
         quantidade: qtdSelecionada, 
         prazos: [12, 24, 36], // Conforme Arquitetura Espacial
-        logo_url: sysLogos.pdf,
+        logo_url: typeof sysLogos !== 'undefined' && sysLogos?.pdf ? sysLogos.pdf : null,
         valor_financiado: Number(valorFinanciado),
         nper_financiamento: Number(nperFinanciamento),
         franquia_km: Number(franquiaKm),
-        projecao_revenda: projecaoRevenda ? Number(projecaoRevenda) : null
+        projecao_revenda: projecaoRevenda ? Number(projecaoRevenda) : null,
+        
+        // 2. Garante que os valores em tela (Desconto, Impostos) vão para o cálculo do PDF
+        desconto_percentual: Number(descontoPct) || 0,
+        impostos_custom: Number(impostosCustom) || 0,
+        seguro_custom: Number(seguroCustom) || 0,
+        valor_usuario: Number(valorUsuario) || 0,
+        prazo_contrato: Number(prazoContrato) || 24
       }; 
       
       const response = await api.post("/pricing/download-pdf", payload, { 
@@ -1827,13 +1854,16 @@ useEffect(() => {
             valor_mensal: null,
             status: "Gerada"
           });
-          loadClientes();
+          if (typeof loadClientes === 'function') {
+            loadClientes();
+          }
         } catch(e) { console.warn("Proposta não registrada:", e); }
       }
       
-      logAction("Proposta", `Gerou PDF da proposta para ${vehicleCleanName} - Cliente: ${clienteSelecionado?.nome || clienteNome || "Sem cliente"}`);
+      logAction("Proposta", `Gerou PDF da proposta para ${vehicleCleanName} - Cliente: ${clienteSelecionado?.nome_razao || clienteSelecionado?.nome || clienteNome || "Sem cliente"}`);
     } catch (e) { 
       setError("Erro ao gerar PDF."); 
+      console.error("Erro PDF:", e);
     } finally { 
       setPdfLoadingMap(prev => ({ ...prev, [vehicleCleanName]: false })); 
     }
@@ -1856,7 +1886,6 @@ useEffect(() => {
       setLoading(false); 
     } 
   };
-
   // ==========================================
   // AJUSTE CRÍTICO DE PERFORMANCE E INITIAL FETCH
   // ==========================================
@@ -4225,224 +4254,49 @@ useEffect(() => {
              </div>
           )}
 
-          {/* TAB: CALCULADORA */}
-          {activeTab === "calculadora" && (
-            <div style={styles.calculatorWrapper}>
-              <div style={styles.configSection}>
-                
-                <section style={styles.cardVehicles}>
-                  <div style={styles.headerTitleAction}>
-                    <h2 style={styles.cardTitle}>1. Seleção de Veículos</h2>
-                    <button onClick={resetVehicles} style={styles.clearBtn}>
-                      Limpar ({selectedVehicles.length})
-                    </button>
-                  </div>
-                  
-                  <div style={{marginBottom: '15px'}}>
-                    <select 
-                      style={{...styles.inputSearch, overflow:"visible", position:"relative", zIndex:10}} 
-                      value={selectedBrand} 
-                      onChange={(e) => setSelectedBrand(e.target.value)}
-                    >
-                      {availableBrands.map(brand => (
-                        <option key={brand} value={brand}>{brand}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <input 
-                    style={styles.inputSearch} 
-                    placeholder="Filtrar por nome ou grupo..." 
-                    value={search} 
-                    onChange={(e) => setSearch(e.target.value)} 
-                  />
-                  
-                  <div style={{...styles.modelsBox, flex:1, maxHeight:"none", minHeight:300}}>
-                    {loading && models.length === 0 && (
-                      <p style={{textAlign: 'center', fontSize: 12, padding: 20}}>Aguarde...</p>
-                    )}
-                    {filteredModels.map(m => (
-                      <label key={m.model_name_clean} style={styles.modelItem}>
-                        <input 
-                          type="checkbox" 
-                          checked={selectedVehicles.includes(m.model_name_clean)} 
-                          onChange={() => setSelectedVehicles(prev => prev.includes(m.model_name_clean) ? prev.filter(x => x !== m.model_name_clean) : [...prev, m.model_name_clean])} 
-                        />
-                        <div style={styles.modelText}>
-                          <span style={styles.modelName}>
-                            {m.brand_name?.toUpperCase() || 'N/A'} - {String(m.model_name || '').trim()} - { (m.year_model === 32000 || m.year === 32000) ? 2026 : (m.year_model || m.year || '')}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                </section>
-                
-                <section style={styles.cardParams}>
-                  <div style={styles.headerTitleAction}>
-                    <h2 style={styles.cardTitle}>2. Ajuste de Parâmetros</h2>
-                    <button onClick={resetParams} style={styles.clearBtn}>Resetar</button>
-                  </div>
-                  
-                  <div style={{marginBottom: '12px', padding: '12px 15px', borderRadius: '10px', background: valorFinanciado > 0 ? 'rgba(249,115,22,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${valorFinanciado > 0 ? 'rgba(249,115,22,0.4)' : 'rgba(255,255,255,0.05)'}`, transition: 'all 0.2s'}}>
-                    <div style={{fontSize: '10px', color: valorFinanciado > 0 ? '#f97316' : '#64748b', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                      {valorFinanciado > 0 ? '🟠 BASE DO CÁLCULO: VALOR FINANCIADO (PRIORITÁRIO)' : '⚪ BASE DO CÁLCULO: FIPE (preencha abaixo para usar valor financiado)'}
-                    </div>
-                  </div>
-                  <div style={styles.formGrid}>
-                    <Field label="Valor Financiado (R$) — Prioritário" value={valorFinanciado} setValue={setValorFinanciado} />
-                    <Field label="Prazo Financ. (Meses)" value={nperFinanciamento} setValue={setNperFinanciamento} />
-                    
-                    <div style={styles.inputGroup}>
-                      <label style={styles.fieldLabel}>Franquia KM/mês</label>
-                      <select style={styles.inputSmall} value={franquiaKm} onChange={(e) => setFranquiaKm(Number(e.target.value))}>
-                        <option value={1000}>1.000 km</option>
-                        <option value={2000}>2.000 km</option>
-                        <option value={2500}>2.500 km</option>
-                        <option value={3000}>3.000 km</option>
-                      </select>
-                    </div>
-
-                    <Field label="Proj. Revenda (Opcional R$)" value={projecaoRevenda} setValue={setProjecaoRevenda} />
-                    <Field label="Ano Modelo" value={yearNum} setValue={setYearNum} />
-                    <Field label="Taxa Juros Mensal" value={taxaJurosMensal} setValue={setTaxaJurosMensal} step="0.0001" />
-                    <Field label="Manutenção/mês" value={revisaoMensal} setValue={setRevisaoMensal} />
-                    <Field label="Custo Pneus (Jogo)" value={custoPneus} setValue={setCustoPneus} />
-                    <Field label="Seguro Anual" value={seguroAnual} setValue={setSeguroAnual} />
-                    <Field label="Margem Net (Legado)" value={percentualAplicado} setValue={setPercentualAplicado} step="0.0001" />
-                  </div>
-                  
-                  <button 
-                    style={{...styles.buttonProcess, opacity: loading ? 0.7 : 1}} 
-                    onClick={handleCalculate} 
-                    disabled={loading}
-                  >
-                    {loading ? "CALCULANDO..." : "GERAR ESTUDO COMPARATIVO"}
-                  </button>
-                </section>
-                
-              </div>
-
-              {results?.compare && (
-                <div style={styles.resultsWrapper}>
-                  
-                  <div style={styles.resultsHeader}>
-                    <div>
-                      <h2 style={styles.cardTitle}>Resultado do Comparativo</h2>
-                      <div style={{marginTop: 10, display: 'flex', gap: 8, alignItems: 'center'}}>
-                        <div style={{position: 'relative', zIndex:10}}>
-                          <select
-                            style={{...styles.inputSearch, width: '280px', height: '38px', fontSize: '13px', border: '1px solid #eab308', background: 'rgba(0,0,0,0.3)', paddingRight: 30, overflow:"visible"}}
-                            value={clienteSelecionado?.id || ""}
-                            onChange={(e) => {
-                              const c = clientes.find(cl => String(cl.id) === e.target.value);
-                              setClienteSelecionado(c || null);
-                              if (c) setClienteNome(c.nome_razao || c.nome || "");
-                            }}
-                          >
-                            <option value="">👤 Selecionar cliente...</option>
-                            {clientes.map(c => (
-                              <option key={c.id} value={c.id}>{c.nome_razao || c.nome}{c.empresa ? ` (${c.empresa})` : ""}</option>
-                            ))}
-                          </select>
-                        </div>
-                        {!clienteSelecionado && (
-                          <input
-                            style={{...styles.inputSearch, width: '180px', height: '38px', fontSize: '13px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(0,0,0,0.3)'}}
-                            placeholder="Ou digitar nome..."
-                            value={clienteNome}
-                            onChange={(e) => setClienteNome(e.target.value)}
-                          />
-                        )}
-                        {clienteSelecionado && (
-                          <button onClick={() => { setClienteSelecionado(null); setClienteNome(""); }}
-                            style={{background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '0 10px', height: 38, cursor: 'pointer', fontSize: 13}}>
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{display: 'flex', gap: '10px', alignItems: 'flex-end'}}>
-                      <button onClick={clearResults} style={styles.clearResultsBtn}>🗑️ LIMPAR</button>
-                      <button onClick={exportToCSV} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 EXCEL</button>
-                    </div>
-                  </div>
-                  
-                  <div style={styles.compareGridWrap}>
-                    {results.compare.map((item, idx) => {
-                      const vKey = item.vehicle.model_name_clean; 
-                      const q = quantidades[vKey] || 1; 
-                      const isPdfLoading = pdfLoadingMap[vKey] || false;
-                      
-                      return (
-                        <div key={idx} style={styles.compareCardItem}>
-                          
-                          <div style={styles.compareHeader}>
-                            <span style={styles.brandTag}>
-                              {item.vehicle?.brand_name?.toUpperCase() || "VEÍCULO"}
-                            </span>
-                            <div style={styles.vehicleTitle}>
-                              {String(item.vehicle?.model_name).trim()}
-                            </div>
-                            <div style={styles.qtyContainer}>
-                              <label style={styles.qtyLabel}>QUANTIDADE DE VEÍCULOS:</label>
-                              <div style={styles.qtySelector}>
-                                <button style={styles.qtyBtn} onClick={() => setQuantidades({...quantidades, [vKey]: Math.max(1, q - 1)})}>-</button>
-                                <div style={styles.qtyValBox}>{q}</div>
-                                <button style={styles.qtyBtn} onClick={() => setQuantidades({...quantidades, [vKey]: q + 1})}>+</button>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div style={styles.compareBody}>
-                            {item.pricing?.map(p => (
-                              <div key={p.prazo_meses} style={{...styles.compareRow, borderBottom: '1px solid rgba(255,255,255,0.08)'}}>
-                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                  <div style={styles.prazoBadge}>{p.prazo_meses} MESES</div>
-                                  <div style={{
-                                    fontSize: '10px',
-                                    fontWeight: 'bold',
-                                    padding: '3px 8px',
-                                    borderRadius: '6px',
-                                    color: '#fff',
-                                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                                    backgroundColor: p.status === 'APROVAR' ? '#10b981' : p.status === 'AJUSTAR' ? '#f59e0b' : '#ef4444'
-                                  }}>
-                                    {p.status}
-                                  </div>
-                                </div>
-                                
-                                <div style={styles.mainValue}>R$ {formatBRL(p.mensalidade_final || p.mensalidade)}</div>
-                                {q > 1 && <div style={styles.fleetTotal}>Frota: R$ {formatBRL((p.mensalidade_final || p.mensalidade) * q)}</div>}
-
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: '10px', color: '#94a3b8'}}>
-                                   <span>Técnica: R$ {formatBRL(p.mensalidade_tecnica)}</span>
-                                   <span>Piso: R$ {formatBRL(p.mensalidade_piso)}</span>
-                                </div>
-                                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '10px', color: '#94a3b8'}}>
-                                   <span>ROI: {p.roi_percentual}%</span>
-                                   <span>Payback: {p.payback_meses}m</span>
-                                </div>
-                              </div>
-                            ))}
-                            <button 
-                              onClick={() => handleDownloadPDF(vKey)} 
-                              disabled={isPdfLoading} 
-                              style={{...styles.pdfCardBtn, background: isPdfLoading ? 'rgba(255,255,255,0.1)' : '#fde68a', color: isPdfLoading ? '#fff' : '#000'}}
-                            >
-                              {isPdfLoading ? "⌛ GERANDO..." : "📄 BAIXAR PROPOSTA PDF"}
-                            </button>
-                          </div>
-                          
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                </div>
-              )}
-            </div>
-          )}
+         {/* TAB: CALCULADORA */}
+        {activeTab === "calculadora" && (
+          <Calculadora
+            styles={styles}
+            models={models}
+            filteredModels={filteredModels}
+            availableBrands={availableBrands}
+            clientes={clientes}
+            results={results} setResults={setResults}
+            quantidades={quantidades} setQuantidades={setQuantidades}
+            selectedVehicles={selectedVehicles} setSelectedVehicles={setSelectedVehicles}
+            selectedBrand={selectedBrand} setSelectedBrand={setSelectedBrand}
+            search={search} setSearch={setSearch}
+            yearNum={yearNum} setYearNum={setYearNum}
+            kmMensal={kmMensal} setKmMensal={setKmMensal}
+            taxaJurosMensal={taxaJurosMensal} setTaxaJurosMensal={setTaxaJurosMensal}
+            percentualAplicado={percentualAplicado} setPercentualAplicado={setPercentualAplicado}
+            revisaoMensal={revisaoMensal} setRevisaoMensal={setRevisaoMensal}
+            valorFinanciado={valorFinanciado} setValorFinanciado={setValorFinanciado}
+            nperFinanciamento={nperFinanciamento} setNperFinanciamento={setNperFinanciamento}
+            franquiaKm={franquiaKm} setFranquiaKm={setFranquiaKm}
+            custoPneus={custoPneus} setCustoPneus={setCustoPneus}
+            seguroAnual={seguroAnual} setSeguroAnual={setSeguroAnual}
+            impostosMensais={impostosMensais} setImpostosMensais={setImpostosMensais}
+            rastreamentoMensal={rastreamentoMensal} setRastreamentoMensal={setRastreamentoMensal}
+            projecaoRevenda={projecaoRevenda} setProjecaoRevenda={setProjecaoRevenda}
+            clienteSelecionado={clienteSelecionado} setClienteSelecionado={setClienteSelecionado}
+            clienteNome={clienteNome} setClienteNome={setClienteNome}
+            loading={loading} setLoading={setLoading}
+            pdfLoadingMap={pdfLoadingMap}
+            error={error} setError={setError}
+            handleDownloadPDF={handleDownloadPDF}
+            exportToCSV={exportToCSV}
+            clearResults={clearResults}
+            resetParams={resetParams}
+            resetVehicles={resetVehicles}
+            logAction={logAction}
+            
+            // --- OS NOVOS ESTADOS QUE CRIAMOS HOJE ---
+            descontoPct={descontoPct} setDescontoPct={setDescontoPct}
+            prazoContrato={prazoContrato} setPrazoContrato={setPrazoContrato}
+          />
+        )}
 
           {/* TAB: CONFIG DE CENÁRIOS */}
           {activeTab === "config" && currentUser?.role === 'admin' && (
