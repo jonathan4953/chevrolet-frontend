@@ -16,6 +16,7 @@ import Relatorios from "./modules/relatorios/Relatorios";
 import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for diferente
 import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
 import Calculadora from "./Calculadora";
+import AdminRBAC from "./AdminRBAC";
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -210,8 +211,35 @@ const [drillDownMes, setDrillDownMes] = useState(null);
     }
   };
 
-  // Permissão de Edição Derivada
-  const hasEditPermission = currentUser?.role === 'admin' || currentUser?.role === 'gestor' || currentUser?.canEdit;
+  // Permissão de Edição Derivada (compatível com RBAC)
+  const hasEditPermission = currentUser?.is_master || currentUser?.role === 'admin' || currentUser?.role === 'gestor' || currentUser?.canEdit;
+
+  // RBAC: Verificar se o usuário tem acesso a um módulo
+  const hasModuleAccess = (moduleSlug) => {
+    if (!currentUser) return false;
+    if (currentUser.is_master) return true;
+    // Se o login retornou a lista de módulos, usa ela
+    if (currentUser.modulos && currentUser.modulos.length > 0) {
+      return currentUser.modulos.includes(moduleSlug);
+    }
+    // Fallback: lógica legada baseada em role
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'gestor') return true;
+    return true; // fallback para não quebrar durante migração
+  };
+
+  // RBAC: Verificar permissão granular (ex: "financeiro_pagar.criar")
+  const hasPermission = (permSlug) => {
+    if (!currentUser) return false;
+    if (currentUser.is_master) return true;
+    if (currentUser.permissoes && currentUser.permissoes.length > 0) {
+      return currentUser.permissoes.includes(permSlug);
+    }
+    // Fallback legado
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'gestor') return true;
+    return currentUser.canEdit || false;
+  };
 
   // --- NOVOS ESTADOS PARA GESTÃO DE FROTA (CADASTRO ESTOQUE REAL) ---
   const [importLoading, setImportLoading] = useState(false);
@@ -1608,7 +1636,7 @@ useEffect(() => {
       } else {
         setCurrentUser(user);
         setIsLoggedIn(true);
-        logAction("Login", `Usuário ${user.email} entrou no sistema.`);
+        logAction("Login", `Usuário ${user.email} entrou no sistema.${user.is_master ? ' [MASTER]' : ''}`);
       }
     } catch (error) {
       alert("E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.");
@@ -2450,9 +2478,9 @@ const clienteDadosExtras = clienteSelecionado ? {
         <header style={styles.header}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <div>
-              <span style={{color: '#eab308', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>Olá, {currentUser?.name}</span>
+              <span style={{color: '#eab308', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>Olá, {currentUser?.name}{currentUser?.is_master ? ' 👑' : ''}</span>
               <h1 style={styles.title}>{activeTab.replace('_', ' ').toUpperCase()}</h1>
-              <p style={styles.subtitle}> Sistema v3.0 • 2026</p>
+              <p style={styles.subtitle}>{currentUser?.empresa_nome ? `${currentUser.empresa_nome} • ` : ''}Sistema v3.0 • 2026</p>
             </div>
             {error && (
               <div style={{background: 'rgba(127, 29, 29, 0.8)', backdropFilter: 'blur(10px)', color: '#fecaca', padding: '10px 20px', borderRadius: '12px', fontSize: '12px', boxShadow: '0 10px 20px rgba(0,0,0,0.3)', border: '1px solid #f87171'}}>
@@ -3748,7 +3776,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           )}
 
           {/* TAB: GESTÃO DE FROTA (CADASTRO MANUAL E IMPORTAÇÃO) */}
-          {activeTab === "frota" && (currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
+          {activeTab === "frota" && (currentUser?.is_master || currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
             <div style={styles.dashboardWrapper}>
                <div style={styles.configSection}>
                  
@@ -3888,7 +3916,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           )}
 
           {/* TAB: USUARIOS E PERMISSÕES */}
-          {activeTab === "usuarios" && (currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
+          {activeTab === "usuarios" && (currentUser?.is_master || currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
              <div style={styles.cardFull}>
                <h2 style={styles.cardTitle}>Gestão de Usuários</h2>
                <div style={{display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start'}}>
@@ -3991,7 +4019,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           )}
 
           {/* TAB: AUDITORIA / LOGS */}
-          {activeTab === "logs" && (currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
+          {activeTab === "logs" && (currentUser?.is_master || currentUser?.role === 'admin' || currentUser?.role === 'gestor') && (
              <div style={styles.cardFull}>
                <h2 style={styles.cardTitle}>Auditoria e Logs de Estoque</h2>
                <p style={{color: '#94a3b8', fontSize: 13, marginBottom: 20}}>
@@ -4042,7 +4070,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           )}
 
           {/* TAB: ATUALIZAR FIPE */}
-          {activeTab === "fipe" && currentUser?.role === 'admin' && (
+          {activeTab === "fipe" && (currentUser?.is_master || currentUser?.role === 'admin') && (
             <div style={styles.cardFull}>
               <h2 style={styles.cardTitle}>Sincronizador FIPE Inteligente (2023-2026)</h2>
               <p style={{color: '#94a3b8', fontSize: 14, marginBottom: 25}}>
@@ -4163,7 +4191,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           )}
 
           {/* TAB: CONFIGS SISTEMA (LOGOS + PALETA DE CORES) */}
-          {activeTab === "config_sistema" && currentUser?.role === 'admin' && (
+          {activeTab === "config_sistema" && (currentUser?.is_master || currentUser?.role === 'admin') && (
              <div style={styles.cardFull}>
                <h2 style={styles.cardTitle}>Personalização Visual do Sistema</h2>
                <p style={{color: '#94a3b8', fontSize: 13, marginBottom: 30}}>
@@ -4299,7 +4327,7 @@ const clienteDadosExtras = clienteSelecionado ? {
         )}
 
           {/* TAB: CONFIG DE CENÁRIOS */}
-          {activeTab === "config" && currentUser?.role === 'admin' && (
+          {activeTab === "config" && (currentUser?.is_master || currentUser?.role === 'admin') && (
             <div style={styles.cardFull}>
               <h2 style={styles.cardTitle}>Cenários de Mercado</h2>
               <div style={styles.actionGrid}>
@@ -4330,6 +4358,16 @@ const clienteDadosExtras = clienteSelecionado ? {
         showToast={showToast} 
     />
 )}
+
+          {/* TAB: ADMINISTRAÇÃO RBAC */}
+          {activeTab === "admin_rbac" && (
+            <AdminRBAC
+              styles={styles}
+              currentUser={currentUser}
+              showToast={showToast}
+              logAction={logAction}
+            />
+          )}
 
           {/* TAB: RELATÓRIOS DINÂMICOS */}
           {activeTab === "relatorios" && (

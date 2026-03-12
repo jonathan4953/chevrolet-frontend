@@ -187,7 +187,7 @@ export default function Sidebar({
         />
 
         {/* GESTÃO */}
-        {(currentUser?.role === "admin" || currentUser?.role === "gestor") && (
+        {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
           <>
             <div
               style={{
@@ -232,7 +232,7 @@ export default function Sidebar({
         )}
 
         {/* SISTEMA */}
-        {currentUser?.role === "admin" && (
+        {(currentUser?.is_master || currentUser?.role === "admin") && (
           <>
             <div
               style={{
@@ -266,6 +266,13 @@ export default function Sidebar({
               label="Personalização"
               icon="🛠️"
             />
+            <NavItem
+              styles={styles}
+              active={activeTab === "admin_rbac"}
+              onClick={() => setActiveTab("admin_rbac")}
+              label="Administração do Sistema"
+              icon="🛡️"
+            />
           </>
         )}
       </nav>
@@ -283,7 +290,19 @@ export default function Sidebar({
       >
         Logado como:{" "}
         <strong style={{ color: "#eab308" }}>{currentUser?.name}</strong>
-        <br />({currentUser?.role?.toUpperCase()})
+        {currentUser?.is_master && (
+          <span style={{
+            display: "inline-block", marginLeft: 6,
+            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+            color: "#000", padding: "1px 6px", borderRadius: 4,
+            fontSize: "8px", fontWeight: 800, verticalAlign: "middle"
+          }}>👑 MASTER</span>
+        )}
+        <br />
+        {currentUser?.empresa_nome && (
+          <span style={{ color: "#475569" }}>{currentUser.empresa_nome} • </span>
+        )}
+        ({currentUser?.role?.toUpperCase()})
       </div>
 
       {/* LOGOUT — fixo no rodapé */}
