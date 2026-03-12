@@ -503,6 +503,10 @@ export default function Calculadora({
                            <span>Piso: R$ {formatBRL(p.mensalidade_piso)}</span>
                         </div>
                         <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '10px', color: '#94a3b8'}}>
+                           <span>Deprec: R$ {formatBRL(p.detalhes?.depreciacao_mensal || 0)}</span>
+                           <span>Revenda: R$ {formatBRL(p.detalhes?.valor_revenda_projetado || 0)}</span>
+                        </div>
+                        <div style={{display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: '10px', color: '#94a3b8'}}>
                            <span>ROI: {p.roi_percentual}%</span>
                            <span>Payback: {p.payback_meses}m</span>
                         </div>
