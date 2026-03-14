@@ -186,6 +186,30 @@ export default function Sidebar({
           icon="🏢"
         />
 
+        {/* RECURSOS HUMANOS */}
+        {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
+          <>
+            <div
+              style={{
+                padding: "10px 20px 3px",
+                fontSize: "9px",
+                color: "#64748b",
+                textTransform: "uppercase",
+                fontWeight: "bold",
+              }}
+            >
+              Recursos Humanos
+            </div>
+            <NavItem
+              styles={styles}
+              active={activeTab === "rh"}
+              onClick={() => setActiveTab("rh")}
+              label="OmniRH"
+              icon="👔"
+            />
+          </>
+        )}
+
         {/* GESTÃO */}
         {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
           <>
@@ -206,13 +230,6 @@ export default function Sidebar({
               onClick={() => setActiveTab("frota")}
               label="Gestão de Frota"
               icon="🚗"
-            />
-            <NavItem
-              styles={styles}
-              active={activeTab === "usuarios"}
-              onClick={() => setActiveTab("usuarios")}
-              label="Usuários"
-              icon="👥"
             />
             <NavItem
               styles={styles}
@@ -251,13 +268,6 @@ export default function Sidebar({
               onClick={() => setActiveTab("fipe")}
               label="Atualizar FIPE"
               icon="🔄"
-            />
-            <NavItem
-              styles={styles}
-              active={activeTab === "config"}
-              onClick={() => setActiveTab("config")}
-              label="Cenários"
-              icon="⚙️"
             />
             <NavItem
               styles={styles}

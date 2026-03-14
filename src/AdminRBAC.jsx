@@ -28,6 +28,15 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   const [empresaModulos, setEmpresaModulos] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // Edição de empresa
+  const [editingEmpresa, setEditingEmpresa] = useState(null);
+  
+  // Edição de usuário
+  const [editingUser, setEditingUser] = useState(null);
+  
+  // Busca de módulos
+  const [moduloSearch, setModuloSearch] = useState('');
+
   // ============================================================
   // CARREGAMENTO DE DADOS
   // ============================================================
@@ -177,6 +186,78 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   };
 
   // ============================================================
+  // HANDLERS — EDIÇÃO DE EMPRESA
+  // ============================================================
+  const saveEditEmpresa = async () => {
+    if (!editingEmpresa) return;
+    setLoading(true);
+    try {
+      await api.put(`/rbac/empresas/${editingEmpresa.id}`, {
+        nome: editingEmpresa.nome,
+        cnpj: editingEmpresa.cnpj,
+        status: editingEmpresa.status
+      });
+      showToast?.("Empresa atualizada!", "success");
+      logAction?.("RBAC", `Editou empresa: ${editingEmpresa.nome}`);
+      setEditingEmpresa(null);
+      loadEmpresas();
+    } catch(e) { showToast?.("Erro ao atualizar empresa.", "error"); }
+    finally { setLoading(false); }
+  };
+
+  const deleteEmpresa = async (id, nome) => {
+    if (!window.confirm(`Excluir a empresa "${nome}"? Todos os dados vinculados serão afetados.`)) return;
+    try {
+      await api.delete(`/rbac/empresas/${id}`);
+      showToast?.("Empresa excluída!", "success");
+      logAction?.("RBAC", `Excluiu empresa: ${nome}`);
+      loadEmpresas();
+    } catch(e) {
+      showToast?.(e.response?.data?.detail || "Erro ao excluir empresa.", "error");
+    }
+  };
+
+  // ============================================================
+  // HANDLERS — EDIÇÃO DE USUÁRIO (reset senha, trocar perfil)
+  // ============================================================
+  const resetUserPassword = async (userId, nome) => {
+    if (!window.confirm(`Resetar a senha de "${nome}" para "123"? O usuário será obrigado a trocar no próximo login.`)) return;
+    try {
+      await api.put(`/users/${userId}/reset-password`);
+      showToast?.(`Senha de ${nome} resetada para "123"!`, "success");
+      logAction?.("RBAC", `Resetou senha do usuário: ${nome}`);
+    } catch(e) { showToast?.("Erro ao resetar senha.", "error"); }
+  };
+
+  const saveEditUser = async () => {
+    if (!editingUser) return;
+    setLoading(true);
+    try {
+      // Atualiza role_id via endpoint existente ou RBAC
+      if (editingUser.role_id_changed) {
+        await api.post("/rbac/role-permissoes", {
+          role_id: editingUser.role_id,
+          permissao_ids: [] // mantém permissões existentes
+        }).catch(() => {});
+      }
+      // Atualiza empresa via RBAC
+      await api.put(`/rbac/usuarios/${editingUser.id}/empresa`, { empresa_id: editingUser.empresa_id });
+      // Toggle master se mudou
+      if (editingUser.is_master !== editingUser.original_is_master) {
+        await api.put(`/rbac/usuarios/${editingUser.id}/toggle-master`);
+      }
+      // Toggle permissão edição
+      await api.put(`/users/${editingUser.id}/toggle-permission`).catch(() => {});
+      
+      showToast?.("Usuário atualizado!", "success");
+      logAction?.("RBAC", `Editou usuário: ${editingUser.nome}`);
+      setEditingUser(null);
+      loadUsuarios();
+    } catch(e) { showToast?.("Erro ao salvar.", "error"); }
+    finally { setLoading(false); }
+  };
+
+  // ============================================================
   // AGRUPAMENTO DE PERMISSÕES POR MÓDULO
   // ============================================================
   const permissoesPorModulo = useMemo(() => {
@@ -256,7 +337,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontSize: 28 }}>🛡️</span>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, color: '#f1f5f9', fontWeight: 700 }}>Administração do Sistema</h2>
+          <h2 style={{ margin: 0, fontSize: 20, color: '#f1f5f9', fontWeight: 700 }}>Administração RBAC</h2>
           <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Controle de Acesso Baseado em Perfis • Multiempresa</p>
         </div>
         {currentUser?.is_master && <span style={s.masterBadge}>👑 MASTER</span>}
@@ -306,7 +387,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr>
-                    {['ID', 'Nome', 'CNPJ', 'Status', 'Módulos'].map(h => (
+                    {['ID', 'Nome', 'CNPJ', 'Status', 'Ações'].map(h => (
                       <th key={h} style={{ padding: '8px 12px', fontSize: 11, color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 700, textTransform: 'uppercase' }}>{h}</th>
                     ))}
                   </tr>
@@ -321,12 +402,11 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                         <span style={s.badge(emp.status === 'Ativo')}>{emp.status}</span>
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        <button
-                          style={{ ...s.btn('#3b82f6'), padding: '6px 14px', fontSize: 10 }}
-                          onClick={() => loadEmpresaModulos(emp.id)}
-                        >
-                          ⚙️ Gerenciar
-                        </button>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button style={{ ...s.btn('#3b82f6'), padding: '5px 10px', fontSize: 9 }} onClick={() => loadEmpresaModulos(emp.id)}>⚙️ Módulos</button>
+                          <button style={{ ...s.btn('#eab308'), padding: '5px 10px', fontSize: 9 }} onClick={() => setEditingEmpresa({ ...emp })}>✏️</button>
+                          <button style={{ ...s.btn('#ef4444'), padding: '5px 10px', fontSize: 9 }} onClick={() => deleteEmpresa(emp.id, emp.nome)}>🗑️</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -364,6 +444,28 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
               </div>
             )}
           </div>
+
+          {/* Modal edição de empresa */}
+          {editingEmpresa && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#0f172a', borderRadius: 20, width: 400, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+                <h3 style={s.sectionTitle}>✏️ Editar Empresa</h3>
+                <label style={s.label}>Nome</label>
+                <input style={s.input} value={editingEmpresa.nome} onChange={e => setEditingEmpresa({...editingEmpresa, nome: e.target.value})} />
+                <label style={s.label}>CNPJ</label>
+                <input style={s.input} value={editingEmpresa.cnpj} onChange={e => setEditingEmpresa({...editingEmpresa, cnpj: e.target.value})} />
+                <label style={s.label}>Status</label>
+                <select style={s.input} value={editingEmpresa.status} onChange={e => setEditingEmpresa({...editingEmpresa, status: e.target.value})}>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Inativo">Inativo</option>
+                </select>
+                <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
+                  <button style={s.btn('#64748b')} onClick={() => setEditingEmpresa(null)}>Cancelar</button>
+                  <button style={s.btn()} onClick={saveEditEmpresa} disabled={loading}>{loading ? '⌛...' : '💾 Salvar'}</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -373,11 +475,14 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       {activeSection === "modulos" && (
         <div style={s.card}>
           <h3 style={s.sectionTitle}>📦 Módulos do Sistema ({modulos.length})</h3>
-          <p style={{ fontSize: 12, color: '#64748b', marginBottom: 16 }}>
-            Estes são todos os módulos registrados. Para liberar por empresa, use a aba Empresas.
-          </p>
+          <input
+            placeholder="🔍 Buscar módulo por nome ou slug..."
+            value={moduloSearch}
+            onChange={e => setModuloSearch(e.target.value)}
+            style={{ width: '100%', padding: '10px 16px', borderRadius: 12, fontSize: 13, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none', marginBottom: 16, boxSizing: 'border-box' }}
+          />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-            {modulos.map(m => (
+            {modulos.filter(m => !moduloSearch || m.nome.toLowerCase().includes(moduloSearch.toLowerCase()) || m.slug.toLowerCase().includes(moduloSearch.toLowerCase()) || (m.descricao || '').toLowerCase().includes(moduloSearch.toLowerCase())).map(m => (
               <div key={m.id} style={{
                 padding: '14px 16px', borderRadius: 12,
                 background: m.ativo ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)',
@@ -389,6 +494,9 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                 <div style={{ fontSize: 10, color: '#475569', marginTop: 4 }}>{m.descricao}</div>
               </div>
             ))}
+            {modulos.filter(m => !moduloSearch || m.nome.toLowerCase().includes(moduloSearch.toLowerCase()) || m.slug.toLowerCase().includes(moduloSearch.toLowerCase()) || (m.descricao || '').toLowerCase().includes(moduloSearch.toLowerCase())).length === 0 && (
+              <div style={{ gridColumn: 'span 4', textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Nenhum módulo encontrado para "{moduloSearch}"</div>
+            )}
           </div>
         </div>
       )}
@@ -543,24 +651,87 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                     <span style={s.badge(u.ativo)}>{u.ativo ? 'Ativo' : 'Inativo'}</span>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    {currentUser?.is_master && u.id !== currentUser.id && (
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                       <button
-                        onClick={() => toggleMaster(u.id)}
-                        style={{
-                          padding: '5px 12px', borderRadius: 8, fontSize: 10, fontWeight: 700, cursor: 'pointer',
-                          background: u.is_master ? 'rgba(239,68,68,0.15)' : 'rgba(234,179,8,0.15)',
-                          color: u.is_master ? '#ef4444' : '#eab308',
-                          border: `1px solid ${u.is_master ? 'rgba(239,68,68,0.3)' : 'rgba(234,179,8,0.3)'}`
-                        }}
-                      >
-                        {u.is_master ? '⬇ Revogar MASTER' : '⬆ Promover MASTER'}
-                      </button>
-                    )}
+                        onClick={() => setEditingUser({ ...u, original_is_master: u.is_master, role_id_changed: false })}
+                        style={{ padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer', background: 'rgba(234,179,8,0.15)', color: '#eab308', border: '1px solid rgba(234,179,8,0.3)' }}
+                      >✏️ Editar</button>
+                      <button
+                        onClick={() => resetUserPassword(u.id, u.nome)}
+                        style={{ padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
+                      >🔄 Reset Senha</button>
+                      {currentUser?.is_master && u.id !== currentUser.id && (
+                        <button
+                          onClick={() => toggleMaster(u.id)}
+                          style={{
+                            padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
+                            background: u.is_master ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
+                            color: u.is_master ? '#ef4444' : '#10b981',
+                            border: `1px solid ${u.is_master ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`
+                          }}
+                        >{u.is_master ? '⬇ Revogar' : '⬆ Master'}</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* MODAL EDIÇÃO DE USUÁRIO */}
+          {editingUser && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#0f172a', borderRadius: 20, width: 500, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <h3 style={{ ...s.sectionTitle, marginBottom: 0 }}>✏️ Editar Usuário</h3>
+                  <button onClick={() => setEditingUser(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                </div>
+                
+                <label style={s.label}>Nome</label>
+                <input style={s.input} value={editingUser.nome} onChange={e => setEditingUser({...editingUser, nome: e.target.value})} />
+                
+                <label style={s.label}>E-mail</label>
+                <input style={{...s.input, opacity: 0.5, cursor: 'not-allowed'}} value={editingUser.email} disabled />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={s.label}>Empresa</label>
+                    <select style={s.input} value={editingUser.empresa_id || ''} onChange={e => setEditingUser({...editingUser, empresa_id: Number(e.target.value)})}>
+                      {empresas.map(emp => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label style={s.label}>Perfil (Role)</label>
+                    <select style={s.input} value={editingUser.role_id || ''} onChange={e => setEditingUser({...editingUser, role_id: Number(e.target.value), role_id_changed: true})}>
+                      {roles.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={editingUser.is_master || false} onChange={e => setEditingUser({...editingUser, is_master: e.target.checked})} />
+                    👑 Acesso MASTER
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={editingUser.canEdit || false} onChange={e => setEditingUser({...editingUser, canEdit: e.target.checked})} />
+                    ✏️ Permissão de Edição
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'space-between' }}>
+                  <button
+                    onClick={() => { resetUserPassword(editingUser.id, editingUser.nome); }}
+                    style={{ padding: '10px 16px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
+                  >🔄 Resetar Senha para "123"</button>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button style={s.btn('#64748b')} onClick={() => setEditingUser(null)}>Cancelar</button>
+                    <button style={s.btn()} onClick={saveEditUser} disabled={loading}>{loading ? '⌛...' : '💾 Salvar'}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

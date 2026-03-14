@@ -17,6 +17,7 @@ import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for 
 import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
 import Calculadora from "./Calculadora";
 import AdminRBAC from "./AdminRBAC";
+import OmniRH from "./OmniRH";
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -148,14 +149,7 @@ const [drillDownMes, setDrillDownMes] = useState(null);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   };
 
-  //RENDERIZAR PLANO DE CONTAS
-
-  {activeTab === "plano_contas" && (
-    <PlanoDeContas 
-        styles={styles} 
-        showToast={showToast} 
-    />
-)}
+  // RENDERIZAR PLANO DE CONTAS — já existe dentro do return()
 
   // CARREGAR DADOS AO ABRIR A ABA RECEBER
   useEffect(() => {
@@ -4358,6 +4352,16 @@ const clienteDadosExtras = clienteSelecionado ? {
         showToast={showToast} 
     />
 )}
+
+          {/* TAB: OMNIRH */}
+          {activeTab === "rh" && (
+            <OmniRH
+              styles={styles}
+              currentUser={currentUser}
+              showToast={showToast}
+              logAction={logAction}
+            />
+          )}
 
           {/* TAB: ADMINISTRAÇÃO RBAC */}
           {activeTab === "admin_rbac" && (
