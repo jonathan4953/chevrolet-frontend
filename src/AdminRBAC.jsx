@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { api } from "./api";
 
 // ============================================================
-// AdminRBAC.jsx — Painel Administrativo RBAC
+// AdminRBAC.jsx — Administração do Sistema
 // Usado pela aba "admin_rbac" no App.jsx
 // ============================================================
 
@@ -258,6 +258,25 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   };
 
   // ============================================================
+  // HANDLERS — EXCLUSÃO DE USUÁRIO
+  // ============================================================
+  const deleteUser = async (userId, nome, isMaster) => {
+    if (isMaster) {
+      showToast?.("Não é possível excluir um usuário MASTER. Revogue o acesso MASTER primeiro.", "error");
+      return;
+    }
+    if (!window.confirm(`⚠️ ATENÇÃO: Deseja realmente excluir o usuário "${nome}"?\n\nEsta ação irá:\n• Desativar o acesso ao sistema\n• Desativar o acesso ao GLPI (suporte)\n\nEssa ação não pode ser desfeita facilmente.`)) return;
+    try {
+      await api.delete(`/rbac/usuarios/${userId}`);
+      showToast?.(`Usuário "${nome}" excluído com sucesso!`, "success");
+      logAction?.("RBAC", `Excluiu usuário: ${nome} (ID ${userId})`);
+      loadUsuarios();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao excluir usuário.", "error");
+    }
+  };
+
+  // ============================================================
   // AGRUPAMENTO DE PERMISSÕES POR MÓDULO
   // ============================================================
   const permissoesPorModulo = useMemo(() => {
@@ -337,7 +356,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontSize: 28 }}>🛡️</span>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, color: '#f1f5f9', fontWeight: 700 }}>Administração RBAC</h2>
+          <h2 style={{ margin: 0, fontSize: 20, color: '#f1f5f9', fontWeight: 700 }}>Administração do Sistema</h2>
           <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Controle de Acesso Baseado em Perfis • Multiempresa</p>
         </div>
         {currentUser?.is_master && <span style={s.masterBadge}>👑 MASTER</span>}
@@ -670,6 +689,16 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                             border: `1px solid ${u.is_master ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`
                           }}
                         >{u.is_master ? '⬇ Revogar' : '⬆ Master'}</button>
+                      )}
+                      {currentUser?.is_master && u.id !== currentUser.id && !u.is_master && (
+                        <button
+                          onClick={() => deleteUser(u.id, u.nome, u.is_master)}
+                          style={{
+                            padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
+                            background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                            border: '1px solid rgba(239,68,68,0.3)'
+                          }}
+                        >🗑️ Excluir</button>
                       )}
                     </div>
                   </td>

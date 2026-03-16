@@ -1554,7 +1554,7 @@ useEffect(() => {
   // --- CARREGAMENTO DE USUÁRIOS REAIS DO BANCO ---
   const loadUsers = async () => {
     try {
-      const res = await api.get('/users');
+      const res = await api.get('/rbac/usuarios');
       if (Array.isArray(res.data)) {
         setUsersList(res.data);
       }
@@ -1582,7 +1582,7 @@ useEffect(() => {
     if(currentUser.role === 'consultor') return;
     
     try {
-      await api.post('/users', newUser);
+      await api.post('/rbac/usuarios', newUser);
       logAction("Gestão de Usuários", `Criou novo usuário: ${newUser.email} (${newUser.role})`);
       alert("Usuário criado com sucesso!");
       
@@ -1608,7 +1608,7 @@ useEffect(() => {
       return;
     }
     try {
-      await api.put(`/users/${userId}/reset-password`);
+      await api.put(`/rbac/usuarios/${userId}/reset-password`);
       logAction("Gestão de Usuários", `Senha redefinida e flag de primeiro acesso ativada para o ID ${userId}`);
       alert("Senha redefinida para '123'. O usuário deverá trocar obrigatoriamente no próximo acesso.");
       loadUsers();
@@ -1621,7 +1621,7 @@ useEffect(() => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post('/login', { email, password });
+      const res = await api.post('/rbac/login', { email, password });
       const user = res.data;
       
       if (user.precisa_trocar_senha) {
@@ -1647,7 +1647,7 @@ useEffect(() => {
     }
 
     try {
-      const res = await api.put(`/users/${pendingUser.id}/first-access`, { password: newPassword });
+      const res = await api.put(`/rbac/usuarios/${pendingUser.id}/first-access`, { password: newPassword });
       const updatedUser = res.data;
 
       setCurrentUser(updatedUser);
@@ -4363,7 +4363,7 @@ const clienteDadosExtras = clienteSelecionado ? {
             />
           )}
 
-          {/* TAB: ADMINISTRAÇÃO RBAC */}
+          {/* TAB: ADMINISTRAÇÃO DO SISTEMA */}
           {activeTab === "admin_rbac" && (
             <AdminRBAC
               styles={styles}
