@@ -34,6 +34,13 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   // Edição de usuário
   const [editingUser, setEditingUser] = useState(null);
   
+  // Criação de usuário
+  const [creatingUser, setCreatingUser] = useState(false);
+  const [novoUsuario, setNovoUsuario] = useState({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false });
+  
+  // Dropdown de ações
+  const [openDropdown, setOpenDropdown] = useState(null);
+  
   // Busca de módulos
   const [moduloSearch, setModuloSearch] = useState('');
 
@@ -258,6 +265,35 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   };
 
   // ============================================================
+  // HANDLERS — CRIAÇÃO DE USUÁRIO
+  // ============================================================
+  const handleCriarUsuario = async (e) => {
+    e.preventDefault();
+    if (!novoUsuario.nome || !novoUsuario.email || !novoUsuario.role_id || !novoUsuario.empresa_id) {
+      showToast?.("Preencha todos os campos obrigatórios.", "error");
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.post("/rbac/usuarios", {
+        nome: novoUsuario.nome,
+        email: novoUsuario.email,
+        password: novoUsuario.password || '123',
+        role_id: Number(novoUsuario.role_id),
+        empresa_id: Number(novoUsuario.empresa_id),
+        is_master: novoUsuario.is_master
+      });
+      showToast?.(`Usuário "${novoUsuario.nome}" criado com sucesso! Senha inicial: ${novoUsuario.password || '123'}`, "success");
+      logAction?.("RBAC", `Criou usuário: ${novoUsuario.nome} (${novoUsuario.email})`);
+      setNovoUsuario({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false });
+      setCreatingUser(false);
+      loadUsuarios();
+    } catch (err) {
+      showToast?.(err.response?.data?.detail || "Erro ao criar usuário. Verifique se o e-mail já existe.", "error");
+    } finally { setLoading(false); }
+  };
+
+  // ============================================================
   // HANDLERS — EXCLUSÃO DE USUÁRIO
   // ============================================================
   const deleteUser = async (userId, nome, isMaster) => {
@@ -271,10 +307,19 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       showToast?.(`Usuário "${nome}" excluído com sucesso!`, "success");
       logAction?.("RBAC", `Excluiu usuário: ${nome} (ID ${userId})`);
       loadUsuarios();
-    } catch (e) {
-      showToast?.(e.response?.data?.detail || "Erro ao excluir usuário.", "error");
+    } catch (err) {
+      showToast?.(err.response?.data?.detail || "Erro ao excluir usuário.", "error");
     }
   };
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null);
+    if (openDropdown !== null) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdown]);
 
   // ============================================================
   // AGRUPAMENTO DE PERMISSÕES POR MÓDULO
@@ -332,7 +377,12 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       background: checked ? '#10b981' : 'transparent',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       verticalAlign: 'middle', position: 'relative', flexShrink: 0
-    })
+    }),
+    dropdownItem: {
+      display: 'block', width: '100%', padding: '9px 16px', fontSize: 12, fontWeight: 600,
+      color: '#e2e8f0', background: 'transparent', border: 'none', textAlign: 'left',
+      cursor: 'pointer', borderRadius: 0
+    }
   };
 
   // Verificação de acesso
@@ -639,7 +689,13 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       {/* ============================================================ */}
       {activeSection === "usuarios" && (
         <div style={s.card}>
-          <h3 style={s.sectionTitle}>👤 Usuários do Sistema ({usuarios.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={s.sectionTitle}>👤 Usuários do Sistema ({usuarios.length})</h3>
+            <button
+              onClick={() => { setCreatingUser(true); setNovoUsuario({ nome: '', email: '', password: '123', role_id: roles[0]?.id || '', empresa_id: empresas[0]?.id || '', is_master: false }); }}
+              style={{ ...s.btn('#10b981'), padding: '8px 18px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }}
+            >➕ Novo Usuário</button>
+          </div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -670,35 +726,49 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                     <span style={s.badge(u.ativo)}>{u.ativo ? 'Ativo' : 'Inativo'}</span>
                   </td>
                   <td style={{ padding: '10px 12px' }}>
-                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                    <div style={{ position: 'relative' }}>
                       <button
-                        onClick={() => setEditingUser({ ...u, original_is_master: u.is_master, role_id_changed: false })}
-                        style={{ padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer', background: 'rgba(234,179,8,0.15)', color: '#eab308', border: '1px solid rgba(234,179,8,0.3)' }}
-                      >✏️ Editar</button>
-                      <button
-                        onClick={() => resetUserPassword(u.id, u.nome)}
-                        style={{ padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
-                      >🔄 Reset Senha</button>
-                      {currentUser?.is_master && u.id !== currentUser.id && (
-                        <button
-                          onClick={() => toggleMaster(u.id)}
-                          style={{
-                            padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
-                            background: u.is_master ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)',
-                            color: u.is_master ? '#ef4444' : '#10b981',
-                            border: `1px solid ${u.is_master ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}`
-                          }}
-                        >{u.is_master ? '⬇ Revogar' : '⬆ Master'}</button>
-                      )}
-                      {currentUser?.is_master && u.id !== currentUser.id && !u.is_master && (
-                        <button
-                          onClick={() => deleteUser(u.id, u.nome, u.is_master)}
-                          style={{
-                            padding: '4px 10px', borderRadius: 6, fontSize: 9, fontWeight: 700, cursor: 'pointer',
-                            background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                            border: '1px solid rgba(239,68,68,0.3)'
-                          }}
-                        >🗑️ Excluir</button>
+                        onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === u.id ? null : u.id); }}
+                        style={{
+                          padding: '6px 14px', borderRadius: 8, fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                          background: openDropdown === u.id ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.06)',
+                          color: openDropdown === u.id ? '#eab308' : '#94a3b8',
+                          border: `1px solid ${openDropdown === u.id ? 'rgba(234,179,8,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                          transition: 'all 0.15s'
+                        }}
+                      >⚙️ Ações ▾</button>
+
+                      {openDropdown === u.id && (
+                        <div style={{
+                          position: 'absolute', right: 0, top: '110%', zIndex: 1000,
+                          background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12, minWidth: 180, padding: '6px 0',
+                          boxShadow: '0 12px 40px rgba(0,0,0,0.6)'
+                        }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); setEditingUser({ ...u, original_is_master: u.is_master, role_id_changed: false }); }}
+                            style={s.dropdownItem}
+                          >✏️ Editar</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); resetUserPassword(u.id, u.nome); }}
+                            style={s.dropdownItem}
+                          >🔄 Reset Senha</button>
+                          {currentUser?.is_master && u.id !== currentUser.id && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); toggleMaster(u.id); }}
+                              style={{ ...s.dropdownItem, color: u.is_master ? '#ef4444' : '#10b981' }}
+                            >{u.is_master ? '⬇ Revogar Master' : '⬆ Tornar Master'}</button>
+                          )}
+                          {currentUser?.is_master && u.id !== currentUser.id && !u.is_master && (
+                            <>
+                              <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); deleteUser(u.id, u.nome, u.is_master); }}
+                                style={{ ...s.dropdownItem, color: '#ef4444' }}
+                              >🗑️ Excluir Usuário</button>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>
@@ -706,6 +776,57 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
               ))}
             </tbody>
           </table>
+
+          {/* MODAL CRIAÇÃO DE USUÁRIO */}
+          {creatingUser && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#0f172a', borderRadius: 20, width: 500, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <h3 style={{ ...s.sectionTitle, marginBottom: 0 }}>➕ Novo Usuário</h3>
+                  <button onClick={() => setCreatingUser(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                </div>
+
+                <form onSubmit={handleCriarUsuario}>
+                  <label style={s.label}>Nome Completo *</label>
+                  <input style={s.input} value={novoUsuario.nome} onChange={e => setNovoUsuario({...novoUsuario, nome: e.target.value})} required placeholder="Nome do colaborador" />
+
+                  <label style={s.label}>E-mail (Login) *</label>
+                  <input style={s.input} type="email" value={novoUsuario.email} onChange={e => setNovoUsuario({...novoUsuario, email: e.target.value})} required placeholder="email@empresa.com" />
+
+                  <label style={s.label}>Senha Inicial</label>
+                  <input style={s.input} value={novoUsuario.password} onChange={e => setNovoUsuario({...novoUsuario, password: e.target.value})} placeholder='Padrão: 123' />
+                  <p style={{ fontSize: 10, color: '#64748b', marginTop: -6, marginBottom: 10 }}>O usuário será obrigado a trocar no primeiro login.</p>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div>
+                      <label style={s.label}>Empresa *</label>
+                      <select style={s.input} value={novoUsuario.empresa_id} onChange={e => setNovoUsuario({...novoUsuario, empresa_id: Number(e.target.value)})} required>
+                        <option value="">Selecione...</option>
+                        {empresas.map(emp => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={s.label}>Perfil (Role) *</label>
+                      <select style={s.input} value={novoUsuario.role_id} onChange={e => setNovoUsuario({...novoUsuario, role_id: Number(e.target.value)})} required>
+                        <option value="">Selecione...</option>
+                        {roles.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', cursor: 'pointer', marginTop: 8 }}>
+                    <input type="checkbox" checked={novoUsuario.is_master} onChange={e => setNovoUsuario({...novoUsuario, is_master: e.target.checked})} />
+                    👑 Acesso MASTER
+                  </label>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+                    <button type="button" style={s.btn('#64748b')} onClick={() => setCreatingUser(false)}>Cancelar</button>
+                    <button type="submit" style={s.btn()} disabled={loading}>{loading ? '⌛ Criando...' : '✅ Criar Usuário'}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* MODAL EDIÇÃO DE USUÁRIO */}
           {editingUser && (
