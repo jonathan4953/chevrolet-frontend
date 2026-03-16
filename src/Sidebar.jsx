@@ -1,6 +1,31 @@
 import React from "react";
 
-function NavItem({ active, onClick, label, icon, styles }) {
+function NavItem({ active, onClick, label, icon, styles, href }) {
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          ...styles.navItem,
+          backgroundColor: "transparent",
+          color: "#94a3b8",
+          padding: "7px 20px",
+          fontSize: "12px",
+          lineHeight: "1.3",
+          cursor: "pointer",
+          textDecoration: "none",
+          display: "block",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.color = "#eab308"; }}
+        onMouseLeave={e => { e.currentTarget.style.color = "#94a3b8"; }}
+      >
+        <span style={{ marginRight: 8 }}>{icon}</span>
+        {label}
+      </a>
+    );
+  }
   return (
     <div
       onClick={onClick}
@@ -161,13 +186,13 @@ export default function Sidebar({
           label="Contas Bancárias"
           icon="🏦"
         />
-     <NavItem
-  styles={styles}
-  active={activeTab === "config_contabil"} // Tem que ser idêntico
-  onClick={() => setActiveTab("config_contabil")} // Tem que ser idêntico
-  label="Plano de Contas"
-  icon="📊"
-/>
+        <NavItem
+          styles={styles}
+          active={activeTab === "config_contabil"}
+          onClick={() => setActiveTab("config_contabil")}
+          label="Plano de Contas"
+          icon="📊"
+        />
         <NavItem
           styles={styles}
           active={activeTab === "clientes"}
@@ -285,6 +310,25 @@ export default function Sidebar({
             />
           </>
         )}
+
+        {/* SUPORTE */}
+        <div
+          style={{
+            padding: "10px 20px 3px",
+            fontSize: "9px",
+            color: "#64748b",
+            textTransform: "uppercase",
+            fontWeight: "bold",
+          }}
+        >
+          Suporte
+        </div>
+        <NavItem
+          styles={styles}
+          href="https://suporte.omni26.com"
+          label="Abrir Chamado"
+          icon="🎧"
+        />
       </nav>
 
       {/* USUÁRIO — fixo no rodapé */}
