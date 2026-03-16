@@ -227,13 +227,14 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   // ============================================================
   // HANDLERS — EDIÇÃO DE USUÁRIO (reset senha, trocar perfil)
   // ============================================================
-  const resetUserPassword = async (userId, nome) => {
-    if (!window.confirm(`Resetar a senha de "${nome}" para "123"? O usuário será obrigado a trocar no próximo login.`)) return;
+  const resetUserPassword = async (userId, nome, senhaProvisoria = '123') => {
+    const senha = senhaProvisoria.trim() || '123';
+    if (!window.confirm(`Resetar a senha de "${nome}" para "${senha}"?\nO usuário será obrigado a trocar no próximo login.`)) return;
     try {
-      await api.put(`/users/${userId}/reset-password`);
-      showToast?.(`Senha de ${nome} resetada para "123"!`, "success");
+      await api.put(`/rbac/usuarios/${userId}/reset-password`, { nova_senha: senha });
+      showToast?.(`Senha de ${nome} resetada para "${senha}"!`, "success");
       logAction?.("RBAC", `Resetou senha do usuário: ${nome}`);
-    } catch(e) { showToast?.("Erro ao resetar senha.", "error"); }
+    } catch(e) { showToast?.(e.response?.data?.detail || "Erro ao resetar senha.", "error"); }
   };
 
   const saveEditUser = async () => {
@@ -252,6 +253,10 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       // Toggle master se mudou
       if (editingUser.is_master !== editingUser.original_is_master) {
         await api.put(`/rbac/usuarios/${editingUser.id}/toggle-master`);
+      }
+      // Toggle ativo/inativo se mudou
+      if (editingUser.ativo !== editingUser.original_ativo) {
+        await api.put(`/rbac/usuarios/${editingUser.id}/toggle-status`, { ativo: editingUser.ativo });
       }
       // Toggle permissão edição
       await api.put(`/users/${editingUser.id}/toggle-permission`).catch(() => {});
@@ -746,7 +751,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                           boxShadow: '0 12px 40px rgba(0,0,0,0.6)'
                         }}>
                           <button
-                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); setEditingUser({ ...u, original_is_master: u.is_master, role_id_changed: false }); }}
+                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); setEditingUser({ ...u, original_is_master: u.is_master, original_ativo: u.ativo, role_id_changed: false, resetSenha: '' }); }}
                             style={s.dropdownItem}
                           >✏️ Editar</button>
                           <button
@@ -858,7 +863,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#94a3b8', cursor: 'pointer' }}>
                     <input type="checkbox" checked={editingUser.is_master || false} onChange={e => setEditingUser({...editingUser, is_master: e.target.checked})} />
                     👑 Acesso MASTER
@@ -867,17 +872,42 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                     <input type="checkbox" checked={editingUser.canEdit || false} onChange={e => setEditingUser({...editingUser, canEdit: e.target.checked})} />
                     ✏️ Permissão de Edição
                   </label>
+                  <label
+                    onClick={() => setEditingUser({...editingUser, ativo: !editingUser.ativo})}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer',
+                      padding: '6px 14px', borderRadius: 8,
+                      background: editingUser.ativo ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                      border: `1px solid ${editingUser.ativo ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                      color: editingUser.ativo ? '#10b981' : '#ef4444',
+                      fontWeight: 700, transition: 'all 0.2s'
+                    }}
+                  >
+                    {editingUser.ativo ? '✅ Ativo' : '🚫 Inativo'}
+                  </label>
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'space-between' }}>
-                  <button
-                    onClick={() => { resetUserPassword(editingUser.id, editingUser.nome); }}
-                    style={{ padding: '10px 16px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)' }}
-                  >🔄 Resetar Senha para "123"</button>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    <button style={s.btn('#64748b')} onClick={() => setEditingUser(null)}>Cancelar</button>
-                    <button style={s.btn()} onClick={saveEditUser} disabled={loading}>{loading ? '⌛...' : '💾 Salvar'}</button>
+                {/* RESET DE SENHA */}
+                <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)' }}>
+                  <label style={{ ...s.label, color: '#60a5fa', marginBottom: 8 }}>🔑 Reset de Senha</label>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      style={{ ...s.input, marginBottom: 0, flex: 1 }}
+                      value={editingUser.resetSenha || ''}
+                      onChange={e => setEditingUser({...editingUser, resetSenha: e.target.value})}
+                      placeholder="Senha provisória (ex: 123)"
+                    />
+                    <button
+                      onClick={() => { resetUserPassword(editingUser.id, editingUser.nome, editingUser.resetSenha || '123'); }}
+                      style={{ padding: '10px 16px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer', background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', whiteSpace: 'nowrap' }}
+                    >🔄 Resetar</button>
                   </div>
+                  <p style={{ fontSize: 10, color: '#64748b', marginTop: 6, marginBottom: 0 }}>O usuário será obrigado a trocar no próximo login. A senha também será atualizada no GLPI.</p>
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
+                  <button style={s.btn('#64748b')} onClick={() => setEditingUser(null)}>Cancelar</button>
+                  <button style={s.btn()} onClick={saveEditUser} disabled={loading}>{loading ? '⌛...' : '💾 Salvar'}</button>
                 </div>
               </div>
             </div>
