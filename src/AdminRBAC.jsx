@@ -311,7 +311,8 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       await api.delete(`/rbac/usuarios/${userId}`);
       showToast?.(`Usuário "${nome}" excluído com sucesso!`, "success");
       logAction?.("RBAC", `Excluiu usuário: ${nome} (ID ${userId})`);
-      loadUsuarios();
+      // Remove da lista local para feedback imediato
+      setUsuarios(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       showToast?.(err.response?.data?.detail || "Erro ao excluir usuário.", "error");
     }
