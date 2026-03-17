@@ -232,10 +232,19 @@ export default function Sidebar({
               label="OmniRH"
               icon="👔"
             />
+            <NavItem
+  styles={styles}
+  active={activeTab === "dossier"}
+  onClick={() => setActiveTab("dossier")}
+  label="Dossiê do Colaborador"
+  icon="🧬"
+/>
           </>
+          
         )}
 
         {/* GESTÃO */}
+        
         {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
           <>
             <div
@@ -256,6 +265,29 @@ export default function Sidebar({
               label="Gestão de Frota"
               icon="🚗"
             />
+            <NavItem
+  styles={styles}
+  active={activeTab === "gestao_clientes"}
+  onClick={() => setActiveTab("gestao_clientes")}
+  label="Gestão de Clientes"
+  icon="👥"
+/>
+
+<NavItem
+  styles={styles}
+  active={activeTab === "gestao_contratos"}
+  onClick={() => setActiveTab("gestao_contratos")}
+  label="Gestão de Contratos"
+  icon="📝"
+/>
+
+<NavItem
+  styles={styles}
+  active={activeTab === "gestao_usuarios"}
+  onClick={() => setActiveTab("gestao_usuarios")}
+  label="Gestão de Usuários"
+  icon="👤"
+/>
             {/* ========== NOVO: GESTÃO DE ATIVOS ========== */}
             <NavItem
               styles={styles}

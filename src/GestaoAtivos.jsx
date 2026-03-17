@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "./api";
 
 // ============================================================
-// GestaoAtivos.jsx — Módulo Gestão de Ativos de Locação
-// Usado pela aba "gestao_ativos" no App.jsx
+// GestaoAtivos.jsx — Módulo Gestão de Ativos de Locação v2
+// Melhorias: dropdown ações, alertas dismiss diário, tooltips ℹ,
+//            valores R$ nos cards, upload de foto no cadastro
 // ============================================================
 
 const STATUS_COLORS = {
@@ -30,16 +31,141 @@ const formatDate = (d) => {
   try { return new Date(d).toLocaleDateString("pt-BR"); } catch { return d; }
 };
 
+// ============================================================
+// COMPONENTE: Tooltip informativo ℹ️
+// ============================================================
+function InfoTip({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span
+      style={{ position: "relative", display: "inline-block", marginLeft: 5, cursor: "help" }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span style={{
+        display: "inline-flex", alignItems: "center", justifyContent: "center",
+        width: 15, height: 15, borderRadius: "50%", fontSize: 9, fontWeight: 800,
+        background: "rgba(59,130,246,0.2)", color: "#60a5fa", lineHeight: 1,
+      }}>ℹ</span>
+      {show && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
+          background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#cbd5e1",
+          whiteSpace: "nowrap", zIndex: 100, boxShadow: "0 8px 25px rgba(0,0,0,0.5)",
+          pointerEvents: "none", maxWidth: 280,
+        }}>
+          {text}
+          <div style={{
+            position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
+            width: 0, height: 0, borderLeft: "5px solid transparent",
+            borderRight: "5px solid transparent", borderTop: "5px solid rgba(255,255,255,0.15)",
+          }} />
+        </div>
+      )}
+    </span>
+  );
+}
+
+// ============================================================
+// COMPONENTE: StatusBadge
+// ============================================================
 function StatusBadge({ status, map = STATUS_COLORS }) {
-  const s = map[status] || { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: status };
+  const sc = map[status] || { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: status };
   return (
     <span style={{
       padding: "3px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-      background: s.bg, color: s.text, textTransform: "uppercase", letterSpacing: 0.5,
+      background: sc.bg, color: sc.text, textTransform: "uppercase", letterSpacing: 0.5,
     }}>
-      {s.label}
+      {sc.label}
     </span>
   );
+}
+
+// ============================================================
+// COMPONENTE: Dropdown de ações por ativo
+// ============================================================
+function AcoesDropdown({ ativo, onEditar, onBaixa, onVerDetalhe }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const items = [
+    { label: "👁️ Ver Detalhes", onClick: () => { onVerDetalhe(ativo.id); setOpen(false); } },
+    { label: "✏️ Editar", onClick: () => { onEditar(ativo); setOpen(false); } },
+    { sep: true },
+    { label: "📦 Baixa de Estoque", onClick: () => { onBaixa(ativo.id, ativo.nome); setOpen(false); }, danger: true },
+  ];
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        style={{
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 8, padding: "5px 10px", fontSize: 14, cursor: "pointer",
+          color: "#94a3b8", lineHeight: 1,
+        }}
+      >⋮</button>
+      {open && (
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50,
+          background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 10, padding: "4px 0", minWidth: 175,
+          boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+        }}>
+          {items.map((item, i) =>
+            item.sep ? (
+              <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
+            ) : (
+              <div
+                key={i}
+                onClick={(e) => { e.stopPropagation(); item.onClick(); }}
+                style={{
+                  padding: "8px 14px", fontSize: 12, cursor: "pointer",
+                  color: item.danger ? "#f87171" : "#cbd5e1",
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                {item.label}
+              </div>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============================================================
+// HELPER: Alertas dismiss diário (localStorage por data)
+// ============================================================
+const ALERTA_STORAGE_KEY = "omni26_ativos_alertas_dismissed";
+
+function getDismissedToday() {
+  try {
+    const data = JSON.parse(localStorage.getItem(ALERTA_STORAGE_KEY) || "{}");
+    const hoje = new Date().toISOString().slice(0, 10);
+    if (data.date !== hoje) return []; // reset diário
+    return data.ids || [];
+  } catch { return []; }
+}
+
+function dismissAlerta(alertaKey) {
+  try {
+    const hoje = new Date().toISOString().slice(0, 10);
+    const data = JSON.parse(localStorage.getItem(ALERTA_STORAGE_KEY) || "{}");
+    const ids = data.date === hoje ? (data.ids || []) : [];
+    ids.push(alertaKey);
+    localStorage.setItem(ALERTA_STORAGE_KEY, JSON.stringify({ date: hoje, ids }));
+  } catch { /* silently fail */ }
 }
 
 // ============================================================
@@ -64,8 +190,9 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   const [formAtivo, setFormAtivo] = useState({
     nome: "", categoria: "Geral", descricao: "", valor_aquisicao: 0,
     valor_locacao_dia: 0, data_aquisicao: "", vida_util_meses: 60,
-    codigo_rastreio: "", observacoes: "",
+    codigo_rastreio: "", observacoes: "", imagem_url: "",
   });
+  const [imagemPreview, setImagemPreview] = useState(null);
 
   // --- LOCAÇÕES ---
   const [locacoes, setLocacoes] = useState([]);
@@ -83,11 +210,23 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
     ativo_id: "", tipo: "CORRETIVA", custo: 0, descricao: "", responsavel: "",
   });
 
-  // --- CLIENTES (para selects) ---
+  // --- CLIENTES ---
   const [clientes, setClientes] = useState([]);
 
-  // --- ALERTAS ---
+  // --- ALERTAS (com dismiss diário) ---
   const [alertas, setAlertas] = useState([]);
+  const [dismissedAlertas, setDismissedAlertas] = useState(getDismissedToday());
+
+  const alertasVisiveis = useMemo(
+    () => alertas.filter(a => !dismissedAlertas.includes(`${a.tipo}_${a.ativo_nome || a.locacao_id || a.manutencao_id}`)),
+    [alertas, dismissedAlertas]
+  );
+
+  const handleDismissAlerta = (alerta) => {
+    const key = `${alerta.tipo}_${alerta.ativo_nome || alerta.locacao_id || alerta.manutencao_id}`;
+    dismissAlerta(key);
+    setDismissedAlertas(prev => [...prev, key]);
+  };
 
   const empresaId = currentUser?.empresa_id || 1;
 
@@ -151,10 +290,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
     } catch (e) { console.error(e); }
   };
 
-  useEffect(() => {
-    loadClientes();
-    loadCategorias();
-  }, []);
+  useEffect(() => { loadClientes(); loadCategorias(); }, []);
 
   useEffect(() => {
     if (section === "dashboard") { loadDashboard(); loadAlertas(); }
@@ -165,6 +301,24 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
 
   useEffect(() => { if (section === "ativos") loadAtivos(); }, [filtroStatus, filtroCategoria, buscaAtivo]);
   useEffect(() => { if (section === "locacoes") loadLocacoes(); }, [filtroLocacao]);
+
+  // ============================================================
+  // UPLOAD DE IMAGEM (converte para base64 data URL)
+  // ============================================================
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast?.("Imagem muito grande. Máximo: 5MB", "error");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagemPreview(reader.result);
+      setFormAtivo(prev => ({ ...prev, imagem_url: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   // ============================================================
   // AÇÕES: ATIVOS
@@ -183,6 +337,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
       }
       setShowFormAtivo(false);
       setEditingAtivo(null);
+      setImagemPreview(null);
       resetFormAtivo();
       loadAtivos();
       loadCategorias();
@@ -191,11 +346,14 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
     } finally { setLoading(false); }
   };
 
-  const resetFormAtivo = () => setFormAtivo({
-    nome: "", categoria: "Geral", descricao: "", valor_aquisicao: 0,
-    valor_locacao_dia: 0, data_aquisicao: "", vida_util_meses: 60,
-    codigo_rastreio: "", observacoes: "",
-  });
+  const resetFormAtivo = () => {
+    setFormAtivo({
+      nome: "", categoria: "Geral", descricao: "", valor_aquisicao: 0,
+      valor_locacao_dia: 0, data_aquisicao: "", vida_util_meses: 60,
+      codigo_rastreio: "", observacoes: "", imagem_url: "",
+    });
+    setImagemPreview(null);
+  };
 
   const editarAtivo = (a) => {
     setEditingAtivo(a);
@@ -204,18 +362,20 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
       valor_aquisicao: a.valor_aquisicao, valor_locacao_dia: a.valor_locacao_dia,
       data_aquisicao: a.data_aquisicao ? String(a.data_aquisicao).split("T")[0] : "",
       vida_util_meses: a.vida_util_meses, codigo_rastreio: a.codigo_rastreio || "",
-      observacoes: a.observacoes || "",
+      observacoes: a.observacoes || "", imagem_url: a.imagem_url || "",
     });
+    setImagemPreview(a.imagem_url || null);
     setShowFormAtivo(true);
   };
 
-  const excluirAtivo = async (id) => {
-    if (!window.confirm("Deseja inativar este ativo?")) return;
+  const baixaEstoque = async (id, nome) => {
+    if (!window.confirm(`Confirmar BAIXA DE ESTOQUE do ativo "${nome}"?\n\nEsta ação irá inativar o ativo permanentemente do estoque.`)) return;
     try {
       await api.delete(`/ativos-module/ativos/${id}`);
-      showToast?.("Ativo inativado", "success");
+      showToast?.(`Baixa de estoque realizada: ${nome}`, "success");
+      logAction?.("ativos.baixa", `Baixa de estoque do ativo ${nome} (ID: ${id})`);
       loadAtivos();
-    } catch (e) { showToast?.(e.response?.data?.detail || "Erro", "error"); }
+    } catch (e) { showToast?.(e.response?.data?.detail || "Erro na baixa", "error"); }
   };
 
   const verDetalheAtivo = async (id) => {
@@ -346,9 +506,6 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
     }),
   };
 
-  // ============================================================
-  // SUB-MENUS
-  // ============================================================
   const sections = [
     { key: "dashboard", label: "Dashboard", icon: "📊" },
     { key: "ativos", label: "Ativos", icon: "🏗️" },
@@ -363,48 +520,102 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
     if (!dashboard) return <p style={{ color: "#94a3b8", textAlign: "center", padding: 40 }}>Carregando dashboard...</p>;
     const { visao_geral: vg, financeiro: fin, operacional: op, manutencao: man, kpis, graficos } = dashboard;
 
+    // Cálculo de valor monetário por status
+    const valorDisponiveis = fin.valor_ocioso || 0;
+    const valorLocados = fin.valor_em_uso || 0;
+    const valorTotal = fin.valor_total_patrimonio || 0;
+
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-        {/* ALERTAS */}
-        {alertas.length > 0 && (
+
+        {/* ALERTAS COM DISMISS INDIVIDUAL */}
+        {alertasVisiveis.length > 0 && (
           <div style={{ ...s.card, borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.05)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <span style={{ fontSize: 20 }}>🔔</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#f87171" }}>
-                {alertas.length} Alerta{alertas.length > 1 ? "s" : ""}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20 }}>🔔</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#f87171" }}>
+                  {alertasVisiveis.length} Alerta{alertasVisiveis.length > 1 ? "s" : ""}
+                </span>
+              </div>
+              <span style={{ fontSize: 10, color: "#64748b" }}>Alertas fechados reaparecem no próximo login</span>
             </div>
-            {alertas.slice(0, 5).map((a, i) => (
-              <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "#fca5a5", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                {a.tipo === "LOCACAO_ATRASADA" && "⏰ "}
-                {a.tipo === "ATIVO_PARADO" && "💤 "}
-                {a.tipo === "MANUTENCAO_PROLONGADA" && "🔧 "}
-                {a.mensagem}
+            {alertasVisiveis.slice(0, 8).map((a, i) => (
+              <div key={i} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "8px 0", fontSize: 12, color: "#fca5a5",
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+              }}>
+                <span>
+                  {a.tipo === "LOCACAO_ATRASADA" && "⏰ "}
+                  {a.tipo === "ATIVO_PARADO" && "💤 "}
+                  {a.tipo === "MANUTENCAO_PROLONGADA" && "🔧 "}
+                  {a.mensagem}
+                </span>
+                <button
+                  onClick={() => handleDismissAlerta(a)}
+                  style={{
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#64748b", fontSize: 12, cursor: "pointer", borderRadius: 6,
+                    width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center",
+                    lineHeight: 1, padding: 0, flexShrink: 0, marginLeft: 10,
+                  }}
+                  title="Fechar alerta (reaparece amanhã se não resolvido)"
+                >✕</button>
               </div>
             ))}
           </div>
         )}
 
-        {/* KPI CARDS */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        {/* KPI CARDS — agora com valor R$ e tooltips ℹ */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
           {[
-            { label: "Total de Ativos", value: vg.total_ativos, icon: "🏗️", color: "#3b82f6" },
-            { label: "Disponíveis", value: vg.disponiveis, icon: "✅", color: "#10b981" },
-            { label: "Locados", value: vg.locados, icon: "📋", color: "#eab308" },
-            { label: "Em Manutenção", value: vg.em_manutencao, icon: "🔧", color: "#f97316" },
-            { label: "Taxa de Ocupação", value: `${vg.taxa_ocupacao}%`, icon: "📈", color: "#8b5cf6" },
-            { label: "Atrasados", value: op.total_atrasados, icon: "⏰", color: "#f87171" },
+            {
+              label: "Total de Ativos", value: vg.total_ativos, icon: "🏗️", color: "#3b82f6",
+              monetary: formatCurrency(valorTotal),
+              tip: "Quantidade total de ativos cadastrados (ativos e inativos operacionais)",
+            },
+            {
+              label: "Disponíveis", value: vg.disponiveis, icon: "✅", color: "#10b981",
+              monetary: formatCurrency(valorDisponiveis),
+              tip: "Ativos livres para locação. O valor representa o patrimônio parado",
+            },
+            {
+              label: "Locados", value: vg.locados, icon: "📋", color: "#eab308",
+              monetary: formatCurrency(valorLocados),
+              tip: "Ativos em contrato ativo de locação. O valor representa patrimônio gerando receita",
+            },
+            {
+              label: "Em Manutenção", value: vg.em_manutencao, icon: "🔧", color: "#f97316",
+              tip: "Ativos fora de operação por manutenção preventiva ou corretiva",
+            },
+            {
+              label: "Taxa de Ocupação", value: `${vg.taxa_ocupacao}%`, icon: "📈", color: "#8b5cf6",
+              tip: "Fórmula: (ativos locados ÷ ativos operacionais) × 100",
+            },
+            {
+              label: "Atrasados", value: op.total_atrasados, icon: "⏰", color: "#f87171",
+              tip: "Locações com data prevista de devolução ultrapassada e ainda não finalizadas",
+            },
           ].map((c, i) => (
             <div key={i} style={s.statCard(c.color)}>
               <div style={{
                 position: "absolute", top: -20, right: -20, width: 80, height: 80,
                 borderRadius: "50%", background: `${c.color}08`,
               }} />
-              <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
+                <InfoTip text={c.tip} />
+              </div>
               <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
                 {c.label}
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: c.color, marginTop: 4 }}>{c.value}</div>
+              {c.monetary && (
+                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, fontWeight: 600 }}>
+                  {c.monetary}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -417,15 +628,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Financeiro</span>
             </div>
             {[
-              { label: "Patrimônio Total", value: formatCurrency(fin.valor_total_patrimonio), color: "#3b82f6" },
-              { label: "Valor em Uso", value: formatCurrency(fin.valor_em_uso), color: "#10b981" },
-              { label: "Valor Ocioso", value: formatCurrency(fin.valor_ocioso), color: "#f97316" },
-              { label: "Receita do Mês", value: formatCurrency(fin.receita_mes), color: "#eab308" },
-              { label: "Custo Manutenção (Mês)", value: formatCurrency(fin.custo_manutencao_mes), color: "#f87171" },
-              { label: "Lucro Operacional (Mês)", value: formatCurrency(fin.lucro_operacional_mes), color: fin.lucro_operacional_mes >= 0 ? "#10b981" : "#f87171" },
+              { label: "Patrimônio Total", value: formatCurrency(fin.valor_total_patrimonio), color: "#3b82f6", tip: "Soma do valor de aquisição de todos os ativos" },
+              { label: "Valor em Uso", value: formatCurrency(fin.valor_em_uso), color: "#10b981", tip: "Valor de aquisição dos ativos atualmente locados" },
+              { label: "Valor Ocioso", value: formatCurrency(fin.valor_ocioso), color: "#f97316", tip: "Valor de aquisição dos ativos parados (disponíveis)" },
+              { label: "Receita do Mês", value: formatCurrency(fin.receita_mes), color: "#eab308", tip: "Soma dos contratos de locação iniciados no mês atual" },
+              { label: "Custo Manutenção (Mês)", value: formatCurrency(fin.custo_manutencao_mes), color: "#f87171", tip: "Soma dos custos de manutenção registrados no mês atual" },
+              { label: "Lucro Operacional (Mês)", value: formatCurrency(fin.lucro_operacional_mes), color: fin.lucro_operacional_mes >= 0 ? "#10b981" : "#f87171", tip: "Fórmula: receita do mês − custo de manutenção do mês" },
             ].map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <span style={{ fontSize: 12, color: "#94a3b8" }}>{item.label}</span>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <span style={{ fontSize: 12, color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                  {item.label}<InfoTip text={item.tip} />
+                </span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.value}</span>
               </div>
             ))}
@@ -436,6 +649,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Previsão de Retorno</span>
+              <InfoTip text="Locações ativas ordenadas pela data prevista de devolução" />
             </div>
             {op.previsao_retorno?.length > 0 ? op.previsao_retorno.map((p, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -458,11 +672,11 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
 
         {/* TOP ROI + RANKING MANUTENÇÃO */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
-          {/* TOP ROI */}
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #3b82f6)" }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Top ROI por Ativo</span>
+              <InfoTip text="ROI = (receita total do ativo ÷ valor de aquisição) × 100. Quanto maior, mais o ativo se pagou." />
             </div>
             {kpis.top_roi?.length > 0 ? kpis.top_roi.map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -482,11 +696,11 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             )) : <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", padding: 20 }}>Sem dados</p>}
           </div>
 
-          {/* RANKING MANUTENÇÃO */}
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #f97316, #f87171)" }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Ranking Manutenção</span>
+              <InfoTip text="Ativos que mais demandaram manutenção. Avalie se vale manter ou dar baixa." />
             </div>
             {man.ranking?.length > 0 ? man.ranking.map((item, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
@@ -500,21 +714,20 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           </div>
         </div>
 
-        {/* RECEITA MENSAL (barras simples) */}
+        {/* RECEITA MENSAL */}
         {graficos?.receita_mensal?.length > 0 && (
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #eab308)" }} />
               <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Receita Mensal (Últimos 6 meses)</span>
+              <InfoTip text="Soma dos valores de contrato por mês de início da locação" />
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 160, padding: "0 10px" }}>
               {(() => {
                 const max = Math.max(...graficos.receita_mensal.map(m => m.receita), 1);
                 return graficos.receita_mensal.map((m, i) => (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>
-                      {formatCurrency(m.receita)}
-                    </span>
+                    <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>{formatCurrency(m.receita)}</span>
                     <div style={{
                       width: "100%", maxWidth: 50, borderRadius: "8px 8px 0 0",
                       height: `${Math.max((m.receita / max) * 120, 4)}px`,
@@ -559,11 +772,10 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   };
 
   // ============================================================
-  // RENDER: TABELA ATIVOS
+  // RENDER: TABELA ATIVOS (com dropdown de ações)
   // ============================================================
   const renderAtivos = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      {/* FILTROS */}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
         <input
           placeholder="🔍 Buscar ativo..."
@@ -579,30 +791,34 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           <option value="">Todas Categorias</option>
           {categorias.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <button
-          onClick={() => { resetFormAtivo(); setEditingAtivo(null); setShowFormAtivo(true); }}
-          style={s.primaryBtn}
-        >
+        <button onClick={() => { resetFormAtivo(); setEditingAtivo(null); setShowFormAtivo(true); }} style={s.primaryBtn}>
           + Novo Ativo
         </button>
       </div>
 
-      {/* TABELA */}
       <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "rgba(255,255,255,0.02)" }}>
-                {["Nome", "Categoria", "Valor Aquisição", "Valor Diária", "Status", "Código Rastreio", "Ações"].map(h => (
-                  <th key={h} style={s.th}>{h}</th>
+                {["", "Nome", "Categoria", "Valor Aquisição", "Valor Diária", "Status", "Código", "Ações"].map(h => (
+                  <th key={h} style={{ ...s.th, ...(h === "" ? { width: 40 } : {}) }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {ativos.length === 0 ? (
-                <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhum ativo encontrado</td></tr>
+                <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhum ativo encontrado</td></tr>
               ) : ativos.map(a => (
                 <tr key={a.id} style={{ cursor: "pointer" }} onClick={() => verDetalheAtivo(a.id)}>
+                  {/* THUMBNAIL */}
+                  <td style={{ ...s.td, padding: "6px 10px" }}>
+                    {a.imagem_url ? (
+                      <img src={a.imagem_url} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗️</div>
+                    )}
+                  </td>
                   <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{a.nome}</td>
                   <td style={s.td}>{a.categoria}</td>
                   <td style={s.td}>{formatCurrency(a.valor_aquisicao)}</td>
@@ -610,10 +826,12 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
                   <td style={s.td}><StatusBadge status={a.status} /></td>
                   <td style={{ ...s.td, fontFamily: "monospace", fontSize: 11 }}>{a.codigo_rastreio || "—"}</td>
                   <td style={s.td} onClick={e => e.stopPropagation()}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => editarAtivo(a)} style={{ ...s.successBtn, padding: "4px 10px", fontSize: 10 }}>Editar</button>
-                      <button onClick={() => excluirAtivo(a.id)} style={{ ...s.dangerBtn, padding: "4px 10px", fontSize: 10 }}>Inativar</button>
-                    </div>
+                    <AcoesDropdown
+                      ativo={a}
+                      onEditar={editarAtivo}
+                      onBaixa={baixaEstoque}
+                      onVerDetalhe={verDetalheAtivo}
+                    />
                   </td>
                 </tr>
               ))}
@@ -626,10 +844,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
       {ativoDetalhe && (
         <div style={s.modalOverlay} onClick={() => setAtivoDetalhe(null)}>
           <div style={{ ...s.modalContent, maxWidth: 700 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <div>
-                <h3 style={{ color: "#f1f5f9", margin: 0, fontSize: 18 }}>{ativoDetalhe.nome}</h3>
-                <span style={{ fontSize: 11, color: "#64748b" }}>{ativoDetalhe.categoria} • {ativoDetalhe.codigo_rastreio || "Sem código"}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+              <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                {ativoDetalhe.imagem_url ? (
+                  <img src={ativoDetalhe.imagem_url} alt="" style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                ) : (
+                  <div style={{ width: 64, height: 64, borderRadius: 12, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🏗️</div>
+                )}
+                <div>
+                  <h3 style={{ color: "#f1f5f9", margin: 0, fontSize: 18 }}>{ativoDetalhe.nome}</h3>
+                  <span style={{ fontSize: 11, color: "#64748b" }}>{ativoDetalhe.categoria} • {ativoDetalhe.codigo_rastreio || "Sem código"}</span>
+                </div>
               </div>
               <StatusBadge status={ativoDetalhe.status} />
             </div>
@@ -653,7 +878,6 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               </div>
             )}
 
-            {/* LOCAÇÕES DO ATIVO */}
             <div style={{ marginBottom: 16 }}>
               <h4 style={{ color: "#eab308", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>📋 Últimas Locações</h4>
               {ativoDetalhe.locacoes?.length > 0 ? ativoDetalhe.locacoes.slice(0, 5).map((l, i) => (
@@ -667,7 +891,6 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               )) : <p style={{ fontSize: 11, color: "#64748b" }}>Nenhuma locação registrada</p>}
             </div>
 
-            {/* MANUTENÇÕES DO ATIVO */}
             <div>
               <h4 style={{ color: "#f97316", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>🔧 Últimas Manutenções</h4>
               {ativoDetalhe.manutencoes?.length > 0 ? ativoDetalhe.manutencoes.slice(0, 5).map((m, i) => (
@@ -796,14 +1019,56 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   );
 
   // ============================================================
-  // MODAL: FORM ATIVO
+  // MODAL: FORM ATIVO (com upload de imagem)
   // ============================================================
   const renderFormAtivo = () => showFormAtivo && (
-    <div style={s.modalOverlay} onClick={() => setShowFormAtivo(false)}>
-      <div style={s.modalContent} onClick={e => e.stopPropagation()}>
+    <div style={s.modalOverlay} onClick={() => { setShowFormAtivo(false); setImagemPreview(null); }}>
+      <div style={{ ...s.modalContent, maxWidth: 650 }} onClick={e => e.stopPropagation()}>
         <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>
           {editingAtivo ? "✏️ Editar Ativo" : "🏗️ Novo Ativo"}
         </h3>
+
+        {/* UPLOAD DE FOTO */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+          <div style={{
+            width: 80, height: 80, borderRadius: 12, overflow: "hidden",
+            border: "2px dashed rgba(255,255,255,0.15)", flexShrink: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(255,255,255,0.03)",
+          }}>
+            {imagemPreview ? (
+              <img src={imagemPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <span style={{ fontSize: 28, opacity: 0.4 }}>📷</span>
+            )}
+          </div>
+          <div>
+            <label
+              style={{
+                ...s.primaryBtn, display: "inline-block", padding: "8px 16px",
+                fontSize: 11, cursor: "pointer",
+              }}
+            >
+              📷 Escolher Foto
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: "none" }}
+              />
+            </label>
+            <div style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>JPG, PNG ou WEBP • Máx 5MB</div>
+            {imagemPreview && (
+              <button
+                onClick={() => { setImagemPreview(null); setFormAtivo(prev => ({ ...prev, imagem_url: "" })); }}
+                style={{ fontSize: 10, color: "#f87171", background: "none", border: "none", cursor: "pointer", marginTop: 4, padding: 0 }}
+              >
+                Remover foto
+              </button>
+            )}
+          </div>
+        </div>
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>Nome *</label>
@@ -819,19 +1084,31 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <input style={s.input} type="date" value={formAtivo.data_aquisicao} onChange={e => setFormAtivo({ ...formAtivo, data_aquisicao: e.target.value })} />
           </div>
           <div>
-            <label style={s.label}>Valor Aquisição (R$)</label>
+            <label style={s.label}>
+              Valor Aquisição (R$)
+              <InfoTip text="Preço pago na compra do ativo. Usado para calcular ROI e IPA." />
+            </label>
             <input style={s.input} type="number" step="0.01" value={formAtivo.valor_aquisicao} onChange={e => setFormAtivo({ ...formAtivo, valor_aquisicao: parseFloat(e.target.value) || 0 })} />
           </div>
           <div>
-            <label style={s.label}>Valor Locação/Dia (R$)</label>
+            <label style={s.label}>
+              Valor Locação/Dia (R$)
+              <InfoTip text="Valor cobrado por dia de locação. Usado como referência ao criar contratos." />
+            </label>
             <input style={s.input} type="number" step="0.01" value={formAtivo.valor_locacao_dia} onChange={e => setFormAtivo({ ...formAtivo, valor_locacao_dia: parseFloat(e.target.value) || 0 })} />
           </div>
           <div>
-            <label style={s.label}>Vida Útil (meses)</label>
+            <label style={s.label}>
+              Vida Útil (meses)
+              <InfoTip text="Estimativa de vida útil do ativo em meses. Usado para controle de depreciação." />
+            </label>
             <input style={s.input} type="number" value={formAtivo.vida_util_meses} onChange={e => setFormAtivo({ ...formAtivo, vida_util_meses: parseInt(e.target.value) || 60 })} />
           </div>
           <div>
-            <label style={s.label}>Código Rastreio (QR/RFID)</label>
+            <label style={s.label}>
+              Código Rastreio (QR/RFID)
+              <InfoTip text="Código único para identificação física do ativo via QR Code ou RFID." />
+            </label>
             <input style={s.input} value={formAtivo.codigo_rastreio} onChange={e => setFormAtivo({ ...formAtivo, codigo_rastreio: e.target.value })} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
@@ -844,7 +1121,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           </div>
         </div>
         <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-          <button onClick={() => { setShowFormAtivo(false); setEditingAtivo(null); }} style={s.dangerBtn}>Cancelar</button>
+          <button onClick={() => { setShowFormAtivo(false); setEditingAtivo(null); setImagemPreview(null); }} style={s.dangerBtn}>Cancelar</button>
           <button onClick={salvarAtivo} disabled={loading || !formAtivo.nome} style={{ ...s.primaryBtn, opacity: loading || !formAtivo.nome ? 0.5 : 1 }}>
             {loading ? "Salvando..." : editingAtivo ? "Atualizar" : "Criar Ativo"}
           </button>
@@ -890,11 +1167,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <input style={s.input} type="date" value={formLocacao.data_prevista_fim} onChange={e => setFormLocacao({ ...formLocacao, data_prevista_fim: e.target.value })} />
           </div>
           <div>
-            <label style={s.label}>Valor Contrato (R$)</label>
+            <label style={s.label}>
+              Valor Contrato (R$)
+              <InfoTip text="Valor total fechado para o período de locação" />
+            </label>
             <input style={s.input} type="number" step="0.01" value={formLocacao.valor_contrato} onChange={e => setFormLocacao({ ...formLocacao, valor_contrato: parseFloat(e.target.value) || 0 })} />
           </div>
           <div>
-            <label style={s.label}>Valor Diária (R$)</label>
+            <label style={s.label}>
+              Valor Diária (R$)
+              <InfoTip text="Valor unitário por dia. Preenchido automaticamente pelo cadastro do ativo." />
+            </label>
             <input style={s.input} type="number" step="0.01" value={formLocacao.valor_diaria} onChange={e => setFormLocacao({ ...formLocacao, valor_diaria: parseFloat(e.target.value) || 0 })} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
@@ -930,7 +1213,10 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             </select>
           </div>
           <div>
-            <label style={s.label}>Tipo</label>
+            <label style={s.label}>
+              Tipo
+              <InfoTip text="Preventiva: manutenção programada. Corretiva: reparo de falha/quebra." />
+            </label>
             <select style={s.input} value={formManutencao.tipo} onChange={e => setFormManutencao({ ...formManutencao, tipo: e.target.value })}>
               <option value="CORRETIVA">Corretiva</option>
               <option value="PREVENTIVA">Preventiva</option>
@@ -964,7 +1250,6 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   // ============================================================
   return (
     <div>
-      {/* CABEÇALHO */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
         <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
         <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20, fontWeight: 800 }}>Gestão de Ativos de Locação</h2>
@@ -973,27 +1258,20 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
         Controle de ativos, locações, manutenções e KPIs de performance
       </p>
 
-      {/* TABS */}
       <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
         {sections.map(sec => (
-          <button
-            key={sec.key}
-            onClick={() => setSection(sec.key)}
-            style={s.sectionBtn(section === sec.key)}
-          >
+          <button key={sec.key} onClick={() => setSection(sec.key)} style={s.sectionBtn(section === sec.key)}>
             <span style={{ marginRight: 6 }}>{sec.icon}</span>
             {sec.label}
           </button>
         ))}
       </div>
 
-      {/* CONTEÚDO */}
       {section === "dashboard" && renderDashboard()}
       {section === "ativos" && renderAtivos()}
       {section === "locacoes" && renderLocacoes()}
       {section === "manutencoes" && renderManutencoes()}
 
-      {/* MODAIS */}
       {renderFormAtivo()}
       {renderFormLocacao()}
       {renderFormManutencao()}

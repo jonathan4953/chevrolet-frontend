@@ -17,7 +17,11 @@ import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for 
 import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
 import Calculadora from "./Calculadora";
 import GestaoAtivos from "./GestaoAtivos";
+import GestaoContratos from "./GestaoContratos";
+import GestaoClientes from "./GestaoClientes";
+import GestaoUsuarios from "./GestaoUsuarios";
 import AdminRBAC from "./AdminRBAC";
+import DossieColaborador from "./Dossiecolaborador";
 import OmniRH from "./OmniRH";
 
 // Função auxiliar para formatar moeda no frontend
@@ -2998,6 +3002,14 @@ const clienteDadosExtras = clienteSelecionado ? {
   </div>
 )}
 
+{activeTab === "dossier" && (
+  <DossieColaborador
+    styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+  />
+)}
+
          {/* TAB: CONTAS A PAGAR */}
          {activeTab === "financeiro_pagar" && (() => {
   // Métricas derivadas do array atual
@@ -4364,13 +4376,41 @@ const clienteDadosExtras = clienteSelecionado ? {
             />
           )}
 
-{activeTab === "gestao_ativos" && (
-  <GestaoAtivos styles={styles}
+{activeTab === "gestao_contratos" && (
+  <GestaoContratos
+    styles={styles}
     currentUser={currentUser}
     showToast={showToast}
-    logAction={logAction} />
+    logAction={logAction}
+  />
 )}
 
+{activeTab === "gestao_clientes" && (
+  <GestaoClientes
+    styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+    logAction={logAction}
+  />
+)}
+
+{activeTab === "gestao_ativos" && (
+  <GestaoAtivos
+    styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+    logAction={logAction}
+  />
+)}
+
+{activeTab === "gestao_usuarios" && (
+  <GestaoUsuarios
+    styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+    logAction={logAction}
+  />
+)}
           {/* TAB: ADMINISTRAÇÃO DO SISTEMA */}
           {activeTab === "admin_rbac" && (
             <AdminRBAC
