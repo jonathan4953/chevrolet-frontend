@@ -21,7 +21,7 @@ import GestaoContratos from "./GestaoContratos";
 import GestaoClientes from "./GestaoClientes";
 import GestaoUsuarios from "./GestaoUsuarios";
 import AdminRBAC from "./AdminRBAC";
-import DossieColaborador from "./Dossiecolaborador";
+import DossieColaborador from "./DossieColaborador";
 import OmniRH from "./OmniRH";
 
 // Função auxiliar para formatar moeda no frontend
