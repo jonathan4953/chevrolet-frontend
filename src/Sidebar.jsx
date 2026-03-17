@@ -256,6 +256,15 @@ export default function Sidebar({
               label="Gestão de Frota"
               icon="🚗"
             />
+            {/* ========== NOVO: GESTÃO DE ATIVOS ========== */}
+            <NavItem
+              styles={styles}
+              active={activeTab === "gestao_ativos"}
+              onClick={() => setActiveTab("gestao_ativos")}
+              label="Gestão de Ativos"
+              icon="🏗️"
+            />
+            {/* ============================================ */}
             <NavItem
               styles={styles}
               active={activeTab === "logs"}

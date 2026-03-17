@@ -16,6 +16,7 @@ import Relatorios from "./modules/relatorios/Relatorios";
 import PlanoDeContas from "./PlanoDeContas"; // Ajuste o caminho se a pasta for diferente
 import ConfigContabil from "./ConfigContabil"; // Verifique se o caminho bate com o local onde você salvou
 import Calculadora from "./Calculadora";
+import GestaoAtivos from "./GestaoAtivos";
 import AdminRBAC from "./AdminRBAC";
 import OmniRH from "./OmniRH";
 
@@ -4362,6 +4363,13 @@ const clienteDadosExtras = clienteSelecionado ? {
               logAction={logAction}
             />
           )}
+
+{activeTab === "gestao_ativos" && (
+  <GestaoAtivos styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+    logAction={logAction} />
+)}
 
           {/* TAB: ADMINISTRAÇÃO DO SISTEMA */}
           {activeTab === "admin_rbac" && (

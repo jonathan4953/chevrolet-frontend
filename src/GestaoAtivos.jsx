@@ -1,0 +1,1002 @@
+import React, { useState, useEffect, useMemo } from "react";
+import { api } from "./api";
+
+// ============================================================
+// GestaoAtivos.jsx — Módulo Gestão de Ativos de Locação
+// Usado pela aba "gestao_ativos" no App.jsx
+// ============================================================
+
+const STATUS_COLORS = {
+  DISPONIVEL: { bg: "rgba(16,185,129,0.15)", border: "#10b981", text: "#34d399", label: "Disponível" },
+  LOCADO:     { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#60a5fa", label: "Locado" },
+  RESERVADO:  { bg: "rgba(234,179,8,0.15)",  border: "#eab308", text: "#facc15", label: "Reservado" },
+  MANUTENCAO: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#fb923c", label: "Manutenção" },
+  INATIVO:    { bg: "rgba(100,116,139,0.15)", border: "#64748b", text: "#94a3b8", label: "Inativo" },
+};
+
+const LOCACAO_STATUS_COLORS = {
+  ATIVA:      { bg: "rgba(16,185,129,0.15)", text: "#34d399", label: "Ativa" },
+  FINALIZADA: { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: "Finalizada" },
+  ATRASADA:   { bg: "rgba(248,113,113,0.15)", text: "#f87171", label: "Atrasada" },
+};
+
+const formatCurrency = (v) => {
+  if (v === null || v === undefined || isNaN(v)) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+};
+
+const formatDate = (d) => {
+  if (!d || d === "None") return "—";
+  try { return new Date(d).toLocaleDateString("pt-BR"); } catch { return d; }
+};
+
+function StatusBadge({ status, map = STATUS_COLORS }) {
+  const s = map[status] || { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: status };
+  return (
+    <span style={{
+      padding: "3px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+      background: s.bg, color: s.text, textTransform: "uppercase", letterSpacing: 0.5,
+    }}>
+      {s.label}
+    </span>
+  );
+}
+
+// ============================================================
+// COMPONENTE PRINCIPAL
+// ============================================================
+export default function GestaoAtivos({ styles, currentUser, showToast, logAction }) {
+  const [section, setSection] = useState("dashboard");
+  const [loading, setLoading] = useState(false);
+
+  // --- DASHBOARD ---
+  const [dashboard, setDashboard] = useState(null);
+
+  // --- ATIVOS ---
+  const [ativos, setAtivos] = useState([]);
+  const [buscaAtivo, setBuscaAtivo] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("");
+  const [filtroCategoria, setFiltroCategoria] = useState("");
+  const [categorias, setCategorias] = useState([]);
+  const [showFormAtivo, setShowFormAtivo] = useState(false);
+  const [editingAtivo, setEditingAtivo] = useState(null);
+  const [ativoDetalhe, setAtivoDetalhe] = useState(null);
+  const [formAtivo, setFormAtivo] = useState({
+    nome: "", categoria: "Geral", descricao: "", valor_aquisicao: 0,
+    valor_locacao_dia: 0, data_aquisicao: "", vida_util_meses: 60,
+    codigo_rastreio: "", observacoes: "",
+  });
+
+  // --- LOCAÇÕES ---
+  const [locacoes, setLocacoes] = useState([]);
+  const [filtroLocacao, setFiltroLocacao] = useState("");
+  const [showFormLocacao, setShowFormLocacao] = useState(false);
+  const [formLocacao, setFormLocacao] = useState({
+    ativo_id: "", cliente_id: "", data_inicio: "", data_prevista_fim: "",
+    valor_contrato: 0, valor_diaria: 0, observacoes: "",
+  });
+
+  // --- MANUTENÇÕES ---
+  const [manutencoes, setManutencoes] = useState([]);
+  const [showFormManutencao, setShowFormManutencao] = useState(false);
+  const [formManutencao, setFormManutencao] = useState({
+    ativo_id: "", tipo: "CORRETIVA", custo: 0, descricao: "", responsavel: "",
+  });
+
+  // --- CLIENTES (para selects) ---
+  const [clientes, setClientes] = useState([]);
+
+  // --- ALERTAS ---
+  const [alertas, setAlertas] = useState([]);
+
+  const empresaId = currentUser?.empresa_id || 1;
+
+  // ============================================================
+  // CARREGAMENTO DE DADOS
+  // ============================================================
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      const r = await api.get(`/ativos-module/dashboard?empresa_id=${empresaId}`);
+      setDashboard(r.data);
+    } catch (e) { console.error("Erro dashboard ativos:", e); }
+    finally { setLoading(false); }
+  };
+
+  const loadAtivos = async () => {
+    try {
+      let url = `/ativos-module/ativos?empresa_id=${empresaId}`;
+      if (filtroStatus) url += `&status=${filtroStatus}`;
+      if (filtroCategoria) url += `&categoria=${filtroCategoria}`;
+      if (buscaAtivo) url += `&busca=${buscaAtivo}`;
+      const r = await api.get(url);
+      setAtivos(r.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadCategorias = async () => {
+    try {
+      const r = await api.get(`/ativos-module/categorias?empresa_id=${empresaId}`);
+      setCategorias(r.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadLocacoes = async () => {
+    try {
+      let url = `/ativos-module/locacoes?empresa_id=${empresaId}`;
+      if (filtroLocacao) url += `&status=${filtroLocacao}`;
+      const r = await api.get(url);
+      setLocacoes(r.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadManutencoes = async () => {
+    try {
+      const r = await api.get(`/ativos-module/manutencoes?empresa_id=${empresaId}`);
+      setManutencoes(r.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadClientes = async () => {
+    try {
+      const r = await api.get("/clientes");
+      setClientes(r.data || []);
+    } catch (e) { console.error(e); }
+  };
+
+  const loadAlertas = async () => {
+    try {
+      const r = await api.get(`/ativos-module/alertas?empresa_id=${empresaId}`);
+      setAlertas(r.data.alertas || []);
+    } catch (e) { console.error(e); }
+  };
+
+  useEffect(() => {
+    loadClientes();
+    loadCategorias();
+  }, []);
+
+  useEffect(() => {
+    if (section === "dashboard") { loadDashboard(); loadAlertas(); }
+    if (section === "ativos") loadAtivos();
+    if (section === "locacoes") loadLocacoes();
+    if (section === "manutencoes") loadManutencoes();
+  }, [section]);
+
+  useEffect(() => { if (section === "ativos") loadAtivos(); }, [filtroStatus, filtroCategoria, buscaAtivo]);
+  useEffect(() => { if (section === "locacoes") loadLocacoes(); }, [filtroLocacao]);
+
+  // ============================================================
+  // AÇÕES: ATIVOS
+  // ============================================================
+  const salvarAtivo = async () => {
+    try {
+      setLoading(true);
+      if (editingAtivo) {
+        await api.put(`/ativos-module/ativos/${editingAtivo.id}`, formAtivo);
+        showToast?.("Ativo atualizado com sucesso!", "success");
+        logAction?.("ativos.editar", `Ativo ${formAtivo.nome} editado`);
+      } else {
+        await api.post("/ativos-module/ativos", { ...formAtivo, empresa_id: empresaId });
+        showToast?.("Ativo criado com sucesso!", "success");
+        logAction?.("ativos.criar", `Ativo ${formAtivo.nome} criado`);
+      }
+      setShowFormAtivo(false);
+      setEditingAtivo(null);
+      resetFormAtivo();
+      loadAtivos();
+      loadCategorias();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao salvar ativo", "error");
+    } finally { setLoading(false); }
+  };
+
+  const resetFormAtivo = () => setFormAtivo({
+    nome: "", categoria: "Geral", descricao: "", valor_aquisicao: 0,
+    valor_locacao_dia: 0, data_aquisicao: "", vida_util_meses: 60,
+    codigo_rastreio: "", observacoes: "",
+  });
+
+  const editarAtivo = (a) => {
+    setEditingAtivo(a);
+    setFormAtivo({
+      nome: a.nome, categoria: a.categoria, descricao: a.descricao || "",
+      valor_aquisicao: a.valor_aquisicao, valor_locacao_dia: a.valor_locacao_dia,
+      data_aquisicao: a.data_aquisicao ? String(a.data_aquisicao).split("T")[0] : "",
+      vida_util_meses: a.vida_util_meses, codigo_rastreio: a.codigo_rastreio || "",
+      observacoes: a.observacoes || "",
+    });
+    setShowFormAtivo(true);
+  };
+
+  const excluirAtivo = async (id) => {
+    if (!window.confirm("Deseja inativar este ativo?")) return;
+    try {
+      await api.delete(`/ativos-module/ativos/${id}`);
+      showToast?.("Ativo inativado", "success");
+      loadAtivos();
+    } catch (e) { showToast?.(e.response?.data?.detail || "Erro", "error"); }
+  };
+
+  const verDetalheAtivo = async (id) => {
+    try {
+      const r = await api.get(`/ativos-module/ativos/${id}`);
+      setAtivoDetalhe(r.data);
+    } catch (e) { console.error(e); }
+  };
+
+  // ============================================================
+  // AÇÕES: LOCAÇÕES
+  // ============================================================
+  const criarLocacao = async () => {
+    try {
+      setLoading(true);
+      await api.post("/ativos-module/locacoes", { ...formLocacao, empresa_id: empresaId });
+      showToast?.("Locação criada com sucesso!", "success");
+      logAction?.("locacoes.criar", `Locação criada para ativo #${formLocacao.ativo_id}`);
+      setShowFormLocacao(false);
+      setFormLocacao({ ativo_id: "", cliente_id: "", data_inicio: "", data_prevista_fim: "", valor_contrato: 0, valor_diaria: 0, observacoes: "" });
+      loadLocacoes();
+      loadAtivos();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao criar locação", "error");
+    } finally { setLoading(false); }
+  };
+
+  const finalizarLocacao = async (id) => {
+    if (!window.confirm("Finalizar esta locação?")) return;
+    try {
+      await api.put(`/ativos-module/locacoes/${id}/finalizar`);
+      showToast?.("Locação finalizada!", "success");
+      logAction?.("locacoes.finalizar", `Locação #${id} finalizada`);
+      loadLocacoes();
+      loadAtivos();
+    } catch (e) { showToast?.(e.response?.data?.detail || "Erro", "error"); }
+  };
+
+  // ============================================================
+  // AÇÕES: MANUTENÇÕES
+  // ============================================================
+  const criarManutencao = async () => {
+    try {
+      setLoading(true);
+      await api.post("/ativos-module/manutencoes", { ...formManutencao, empresa_id: empresaId });
+      showToast?.("Manutenção registrada!", "success");
+      logAction?.("manutencoes.criar", `Manutenção registrada para ativo #${formManutencao.ativo_id}`);
+      setShowFormManutencao(false);
+      setFormManutencao({ ativo_id: "", tipo: "CORRETIVA", custo: 0, descricao: "", responsavel: "" });
+      loadManutencoes();
+      loadAtivos();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao registrar manutenção", "error");
+    } finally { setLoading(false); }
+  };
+
+  const finalizarManutencao = async (id) => {
+    if (!window.confirm("Finalizar esta manutenção?")) return;
+    try {
+      await api.put(`/ativos-module/manutencoes/${id}/finalizar`);
+      showToast?.("Manutenção finalizada!", "success");
+      loadManutencoes();
+      loadAtivos();
+    } catch (e) { showToast?.(e.response?.data?.detail || "Erro", "error"); }
+  };
+
+  // ============================================================
+  // ESTILOS INTERNOS
+  // ============================================================
+  const s = {
+    card: {
+      background: "rgba(15, 23, 42, 0.6)", borderRadius: 16,
+      border: "1px solid rgba(255,255,255,0.06)", padding: 24,
+    },
+    sectionBtn: (active) => ({
+      padding: "8px 18px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+      cursor: "pointer", border: "1px solid",
+      background: active ? "rgba(234,179,8,0.9)" : "rgba(255,255,255,0.04)",
+      color: active ? "#000" : "#94a3b8",
+      borderColor: active ? "#eab308" : "rgba(255,255,255,0.08)",
+      transition: "all 0.2s",
+    }),
+    input: {
+      width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 13,
+      background: "rgba(15, 23, 42, 0.9)", color: "#f1f5f9",
+      border: "1px solid rgba(255,255,255,0.1)", outline: "none",
+    },
+    label: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 4, display: "block" },
+    primaryBtn: {
+      padding: "10px 22px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+      cursor: "pointer", border: "none",
+      background: "linear-gradient(135deg, #eab308, #d97706)",
+      color: "#000", transition: "all 0.2s",
+    },
+    dangerBtn: {
+      padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+      cursor: "pointer", border: "1px solid rgba(248,113,113,0.3)",
+      background: "rgba(248,113,113,0.1)", color: "#f87171",
+    },
+    successBtn: {
+      padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
+      cursor: "pointer", border: "1px solid rgba(16,185,129,0.3)",
+      background: "rgba(16,185,129,0.1)", color: "#34d399",
+    },
+    th: {
+      padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700,
+      color: "#64748b", textTransform: "uppercase", letterSpacing: 0.8,
+      borderBottom: "1px solid rgba(255,255,255,0.06)",
+    },
+    td: {
+      padding: "12px 14px", fontSize: 12, color: "#cbd5e1",
+      borderBottom: "1px solid rgba(255,255,255,0.04)",
+    },
+    modalOverlay: {
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "rgba(0,0,0,0.7)", zIndex: 9999,
+      display: "flex", alignItems: "center", justifyContent: "center",
+    },
+    modalContent: {
+      background: "rgba(15, 23, 42, 0.98)", border: "1px solid rgba(255,255,255,0.1)",
+      borderRadius: 20, padding: 30, maxWidth: 600, width: "90%",
+      maxHeight: "85vh", overflowY: "auto",
+    },
+    statCard: (color) => ({
+      background: "rgba(15, 23, 42, 0.6)", borderRadius: 16,
+      border: `1px solid ${color}22`, padding: "20px 24px",
+      position: "relative", overflow: "hidden",
+    }),
+  };
+
+  // ============================================================
+  // SUB-MENUS
+  // ============================================================
+  const sections = [
+    { key: "dashboard", label: "Dashboard", icon: "📊" },
+    { key: "ativos", label: "Ativos", icon: "🏗️" },
+    { key: "locacoes", label: "Locações", icon: "📋" },
+    { key: "manutencoes", label: "Manutenções", icon: "🔧" },
+  ];
+
+  // ============================================================
+  // RENDER: DASHBOARD
+  // ============================================================
+  const renderDashboard = () => {
+    if (!dashboard) return <p style={{ color: "#94a3b8", textAlign: "center", padding: 40 }}>Carregando dashboard...</p>;
+    const { visao_geral: vg, financeiro: fin, operacional: op, manutencao: man, kpis, graficos } = dashboard;
+
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* ALERTAS */}
+        {alertas.length > 0 && (
+          <div style={{ ...s.card, borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.05)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+              <span style={{ fontSize: 20 }}>🔔</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#f87171" }}>
+                {alertas.length} Alerta{alertas.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            {alertas.slice(0, 5).map((a, i) => (
+              <div key={i} style={{ padding: "6px 0", fontSize: 12, color: "#fca5a5", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                {a.tipo === "LOCACAO_ATRASADA" && "⏰ "}
+                {a.tipo === "ATIVO_PARADO" && "💤 "}
+                {a.tipo === "MANUTENCAO_PROLONGADA" && "🔧 "}
+                {a.mensagem}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* KPI CARDS */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+          {[
+            { label: "Total de Ativos", value: vg.total_ativos, icon: "🏗️", color: "#3b82f6" },
+            { label: "Disponíveis", value: vg.disponiveis, icon: "✅", color: "#10b981" },
+            { label: "Locados", value: vg.locados, icon: "📋", color: "#eab308" },
+            { label: "Em Manutenção", value: vg.em_manutencao, icon: "🔧", color: "#f97316" },
+            { label: "Taxa de Ocupação", value: `${vg.taxa_ocupacao}%`, icon: "📈", color: "#8b5cf6" },
+            { label: "Atrasados", value: op.total_atrasados, icon: "⏰", color: "#f87171" },
+          ].map((c, i) => (
+            <div key={i} style={s.statCard(c.color)}>
+              <div style={{
+                position: "absolute", top: -20, right: -20, width: 80, height: 80,
+                borderRadius: "50%", background: `${c.color}08`,
+              }} />
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
+              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {c.label}
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: c.color, marginTop: 4 }}>{c.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* FINANCEIRO */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 16 }}>
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #3b82f6)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Financeiro</span>
+            </div>
+            {[
+              { label: "Patrimônio Total", value: formatCurrency(fin.valor_total_patrimonio), color: "#3b82f6" },
+              { label: "Valor em Uso", value: formatCurrency(fin.valor_em_uso), color: "#10b981" },
+              { label: "Valor Ocioso", value: formatCurrency(fin.valor_ocioso), color: "#f97316" },
+              { label: "Receita do Mês", value: formatCurrency(fin.receita_mes), color: "#eab308" },
+              { label: "Custo Manutenção (Mês)", value: formatCurrency(fin.custo_manutencao_mes), color: "#f87171" },
+              { label: "Lucro Operacional (Mês)", value: formatCurrency(fin.lucro_operacional_mes), color: fin.lucro_operacional_mes >= 0 ? "#10b981" : "#f87171" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <span style={{ fontSize: 12, color: "#94a3b8" }}>{item.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* PREVISÃO DE RETORNO */}
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Previsão de Retorno</span>
+            </div>
+            {op.previsao_retorno?.length > 0 ? op.previsao_retorno.map((p, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 600 }}>{p.ativo}</div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>{p.cliente}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 11, color: p.dias_restantes <= 3 ? "#f87171" : "#eab308", fontWeight: 700 }}>
+                    {p.dias_restantes}d restantes
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>{formatDate(p.data_prevista_fim)}</div>
+                </div>
+              </div>
+            )) : (
+              <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", padding: 20 }}>Nenhuma locação ativa</p>
+            )}
+          </div>
+        </div>
+
+        {/* TOP ROI + RANKING MANUTENÇÃO */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+          {/* TOP ROI */}
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #3b82f6)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Top ROI por Ativo</span>
+            </div>
+            {kpis.top_roi?.length > 0 ? kpis.top_roi.map((item, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 600 }}>
+                    <span style={{ color: "#eab308", marginRight: 6 }}>#{i + 1}</span>{item.ativo}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#64748b" }}>
+                    Receita: {formatCurrency(item.receita)} | Manutenção: {formatCurrency(item.custo_manutencao)}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#10b981" }}>{item.roi}%</div>
+                  <div style={{ fontSize: 9, color: "#64748b" }}>ROI</div>
+                </div>
+              </div>
+            )) : <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", padding: 20 }}>Sem dados</p>}
+          </div>
+
+          {/* RANKING MANUTENÇÃO */}
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #f97316, #f87171)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Ranking Manutenção</span>
+            </div>
+            {man.ranking?.length > 0 ? man.ranking.map((item, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                <div style={{ fontSize: 12, color: "#f1f5f9" }}>{item.ativo}</div>
+                <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                  <span style={{ fontSize: 11, color: "#f97316", fontWeight: 700 }}>{item.quantidade}x</span>
+                  <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600 }}>{formatCurrency(item.custo_total)}</span>
+                </div>
+              </div>
+            )) : <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", padding: 20 }}>Sem dados</p>}
+          </div>
+        </div>
+
+        {/* RECEITA MENSAL (barras simples) */}
+        {graficos?.receita_mensal?.length > 0 && (
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #eab308)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Receita Mensal (Últimos 6 meses)</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 160, padding: "0 10px" }}>
+              {(() => {
+                const max = Math.max(...graficos.receita_mensal.map(m => m.receita), 1);
+                return graficos.receita_mensal.map((m, i) => (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>
+                      {formatCurrency(m.receita)}
+                    </span>
+                    <div style={{
+                      width: "100%", maxWidth: 50, borderRadius: "8px 8px 0 0",
+                      height: `${Math.max((m.receita / max) * 120, 4)}px`,
+                      background: "linear-gradient(to top, #10b981, #34d399)",
+                      transition: "height 0.5s ease",
+                    }} />
+                    <span style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>{m.mes}</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          </div>
+        )}
+
+        {/* POR CATEGORIA */}
+        {graficos?.por_categoria?.length > 0 && (
+          <div style={s.card}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #ec4899)" }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Ativos por Categoria</span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {graficos.por_categoria.map((c, i) => {
+                const colors = ["#3b82f6", "#10b981", "#eab308", "#f97316", "#8b5cf6", "#ec4899", "#f87171"];
+                const color = colors[i % colors.length];
+                return (
+                  <div key={i} style={{
+                    padding: "8px 16px", borderRadius: 10,
+                    background: `${color}15`, border: `1px solid ${color}30`,
+                    display: "flex", alignItems: "center", gap: 8,
+                  }}>
+                    <span style={{ fontSize: 12, color, fontWeight: 700 }}>{c.quantidade}</span>
+                    <span style={{ fontSize: 11, color: "#cbd5e1" }}>{c.categoria}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ============================================================
+  // RENDER: TABELA ATIVOS
+  // ============================================================
+  const renderAtivos = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* FILTROS */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          placeholder="🔍 Buscar ativo..."
+          value={buscaAtivo}
+          onChange={e => setBuscaAtivo(e.target.value)}
+          style={{ ...s.input, maxWidth: 250 }}
+        />
+        <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ ...s.input, maxWidth: 180 }}>
+          <option value="">Todos os Status</option>
+          {Object.entries(STATUS_COLORS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+        <select value={filtroCategoria} onChange={e => setFiltroCategoria(e.target.value)} style={{ ...s.input, maxWidth: 180 }}>
+          <option value="">Todas Categorias</option>
+          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <button
+          onClick={() => { resetFormAtivo(); setEditingAtivo(null); setShowFormAtivo(true); }}
+          style={s.primaryBtn}
+        >
+          + Novo Ativo
+        </button>
+      </div>
+
+      {/* TABELA */}
+      <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                {["Nome", "Categoria", "Valor Aquisição", "Valor Diária", "Status", "Código Rastreio", "Ações"].map(h => (
+                  <th key={h} style={s.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ativos.length === 0 ? (
+                <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhum ativo encontrado</td></tr>
+              ) : ativos.map(a => (
+                <tr key={a.id} style={{ cursor: "pointer" }} onClick={() => verDetalheAtivo(a.id)}>
+                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{a.nome}</td>
+                  <td style={s.td}>{a.categoria}</td>
+                  <td style={s.td}>{formatCurrency(a.valor_aquisicao)}</td>
+                  <td style={s.td}>{formatCurrency(a.valor_locacao_dia)}</td>
+                  <td style={s.td}><StatusBadge status={a.status} /></td>
+                  <td style={{ ...s.td, fontFamily: "monospace", fontSize: 11 }}>{a.codigo_rastreio || "—"}</td>
+                  <td style={s.td} onClick={e => e.stopPropagation()}>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button onClick={() => editarAtivo(a)} style={{ ...s.successBtn, padding: "4px 10px", fontSize: 10 }}>Editar</button>
+                      <button onClick={() => excluirAtivo(a.id)} style={{ ...s.dangerBtn, padding: "4px 10px", fontSize: 10 }}>Inativar</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* MODAL DETALHE */}
+      {ativoDetalhe && (
+        <div style={s.modalOverlay} onClick={() => setAtivoDetalhe(null)}>
+          <div style={{ ...s.modalContent, maxWidth: 700 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <div>
+                <h3 style={{ color: "#f1f5f9", margin: 0, fontSize: 18 }}>{ativoDetalhe.nome}</h3>
+                <span style={{ fontSize: 11, color: "#64748b" }}>{ativoDetalhe.categoria} • {ativoDetalhe.codigo_rastreio || "Sem código"}</span>
+              </div>
+              <StatusBadge status={ativoDetalhe.status} />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+              {[
+                { label: "Aquisição", value: formatCurrency(ativoDetalhe.valor_aquisicao) },
+                { label: "Diária", value: formatCurrency(ativoDetalhe.valor_locacao_dia) },
+                { label: "Vida Útil", value: `${ativoDetalhe.vida_util_meses} meses` },
+              ].map((item, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 14px" }}>
+                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>{item.label}</div>
+                  <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 700, marginTop: 2 }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {ativoDetalhe.observacoes && (
+              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16, padding: "10px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 10 }}>
+                {ativoDetalhe.observacoes}
+              </div>
+            )}
+
+            {/* LOCAÇÕES DO ATIVO */}
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ color: "#eab308", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>📋 Últimas Locações</h4>
+              {ativoDetalhe.locacoes?.length > 0 ? ativoDetalhe.locacoes.slice(0, 5).map((l, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <span style={{ color: "#cbd5e1" }}>{l.cliente_nome} — {formatDate(l.data_inicio)}</span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <span style={{ color: "#10b981" }}>{formatCurrency(l.valor_contrato)}</span>
+                    <StatusBadge status={l.status} map={LOCACAO_STATUS_COLORS} />
+                  </div>
+                </div>
+              )) : <p style={{ fontSize: 11, color: "#64748b" }}>Nenhuma locação registrada</p>}
+            </div>
+
+            {/* MANUTENÇÕES DO ATIVO */}
+            <div>
+              <h4 style={{ color: "#f97316", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>🔧 Últimas Manutenções</h4>
+              {ativoDetalhe.manutencoes?.length > 0 ? ativoDetalhe.manutencoes.slice(0, 5).map((m, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                  <span style={{ color: "#cbd5e1" }}>{m.tipo} — {m.descricao || "Sem descrição"}</span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <span style={{ color: "#f87171" }}>{formatCurrency(m.custo)}</span>
+                    <span style={{ fontSize: 10, color: m.data_fim ? "#10b981" : "#f97316" }}>
+                      {m.data_fim ? "Finalizada" : "Em andamento"}
+                    </span>
+                  </div>
+                </div>
+              )) : <p style={{ fontSize: 11, color: "#64748b" }}>Nenhuma manutenção registrada</p>}
+            </div>
+
+            <button onClick={() => setAtivoDetalhe(null)} style={{ ...s.dangerBtn, marginTop: 20, width: "100%" }}>Fechar</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  // ============================================================
+  // RENDER: LOCAÇÕES
+  // ============================================================
+  const renderLocacoes = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        <select value={filtroLocacao} onChange={e => setFiltroLocacao(e.target.value)} style={{ ...s.input, maxWidth: 180 }}>
+          <option value="">Todas</option>
+          <option value="ATIVA">Ativas</option>
+          <option value="FINALIZADA">Finalizadas</option>
+          <option value="ATRASADA">Atrasadas</option>
+        </select>
+        <button onClick={() => setShowFormLocacao(true)} style={s.primaryBtn}>+ Nova Locação</button>
+      </div>
+
+      <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                {["Ativo", "Cliente", "Início", "Prev. Fim", "Fim Real", "Valor Contrato", "Diária", "Status", "Ações"].map(h => (
+                  <th key={h} style={s.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {locacoes.length === 0 ? (
+                <tr><td colSpan={9} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhuma locação encontrada</td></tr>
+              ) : locacoes.map(l => (
+                <tr key={l.id}>
+                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{l.ativo_nome}</td>
+                  <td style={s.td}>{l.cliente_nome}</td>
+                  <td style={s.td}>{formatDate(l.data_inicio)}</td>
+                  <td style={s.td}>{formatDate(l.data_prevista_fim)}</td>
+                  <td style={s.td}>{formatDate(l.data_real_fim)}</td>
+                  <td style={s.td}>{formatCurrency(l.valor_contrato)}</td>
+                  <td style={s.td}>{formatCurrency(l.valor_diaria)}</td>
+                  <td style={s.td}><StatusBadge status={l.status} map={LOCACAO_STATUS_COLORS} /></td>
+                  <td style={s.td}>
+                    {(l.status === "ATIVA" || l.status === "ATRASADA") && (
+                      <button onClick={() => finalizarLocacao(l.id)} style={s.successBtn}>Finalizar</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // RENDER: MANUTENÇÕES
+  // ============================================================
+  const renderManutencoes = () => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", gap: 12 }}>
+        <button onClick={() => setShowFormManutencao(true)} style={s.primaryBtn}>+ Registrar Manutenção</button>
+      </div>
+
+      <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                {["Ativo", "Tipo", "Início", "Fim", "Custo", "Descrição", "Responsável", "Ações"].map(h => (
+                  <th key={h} style={s.th}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {manutencoes.length === 0 ? (
+                <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhuma manutenção registrada</td></tr>
+              ) : manutencoes.map(m => (
+                <tr key={m.id}>
+                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{m.ativo_nome}</td>
+                  <td style={s.td}>
+                    <span style={{
+                      padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+                      background: m.tipo === "PREVENTIVA" ? "rgba(59,130,246,0.15)" : "rgba(249,115,22,0.15)",
+                      color: m.tipo === "PREVENTIVA" ? "#60a5fa" : "#fb923c",
+                    }}>
+                      {m.tipo}
+                    </span>
+                  </td>
+                  <td style={s.td}>{formatDate(m.data_inicio)}</td>
+                  <td style={s.td}>{formatDate(m.data_fim)}</td>
+                  <td style={s.td}>{formatCurrency(m.custo)}</td>
+                  <td style={{ ...s.td, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.descricao || "—"}</td>
+                  <td style={s.td}>{m.responsavel || "—"}</td>
+                  <td style={s.td}>
+                    {!m.data_fim && (
+                      <button onClick={() => finalizarManutencao(m.id)} style={s.successBtn}>Finalizar</button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // MODAL: FORM ATIVO
+  // ============================================================
+  const renderFormAtivo = () => showFormAtivo && (
+    <div style={s.modalOverlay} onClick={() => setShowFormAtivo(false)}>
+      <div style={s.modalContent} onClick={e => e.stopPropagation()}>
+        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>
+          {editingAtivo ? "✏️ Editar Ativo" : "🏗️ Novo Ativo"}
+        </h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Nome *</label>
+            <input style={s.input} value={formAtivo.nome} onChange={e => setFormAtivo({ ...formAtivo, nome: e.target.value })} />
+          </div>
+          <div>
+            <label style={s.label}>Categoria</label>
+            <input style={s.input} value={formAtivo.categoria} onChange={e => setFormAtivo({ ...formAtivo, categoria: e.target.value })} list="cat-list" />
+            <datalist id="cat-list">{categorias.map(c => <option key={c} value={c} />)}</datalist>
+          </div>
+          <div>
+            <label style={s.label}>Data Aquisição</label>
+            <input style={s.input} type="date" value={formAtivo.data_aquisicao} onChange={e => setFormAtivo({ ...formAtivo, data_aquisicao: e.target.value })} />
+          </div>
+          <div>
+            <label style={s.label}>Valor Aquisição (R$)</label>
+            <input style={s.input} type="number" step="0.01" value={formAtivo.valor_aquisicao} onChange={e => setFormAtivo({ ...formAtivo, valor_aquisicao: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <label style={s.label}>Valor Locação/Dia (R$)</label>
+            <input style={s.input} type="number" step="0.01" value={formAtivo.valor_locacao_dia} onChange={e => setFormAtivo({ ...formAtivo, valor_locacao_dia: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <label style={s.label}>Vida Útil (meses)</label>
+            <input style={s.input} type="number" value={formAtivo.vida_util_meses} onChange={e => setFormAtivo({ ...formAtivo, vida_util_meses: parseInt(e.target.value) || 60 })} />
+          </div>
+          <div>
+            <label style={s.label}>Código Rastreio (QR/RFID)</label>
+            <input style={s.input} value={formAtivo.codigo_rastreio} onChange={e => setFormAtivo({ ...formAtivo, codigo_rastreio: e.target.value })} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Descrição</label>
+            <textarea style={{ ...s.input, minHeight: 60, resize: "vertical" }} value={formAtivo.descricao} onChange={e => setFormAtivo({ ...formAtivo, descricao: e.target.value })} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Observações</label>
+            <textarea style={{ ...s.input, minHeight: 50, resize: "vertical" }} value={formAtivo.observacoes} onChange={e => setFormAtivo({ ...formAtivo, observacoes: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+          <button onClick={() => { setShowFormAtivo(false); setEditingAtivo(null); }} style={s.dangerBtn}>Cancelar</button>
+          <button onClick={salvarAtivo} disabled={loading || !formAtivo.nome} style={{ ...s.primaryBtn, opacity: loading || !formAtivo.nome ? 0.5 : 1 }}>
+            {loading ? "Salvando..." : editingAtivo ? "Atualizar" : "Criar Ativo"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // MODAL: FORM LOCAÇÃO
+  // ============================================================
+  const ativosDisponiveis = useMemo(() => ativos.filter(a => a.status === "DISPONIVEL"), [ativos]);
+
+  const renderFormLocacao = () => showFormLocacao && (
+    <div style={s.modalOverlay} onClick={() => setShowFormLocacao(false)}>
+      <div style={s.modalContent} onClick={e => e.stopPropagation()}>
+        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>📋 Nova Locação</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Ativo *</label>
+            <select style={s.input} value={formLocacao.ativo_id} onChange={e => {
+              const aid = parseInt(e.target.value);
+              const ativo = ativos.find(a => a.id === aid);
+              setFormLocacao({ ...formLocacao, ativo_id: aid, valor_diaria: ativo?.valor_locacao_dia || 0 });
+            }}>
+              <option value="">Selecionar ativo...</option>
+              {ativosDisponiveis.map(a => <option key={a.id} value={a.id}>{a.nome} — {formatCurrency(a.valor_locacao_dia)}/dia</option>)}
+            </select>
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Cliente</label>
+            <select style={s.input} value={formLocacao.cliente_id} onChange={e => setFormLocacao({ ...formLocacao, cliente_id: parseInt(e.target.value) || "" })}>
+              <option value="">Selecionar cliente...</option>
+              {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={s.label}>Data Início</label>
+            <input style={s.input} type="date" value={formLocacao.data_inicio} onChange={e => setFormLocacao({ ...formLocacao, data_inicio: e.target.value })} />
+          </div>
+          <div>
+            <label style={s.label}>Previsão Fim *</label>
+            <input style={s.input} type="date" value={formLocacao.data_prevista_fim} onChange={e => setFormLocacao({ ...formLocacao, data_prevista_fim: e.target.value })} />
+          </div>
+          <div>
+            <label style={s.label}>Valor Contrato (R$)</label>
+            <input style={s.input} type="number" step="0.01" value={formLocacao.valor_contrato} onChange={e => setFormLocacao({ ...formLocacao, valor_contrato: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <label style={s.label}>Valor Diária (R$)</label>
+            <input style={s.input} type="number" step="0.01" value={formLocacao.valor_diaria} onChange={e => setFormLocacao({ ...formLocacao, valor_diaria: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Observações</label>
+            <textarea style={{ ...s.input, minHeight: 50, resize: "vertical" }} value={formLocacao.observacoes} onChange={e => setFormLocacao({ ...formLocacao, observacoes: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+          <button onClick={() => setShowFormLocacao(false)} style={s.dangerBtn}>Cancelar</button>
+          <button onClick={criarLocacao} disabled={loading || !formLocacao.ativo_id || !formLocacao.data_prevista_fim} style={{ ...s.primaryBtn, opacity: loading || !formLocacao.ativo_id ? 0.5 : 1 }}>
+            {loading ? "Criando..." : "Criar Locação"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // MODAL: FORM MANUTENÇÃO
+  // ============================================================
+  const renderFormManutencao = () => showFormManutencao && (
+    <div style={s.modalOverlay} onClick={() => setShowFormManutencao(false)}>
+      <div style={s.modalContent} onClick={e => e.stopPropagation()}>
+        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>🔧 Registrar Manutenção</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Ativo *</label>
+            <select style={s.input} value={formManutencao.ativo_id} onChange={e => setFormManutencao({ ...formManutencao, ativo_id: parseInt(e.target.value) || "" })}>
+              <option value="">Selecionar ativo...</option>
+              {ativos.filter(a => a.status !== "LOCADO" && a.status !== "INATIVO").map(a => (
+                <option key={a.id} value={a.id}>{a.nome} ({STATUS_COLORS[a.status]?.label})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={s.label}>Tipo</label>
+            <select style={s.input} value={formManutencao.tipo} onChange={e => setFormManutencao({ ...formManutencao, tipo: e.target.value })}>
+              <option value="CORRETIVA">Corretiva</option>
+              <option value="PREVENTIVA">Preventiva</option>
+            </select>
+          </div>
+          <div>
+            <label style={s.label}>Custo (R$)</label>
+            <input style={s.input} type="number" step="0.01" value={formManutencao.custo} onChange={e => setFormManutencao({ ...formManutencao, custo: parseFloat(e.target.value) || 0 })} />
+          </div>
+          <div>
+            <label style={s.label}>Responsável</label>
+            <input style={s.input} value={formManutencao.responsavel} onChange={e => setFormManutencao({ ...formManutencao, responsavel: e.target.value })} />
+          </div>
+          <div style={{ gridColumn: "1 / -1" }}>
+            <label style={s.label}>Descrição</label>
+            <textarea style={{ ...s.input, minHeight: 60, resize: "vertical" }} value={formManutencao.descricao} onChange={e => setFormManutencao({ ...formManutencao, descricao: e.target.value })} />
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+          <button onClick={() => setShowFormManutencao(false)} style={s.dangerBtn}>Cancelar</button>
+          <button onClick={criarManutencao} disabled={loading || !formManutencao.ativo_id} style={{ ...s.primaryBtn, opacity: loading || !formManutencao.ativo_id ? 0.5 : 1 }}>
+            {loading ? "Registrando..." : "Registrar Manutenção"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // RENDER PRINCIPAL
+  // ============================================================
+  return (
+    <div>
+      {/* CABEÇALHO */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+        <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
+        <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20, fontWeight: 800 }}>Gestão de Ativos de Locação</h2>
+      </div>
+      <p style={{ color: "#64748b", fontSize: 12, marginBottom: 20, marginLeft: 16 }}>
+        Controle de ativos, locações, manutenções e KPIs de performance
+      </p>
+
+      {/* TABS */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {sections.map(sec => (
+          <button
+            key={sec.key}
+            onClick={() => setSection(sec.key)}
+            style={s.sectionBtn(section === sec.key)}
+          >
+            <span style={{ marginRight: 6 }}>{sec.icon}</span>
+            {sec.label}
+          </button>
+        ))}
+      </div>
+
+      {/* CONTEÚDO */}
+      {section === "dashboard" && renderDashboard()}
+      {section === "ativos" && renderAtivos()}
+      {section === "locacoes" && renderLocacoes()}
+      {section === "manutencoes" && renderManutencoes()}
+
+      {/* MODAIS */}
+      {renderFormAtivo()}
+      {renderFormLocacao()}
+      {renderFormManutencao()}
+    </div>
+  );
+}
