@@ -193,17 +193,7 @@ export default function Sidebar({
           label="Plano de Contas"
           icon="📊"
         />
-        <NavItem
-          styles={styles}
-          active={activeTab === "clientes"}
-          onClick={() => {
-            setActiveTab("clientes");
-            loadClientes();
-          }}
-          label="Clientes"
-          icon="👥"
-        />
-        <NavItem
+          <NavItem
           styles={styles}
           active={activeTab === "fornecedores"}
           onClick={() => setActiveTab("fornecedores")}
