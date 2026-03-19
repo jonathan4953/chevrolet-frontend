@@ -1,0 +1,936 @@
+/* ============================================================
+   OMNI26 ERP — Design System CSS
+   Identidade Visual baseada no logotipo oficial
+   
+   Paleta:
+   - Primária (Laranja):    #F26B25
+   - Escura (Cinza Escuro): #636466
+   - Suporte (Cinza Claro): #B3B4B5
+   - Fundo (Branco):        #FFFFFF
+   
+   Arquivo: omni26-design-system.css
+   Importar no index.css ou App.css
+   ============================================================ */
+
+/* ============================================================
+   1. CSS VARIABLES (:root)
+   ============================================================ */
+:root {
+  /* ── PALETA PRIMÁRIA ── */
+  --omni-orange:          #F26B25;
+  --omni-orange-hover:    #E05A15;   /* -10% luminosidade */
+  --omni-orange-active:   #CC4E0E;   /* -18% luminosidade */
+  --omni-orange-light:    #FDECE3;   /* fundo sutil laranja */
+  --omni-orange-soft:     #F9A870;   /* laranja suave para badges */
+  --omni-orange-glow:     rgba(242, 107, 37, 0.15);
+
+  /* ── CINZA ESCURO (Texto / Estrutura) ── */
+  --omni-dark:            #636466;
+  --omni-dark-deeper:     #3D3E40;   /* títulos de destaque */
+  --omni-dark-heading:    #2A2B2D;   /* H1, H2 */
+  --omni-dark-muted:      #8E9093;   /* texto secundário */
+
+  /* ── CINZA CLARO (Suporte / Divisão) ── */
+  --omni-gray:            #B3B4B5;
+  --omni-gray-light:      #D4D5D6;   /* bordas de cards */
+  --omni-gray-lighter:    #ECECED;   /* backgrounds alternados */
+  --omni-gray-bg:         #F7F7F8;   /* fundo de seções */
+  --omni-gray-placeholder:#C8C9CA;   /* placeholders de input */
+
+  /* ── FUNDOS ── */
+  --omni-white:           #FFFFFF;
+  --omni-bg-page:         #F5F5F6;   /* fundo geral (levemente off-white) */
+  --omni-bg-sidebar:      #2A2B2D;   /* sidebar escura */
+  --omni-bg-sidebar-hover:#3D3E40;
+  --omni-bg-sidebar-active:rgba(242, 107, 37, 0.12);
+
+  /* ── SEMÂNTICAS (Status) ── */
+  --omni-success:         #22A06B;
+  --omni-success-bg:      #E7F6EF;
+  --omni-error:           #D93025;
+  --omni-error-bg:        #FDECEA;
+  --omni-warning:         #E8A317;
+  --omni-warning-bg:      #FFF6E0;
+  --omni-info:            #1A73E8;
+  --omni-info-bg:         #E8F0FE;
+
+  /* ── TIPOGRAFIA ── */
+  --font-primary:         'DM Sans', 'Segoe UI', -apple-system, sans-serif;
+  --font-mono:            'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --text-xs:    11px;
+  --text-sm:    12px;
+  --text-base:  14px;
+  --text-md:    15px;
+  --text-lg:    18px;
+  --text-xl:    22px;
+  --text-2xl:   28px;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-black:    800;
+
+  --line-height-tight:   1.25;
+  --line-height-normal:  1.5;
+  --line-height-relaxed: 1.65;
+
+  /* ── ESPAÇAMENTO ── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   12px;
+  --space-lg:   16px;
+  --space-xl:   24px;
+  --space-2xl:  32px;
+  --space-3xl:  48px;
+
+  /* ── BORDAS ── */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full:9999px;
+
+  --border-default: 1px solid var(--omni-gray-light);
+  --border-subtle:  1px solid var(--omni-gray-lighter);
+
+  /* ── SOMBRAS ── */
+  --shadow-sm:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:    0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg:    0 12px 36px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-orange:0 4px 16px rgba(242,107,37,0.25);
+  --shadow-card:  0 2px 8px rgba(0,0,0,0.05);
+
+  /* ── TRANSIÇÕES ── */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-smooth: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── LAYOUT ── */
+  --sidebar-width:      240px;
+  --sidebar-collapsed:  64px;
+  --header-height:      64px;
+  --content-max-width:  1400px;
+}
+
+
+/* ============================================================
+   2. RESET & GLOBAL
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-primary);
+  color: var(--omni-dark);
+  background: var(--omni-bg-page);
+  line-height: var(--line-height-normal);
+  overflow-x: auto;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Garante scroll em telas menores */
+html, body, #root {
+  overflow-x: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--omni-dark-heading);
+  font-weight: var(--weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+a {
+  color: var(--omni-orange);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: var(--omni-orange-hover);
+}
+
+::selection {
+  background: var(--omni-orange-light);
+  color: var(--omni-dark-deeper);
+}
+
+/* Scrollbar customizada */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--omni-gray); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--omni-dark-muted); }
+
+
+/* ============================================================
+   3. SIDEBAR (Menu Lateral)
+   ============================================================ */
+.omni-sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background: var(--omni-bg-sidebar);
+  color: var(--omni-gray);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--transition-smooth);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.omni-sidebar-logo {
+  padding: var(--space-xl) var(--space-lg);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.omni-sidebar-logo img {
+  height: 32px;
+  width: auto;
+}
+
+.omni-sidebar-section {
+  padding: var(--space-lg) 0 var(--space-sm);
+}
+
+.omni-sidebar-section-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--omni-dark-muted);
+  padding: 0 var(--space-lg) var(--space-sm);
+}
+
+.omni-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  margin: 2px var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--omni-gray);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  white-space: nowrap;
+}
+
+.omni-sidebar-item:hover {
+  background: var(--omni-bg-sidebar-hover);
+  color: var(--omni-white);
+}
+
+.omni-sidebar-item.active {
+  background: var(--omni-bg-sidebar-active);
+  color: var(--omni-orange);
+  font-weight: var(--weight-semibold);
+}
+
+.omni-sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--omni-orange);
+  border-radius: 0 2px 2px 0;
+}
+
+.omni-sidebar-item-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   4. NAVBAR (Cabeçalho)
+   ============================================================ */
+.omni-header {
+  height: var(--header-height);
+  background: var(--omni-white);
+  border-bottom: var(--border-default);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-xl);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+
+.omni-header-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-black);
+  color: var(--omni-dark-heading);
+  letter-spacing: -0.02em;
+}
+
+.omni-header-subtitle {
+  font-size: var(--text-xs);
+  color: var(--omni-dark-muted);
+  margin-top: 2px;
+}
+
+.omni-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.omni-header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--omni-orange-light);
+  color: var(--omni-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--weight-bold);
+  font-size: var(--text-sm);
+  border: 2px solid var(--omni-orange-soft);
+}
+
+
+/* ============================================================
+   5. MAIN CONTENT (Área de conteúdo)
+   ============================================================ */
+.omni-main {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-x: auto;  /* SCROLL HORIZONTAL em telas pequenas */
+}
+
+.omni-content {
+  flex: 1;
+  padding: var(--space-xl) var(--space-2xl);
+  max-width: var(--content-max-width);
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+  min-width: 0;
+}
+
+
+/* ============================================================
+   6. BOTÕES
+   ============================================================ */
+
+/* Primário (Laranja — CTA) */
+.omni-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 10px 22px;
+  background: var(--omni-orange);
+  color: var(--omni-white);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-orange);
+  white-space: nowrap;
+}
+
+.omni-btn-primary:hover {
+  background: var(--omni-orange-hover);
+  box-shadow: 0 6px 20px rgba(242,107,37,0.35);
+  transform: translateY(-1px);
+}
+
+.omni-btn-primary:active {
+  background: var(--omni-orange-active);
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(242,107,37,0.2);
+}
+
+.omni-btn-primary:disabled {
+  background: var(--omni-gray);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Secundário (Contorno cinza) */
+.omni-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: 10px 22px;
+  background: var(--omni-white);
+  color: var(--omni-dark);
+  font-family: var(--font-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  border: var(--border-default);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.omni-btn-secondary:hover {
+  background: var(--omni-gray-bg);
+  border-color: var(--omni-gray);
+}
+
+.omni-btn-secondary:active {
+  background: var(--omni-gray-lighter);
+}
+
+/* Ghost (Sem fundo) */
+.omni-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--omni-dark-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.omni-btn-ghost:hover {
+  background: var(--omni-gray-lighter);
+  color: var(--omni-dark);
+}
+
+/* Botão Danger */
+.omni-btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 22px;
+  background: var(--omni-error);
+  color: var(--omni-white);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.omni-btn-danger:hover {
+  background: #C12A20;
+}
+
+/* Tamanhos */
+.omni-btn-sm { padding: 6px 14px; font-size: var(--text-xs); }
+.omni-btn-lg { padding: 14px 32px; font-size: var(--text-base); }
+
+
+/* ============================================================
+   7. CARDS
+   ============================================================ */
+.omni-card {
+  background: var(--omni-white);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--transition-normal);
+}
+
+.omni-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.omni-card-title {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--omni-dark-heading);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.omni-card-title::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: var(--omni-orange);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* KPI Card */
+.omni-kpi-card {
+  background: var(--omni-white);
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+}
+
+.omni-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.omni-kpi-card-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--omni-orange);
+}
+
+.omni-kpi-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--omni-dark-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.omni-kpi-value {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-black);
+  color: var(--omni-dark-heading);
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+.omni-kpi-value.positive { color: var(--omni-success); }
+.omni-kpi-value.negative { color: var(--omni-error); }
+
+
+/* ============================================================
+   8. TABELAS (Data Grids)
+   ============================================================ */
+.omni-table-wrapper {
+  overflow-x: auto;
+  border: var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--omni-white);
+}
+
+.omni-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.omni-table thead {
+  background: var(--omni-gray-bg);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.omni-table th {
+  padding: var(--space-md) var(--space-lg);
+  text-align: left;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--omni-dark-muted);
+  border-bottom: 2px solid var(--omni-gray-lighter);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.omni-table td {
+  padding: var(--space-md) var(--space-lg);
+  color: var(--omni-dark);
+  border-bottom: 1px solid var(--omni-gray-lighter);
+  vertical-align: middle;
+}
+
+.omni-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.omni-table tbody tr:hover {
+  background: var(--omni-orange-light);
+}
+
+.omni-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Valores monetários na tabela */
+.omni-table .money {
+  font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.omni-table .money.positive { color: var(--omni-success); }
+.omni-table .money.negative { color: var(--omni-error); }
+
+
+/* ============================================================
+   9. FORMULÁRIOS (Inputs)
+   ============================================================ */
+.omni-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.omni-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--omni-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.omni-input {
+  padding: 10px 14px;
+  border: var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  color: var(--omni-dark);
+  background: var(--omni-white);
+  transition: all var(--transition-fast);
+  outline: none;
+  width: 100%;
+}
+
+.omni-input::placeholder {
+  color: var(--omni-gray-placeholder);
+}
+
+.omni-input:focus {
+  border-color: var(--omni-orange);
+  box-shadow: 0 0 0 3px var(--omni-orange-glow);
+}
+
+.omni-input:disabled {
+  background: var(--omni-gray-bg);
+  color: var(--omni-gray);
+  cursor: not-allowed;
+}
+
+.omni-select {
+  appearance: none;
+  padding: 10px 36px 10px 14px;
+  border: var(--border-default);
+  border-radius: var(--radius-md);
+  font-family: var(--font-primary);
+  font-size: var(--text-base);
+  color: var(--omni-dark);
+  background: var(--omni-white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23636466' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+  outline: none;
+  width: 100%;
+}
+
+.omni-select:focus {
+  border-color: var(--omni-orange);
+  box-shadow: 0 0 0 3px var(--omni-orange-glow);
+}
+
+
+/* ============================================================
+   10. BADGES & STATUS
+   ============================================================ */
+.omni-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.omni-badge-success {
+  background: var(--omni-success-bg);
+  color: var(--omni-success);
+  border: 1px solid rgba(34,160,107,0.2);
+}
+
+.omni-badge-error {
+  background: var(--omni-error-bg);
+  color: var(--omni-error);
+  border: 1px solid rgba(217,48,37,0.2);
+}
+
+.omni-badge-warning {
+  background: var(--omni-warning-bg);
+  color: var(--omni-warning);
+  border: 1px solid rgba(232,163,23,0.2);
+}
+
+.omni-badge-info {
+  background: var(--omni-info-bg);
+  color: var(--omni-info);
+  border: 1px solid rgba(26,115,232,0.2);
+}
+
+.omni-badge-neutral {
+  background: var(--omni-gray-lighter);
+  color: var(--omni-dark-muted);
+  border: 1px solid var(--omni-gray-light);
+}
+
+.omni-badge-orange {
+  background: var(--omni-orange-light);
+  color: var(--omni-orange);
+  border: 1px solid rgba(242,107,37,0.2);
+}
+
+
+/* ============================================================
+   11. MODAL
+   ============================================================ */
+.omni-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 43, 45, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+}
+
+.omni-modal {
+  background: var(--omni-white);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  max-width: 640px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--space-2xl);
+}
+
+.omni-modal-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-black);
+  color: var(--omni-dark-heading);
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: var(--border-subtle);
+}
+
+
+/* ============================================================
+   12. TOAST / NOTIFICAÇÕES
+   ============================================================ */
+.omni-toast {
+  position: fixed;
+  top: var(--space-xl);
+  right: var(--space-xl);
+  z-index: 10000;
+  padding: 14px 22px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  animation: omni-slide-in 300ms ease-out;
+}
+
+.omni-toast-success {
+  background: var(--omni-success);
+  color: white;
+}
+
+.omni-toast-error {
+  background: var(--omni-error);
+  color: white;
+}
+
+@keyframes omni-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+
+/* ============================================================
+   13. RESPONSIVIDADE
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 1200px) {
+  :root {
+    --sidebar-width: 200px;
+  }
+  .omni-content {
+    padding: var(--space-lg) var(--space-xl);
+  }
+}
+
+/* Mobile landscape / small tablet */
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 64px;
+  }
+  .omni-sidebar-item span:not(.omni-sidebar-item-icon) {
+    display: none;
+  }
+  .omni-sidebar-section-label {
+    display: none;
+  }
+  .omni-sidebar-logo span {
+    display: none;
+  }
+  .omni-content {
+    padding: var(--space-md) var(--space-lg);
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 640px) {
+  .omni-sidebar {
+    display: none;
+  }
+  .omni-main {
+    margin-left: 0;
+  }
+  .omni-content {
+    padding: var(--space-md);
+  }
+  .omni-kpi-value {
+    font-size: var(--text-lg);
+  }
+}
+
+/* Mínimo absoluto — nunca colapsa */
+@media (max-width: 480px) {
+  body {
+    min-width: 480px;
+    overflow-x: auto;
+  }
+}
+
+
+/* ============================================================
+   14. ACESSIBILIDADE & CONTRASTE
+   ============================================================
+   
+   WCAG AA (4.5:1 para texto normal, 3:1 para texto grande):
+   
+   ✅ #636466 sobre #FFFFFF → Ratio 5.14:1 (AA ✓)
+   ✅ #2A2B2D sobre #FFFFFF → Ratio 12.1:1 (AAA ✓)
+   ✅ #FFFFFF sobre #F26B25 → Ratio 3.13:1 (AA Large Text ✓)
+   ⚠️ #FFFFFF sobre #F26B25 → Para texto pequeno, usar bold
+   ✅ #3D3E40 sobre #F7F7F8 → Ratio 8.2:1 (AAA ✓)
+   ✅ #636466 sobre #F5F5F6 → Ratio 4.8:1 (AA ✓)
+   
+   RECOMENDAÇÕES:
+   - Texto branco sobre laranja: usar font-weight ≥ 600 e font-size ≥ 14px
+   - Para texto menor sobre laranja, usar #2A2B2D (escuro) em vez de branco
+   - Placeholders: #C8C9CA sobre branco tem ratio 1.6:1 — aceitável para placeholder
+     (não é texto informativo, apenas dica)
+   - Ícones inativos (#B3B4B5 sobre branco): ratio 2.0:1 — aceitável para decorativo,
+     mas adicionar aria-label para leitores de tela
+   ============================================================ */
+
+/* Focus visible para navegação por teclado */
+:focus-visible {
+  outline: 2px solid var(--omni-orange);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Reduz animações para quem prefere */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Alto contraste */
+@media (prefers-contrast: high) {
+  :root {
+    --omni-gray-light: #999;
+    --omni-gray-lighter: #CCC;
+    --border-default: 2px solid #636466;
+  }
+}
+
+
+/* ============================================================
+   15. UTILITIES (Classes utilitárias)
+   ============================================================ */
+.omni-text-muted    { color: var(--omni-dark-muted); }
+.omni-text-orange   { color: var(--omni-orange); }
+.omni-text-success  { color: var(--omni-success); }
+.omni-text-error    { color: var(--omni-error); }
+.omni-text-mono     { font-family: var(--font-mono); }
+.omni-text-bold     { font-weight: var(--weight-bold); }
+.omni-text-xs       { font-size: var(--text-xs); }
+.omni-text-sm       { font-size: var(--text-sm); }
+
+.omni-bg-orange-light { background: var(--omni-orange-light); }
+.omni-bg-gray        { background: var(--omni-gray-bg); }
+
+.omni-border-orange  { border-color: var(--omni-orange) !important; }
+.omni-border-bottom  { border-bottom: var(--border-default); }
+
+.omni-flex           { display: flex; }
+.omni-flex-col       { display: flex; flex-direction: column; }
+.omni-flex-center    { display: flex; align-items: center; justify-content: center; }
+.omni-flex-between   { display: flex; align-items: center; justify-content: space-between; }
+.omni-gap-sm         { gap: var(--space-sm); }
+.omni-gap-md         { gap: var(--space-md); }
+.omni-gap-lg         { gap: var(--space-lg); }
+.omni-gap-xl         { gap: var(--space-xl); }
+
+.omni-grid-2         { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
+.omni-grid-3         { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-lg); }
+.omni-grid-4         { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-lg); }
+
+.omni-truncate       { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.omni-sr-only        { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }

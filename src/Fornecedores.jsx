@@ -3,38 +3,39 @@ import { useState, useEffect, useCallback } from "react";
 import { api } from "./api";
 
 const S = {
-  bg: "rgba(15,23,42,0.8)",
-  border: "rgba(255,255,255,0.07)",
-  blue: "#3b82f6",
-  green: "#10b981",
-  red: "#ef4444",
-  yellow: "#eab308",
-  text: "#f1f5f9",
-  muted: "#64748b",
-  subtle: "#94a3b8",
+  bg: "#FFFFFF",
+  border: "#E5E7EB",
+  primary: "#F26B25", // Laranja oficial Omni26
+  primaryLight: "rgba(242, 107, 37, 0.1)",
+  blue: "#1A73E8",
+  green: "#22A06B",
+  red: "#D93025",
+  text: "#2A2B2D",
+  muted: "#8E9093",
+  subtle: "#636466",
 };
 
 const fmt = (v) => v ? v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4") : "";
 
 const Card = ({ children, style = {} }) => (
-  <div style={{ background: S.bg, backdropFilter: "blur(16px)", border: `1px solid ${S.border}`, borderRadius: 20, ...style }}>{children}</div>
+  <div style={{ background: S.bg, border: `1px solid ${S.border}`, borderRadius: 20, boxShadow: "0 4px 12px rgba(0,0,0,0.03)", ...style }}>{children}</div>
 );
 
 const Badge = ({ label, color }) => (
-  <span style={{ background: `${color}20`, color, border: `1px solid ${color}40`, padding: "3px 10px", borderRadius: 20, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{label}</span>
+  <span style={{ background: `${color}15`, color, border: `1px solid ${color}30`, padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>{label}</span>
 );
 
 const Input = ({ label, value, onChange, type = "text", placeholder, required, options, span }) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 5, gridColumn: span ? `span ${span}` : undefined }}>
-    <label style={{ fontSize: 10, color: S.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+    <label style={{ fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
       {label}{required && <span style={{ color: S.red }}> *</span>}
     </label>
     {options ? (
-      <select value={value} onChange={e => onChange(e.target.value)} style={{ background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13 }}>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ background: "#FFFFFF", border: "1px solid #D4D5D6", borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none", transition: "border 0.2s" }} onFocus={e => e.target.style.borderColor = S.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"}>
         {options.map(o => <option key={o.v || o} value={o.v || o}>{o.l || o}</option>)}
       </select>
     ) : (
-      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box" }} />
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ background: "#FFFFFF", border: "1px solid #D4D5D6", borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none", width: "100%", boxSizing: "border-box", transition: "border 0.2s" }} onFocus={e => e.target.style.borderColor = S.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
     )}
   </div>
 );
@@ -75,18 +76,18 @@ function ModalFornecedor({ fornecedor, onSave, onClose }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(2,6,20,0.88)", backdropFilter: "blur(16px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-      <div style={{ background: "rgba(10,18,32,0.98)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, padding: "36px 32px", width: "100%", maxWidth: 720, maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 60px 120px rgba(0,0,0,0.8)" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 18, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: S.subtle, fontSize: 16, cursor: "pointer", borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(42, 43, 45, 0.7)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+      <div style={{ background: "#FFFFFF", border: `1px solid ${S.border}`, borderRadius: 24, padding: "36px 32px", width: "100%", maxWidth: 720, maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 20, right: 20, background: "#F9FAFB", border: "1px solid #D4D5D6", color: S.subtle, fontSize: 16, cursor: "pointer", borderRadius: 8, width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#E5E7EB"} onMouseLeave={e => e.currentTarget.style.background = "#F9FAFB"}>✕</button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
-          <div style={{ width: 4, height: 28, borderRadius: 2, background: `linear-gradient(to bottom, ${S.blue}, ${S.green})` }} />
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 900 }}>{isEdit ? "Editar Fornecedor" : "Novo Fornecedor"}</h2>
+          <div style={{ width: 4, height: 28, borderRadius: 2, background: `linear-gradient(to bottom, ${S.primary}, #FF9B6A)` }} />
+          <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: S.text }}>{isEdit ? "Editar Fornecedor" : "Novo Fornecedor"}</h2>
         </div>
 
         <form onSubmit={handleSave}>
           {/* Seção: Dados Gerais */}
-          <div style={{ fontSize: 10, color: S.yellow, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.yellow}30`, paddingBottom: 8 }}>Dados Gerais</div>
+          <div style={{ fontSize: 11, color: S.primary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.primaryLight}`, paddingBottom: 8 }}>Dados Gerais</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
             <Input label="Tipo de Pessoa" value={form.tipo_pessoa} onChange={set("tipo_pessoa")} options={[{v:"PJ",l:"Pessoa Jurídica (CNPJ)"},{v:"PF",l:"Pessoa Física (CPF)"}]} />
             <Input label="Categoria" value={form.tipo_fornecedor} onChange={set("tipo_fornecedor")} options={TIPOS} />
@@ -97,12 +98,22 @@ function ModalFornecedor({ fornecedor, onSave, onClose }) {
           </div>
 
           {/* Seção: Endereço */}
-          <div style={{ fontSize: 10, color: S.yellow, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.yellow}30`, paddingBottom: 8 }}>Endereço</div>
+          <div style={{ fontSize: 11, color: S.primary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.primaryLight}`, paddingBottom: 8 }}>Endereço</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 28 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-              <label style={{ fontSize: 10, color: S.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>CEP</label>
+              <label style={{ fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>CEP</label>
               <div style={{ display: "flex", gap: 8 }}>
-                <input value={form.cep} onChange={e => set("cep")(e.target.value)} onBlur={e => buscarCep(e.target.value)} placeholder="00000-000" style={{ flex: 1, background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none" }} />
+                <input 
+                  value={form.cep} 
+                  onChange={e => set("cep")(e.target.value)} 
+                  onBlur={e => {
+                    buscarCep(e.target.value);
+                    e.target.style.borderColor = "#D4D5D6";
+                  }} 
+                  placeholder="00000-000" 
+                  style={{ flex: 1, background: "#FFFFFF", border: "1px solid #D4D5D6", borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none", transition: "border 0.2s" }} 
+                  onFocus={e => e.target.style.borderColor = S.primary} 
+                />
                 {buscandoCep && <span style={{ alignSelf: "center", color: S.muted, fontSize: 11 }}>🔍</span>}
               </div>
             </div>
@@ -115,8 +126,8 @@ function ModalFornecedor({ fornecedor, onSave, onClose }) {
           </div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
-            <button type="button" onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: `1px solid rgba(255,255,255,0.1)`, color: S.subtle, borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Cancelar</button>
-            <button type="submit" disabled={saving} style={{ background: `${S.blue}22`, border: `1px solid ${S.blue}44`, color: S.blue, borderRadius: 10, padding: "11px 28px", cursor: "pointer", fontWeight: 800, fontSize: 13, minWidth: 140 }}>
+            <button type="button" onClick={onClose} style={{ background: "#F9FAFB", border: `1px solid #D4D5D6`, color: S.subtle, borderRadius: 10, padding: "11px 22px", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Cancelar</button>
+            <button type="submit" disabled={saving} style={{ background: S.primary, border: "none", color: "#FFFFFF", borderRadius: 10, padding: "11px 28px", cursor: "pointer", fontWeight: 800, fontSize: 13, minWidth: 140, boxShadow: "0 4px 10px rgba(242, 107, 37, 0.2)" }}>
               {saving ? "Salvando..." : isEdit ? "💾 Salvar Alterações" : "➕ Cadastrar"}
             </button>
           </div>
@@ -163,13 +174,13 @@ export default function Fornecedores() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 4, height: 36, borderRadius: 2, background: `linear-gradient(to bottom, ${S.blue}, ${S.green})` }} />
+          <div style={{ width: 4, height: 36, borderRadius: 2, background: `linear-gradient(to bottom, ${S.primary}, #FF9B6A)` }} />
           <div>
-            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900 }}>Fornecedores</h1>
-            <p style={{ margin: "4px 0 0 0", color: S.muted, fontSize: 13 }}>{lista.length} cadastrado(s)</p>
+            <h1 style={{ margin: 0, fontSize: 24, fontWeight: 900, color: S.text }}>Fornecedores</h1>
+            <p style={{ margin: "4px 0 0 0", color: S.muted, fontSize: 13, fontWeight: 600 }}>{lista.length} cadastrado(s)</p>
           </div>
         </div>
-        <button onClick={() => { setEditando(null); setShowModal(true); }} style={{ background: `${S.blue}22`, border: `1px solid ${S.blue}44`, color: S.blue, borderRadius: 12, padding: "11px 22px", cursor: "pointer", fontWeight: 800, fontSize: 13 }}>
+        <button onClick={() => { setEditando(null); setShowModal(true); }} style={{ background: S.primary, border: "none", color: "#FFFFFF", borderRadius: 12, padding: "11px 22px", cursor: "pointer", fontWeight: 800, fontSize: 13, boxShadow: "0 4px 10px rgba(242, 107, 37, 0.2)" }}>
           ➕ Novo Fornecedor
         </button>
       </div>
@@ -178,17 +189,17 @@ export default function Fornecedores() {
       <Card style={{ padding: "18px 22px" }}>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            <label style={{ fontSize: 10, color: S.muted, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Buscar</label>
-            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Nome, CNPJ, e-mail..." style={{ width: "100%", background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, boxSizing: "border-box" }} />
+            <label style={{ fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Buscar</label>
+            <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Nome, CNPJ, e-mail..." style={{ width: "100%", background: "#FFFFFF", border: "1px solid #D4D5D6", borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, boxSizing: "border-box", outline: "none", transition: "border 0.2s" }} onFocus={e => e.target.style.borderColor = S.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
           </div>
           <div>
-            <label style={{ fontSize: 10, color: S.muted, fontWeight: 700, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Categoria</label>
-            <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ background: "rgba(0,0,0,0.4)", border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13 }}>
+            <label style={{ fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", display: "block", marginBottom: 6 }}>Categoria</label>
+            <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ background: "#FFFFFF", border: "1px solid #D4D5D6", borderRadius: 10, padding: "10px 12px", color: S.text, fontSize: 13, outline: "none", transition: "border 0.2s" }} onFocus={e => e.target.style.borderColor = S.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"}>
               <option value="Todos">Todos</option>
               {TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
-          <button onClick={load} style={{ background: `${S.yellow}22`, border: `1px solid ${S.yellow}44`, color: S.yellow, borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontWeight: 800, fontSize: 13 }}>🔄</button>
+          <button onClick={load} style={{ background: S.primaryLight, border: `1px solid rgba(242, 107, 37, 0.3)`, color: S.primary, borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontWeight: 800, fontSize: 13 }}>🔄</button>
         </div>
       </Card>
 
@@ -199,35 +210,35 @@ export default function Fornecedores() {
             <thead>
               <tr>
                 {["Razão Social / Nome", "Documento", "Categoria", "Telefone", "E-mail", "Cidade/UF", "Ações"].map(h => (
-                  <th key={h} style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "rgba(0,0,0,0.3)", borderBottom: `1px solid ${S.border}`, whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={h} style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#F9FAFB", borderBottom: `1px solid ${S.border}`, whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} style={{ padding: 50, textAlign: "center", color: S.muted }}>Carregando...</td></tr>
+                <tr><td colSpan={7} style={{ padding: 50, textAlign: "center", color: S.muted, fontWeight: 600 }}>Carregando...</td></tr>
               ) : filtrados.length === 0 ? (
-                <tr><td colSpan={7} style={{ padding: 60, textAlign: "center", color: S.muted }}>
+                <tr><td colSpan={7} style={{ padding: 60, textAlign: "center", color: S.muted, fontWeight: 600 }}>
                   {busca ? "Nenhum fornecedor encontrado para essa busca." : "Nenhum fornecedor cadastrado."}
                 </td></tr>
               ) : filtrados.map(f => (
                 <tr key={f.id} style={{ borderBottom: `1px solid ${S.border}`, transition: "background 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
                   <td style={{ padding: "14px 16px" }}>
-                    <div style={{ fontWeight: 700 }}>{f.nome_razao}</div>
-                    <div style={{ fontSize: 11, color: S.muted, marginTop: 2 }}>{f.tipo_pessoa === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</div>
+                    <div style={{ fontWeight: 800, color: S.text }}>{f.nome_razao}</div>
+                    <div style={{ fontSize: 11, color: S.muted, marginTop: 2, fontWeight: 600 }}>{f.tipo_pessoa === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</div>
                   </td>
-                  <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: S.subtle }}>{fmt(f.documento)}</td>
-                  <td style={{ padding: "14px 16px" }}><Badge label={f.tipo_fornecedor || "Geral"} color={S.blue} /></td>
-                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12 }}>{f.telefone || "—"}</td>
-                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12 }}>{f.email || "—"}</td>
-                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12 }}>{f.cidade ? `${f.cidade}/${f.uf}` : "—"}</td>
+                  <td style={{ padding: "14px 16px", fontFamily: "monospace", fontSize: 12, color: S.subtle, fontWeight: 600 }}>{fmt(f.documento)}</td>
+                  <td style={{ padding: "14px 16px" }}><Badge label={f.tipo_fornecedor || "Geral"} color={S.primary} /></td>
+                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.telefone || "—"}</td>
+                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.email || "—"}</td>
+                  <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.cidade ? `${f.cidade}/${f.uf}` : "—"}</td>
                   <td style={{ padding: "14px 16px" }}>
                     <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => { setEditando(f); setShowModal(true); }} style={{ background: `${S.blue}20`, border: `1px solid ${S.blue}40`, color: S.blue, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 11 }}>✏️ Editar</button>
-                      <button onClick={() => handleExcluir(f.id, f.nome_razao)} style={{ background: `${S.red}15`, border: `1px solid ${S.red}35`, color: S.red, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 700, fontSize: 11 }}>🗑️</button>
+                      <button onClick={() => { setEditando(f); setShowModal(true); }} style={{ background: S.primaryLight, border: `1px solid rgba(242, 107, 37, 0.3)`, color: S.primary, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 800, fontSize: 11 }}>✏️ Editar</button>
+                      <button onClick={() => handleExcluir(f.id, f.nome_razao)} style={{ background: `rgba(217, 48, 37, 0.1)`, border: `1px solid rgba(217, 48, 37, 0.3)`, color: S.red, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 800, fontSize: 11 }}>🗑️</button>
                     </div>
                   </td>
                 </tr>
@@ -236,7 +247,7 @@ export default function Fornecedores() {
           </table>
         </div>
         {filtrados.length > 0 && (
-          <div style={{ padding: "12px 16px", borderTop: `1px solid ${S.border}`, fontSize: 11, color: S.muted }}>
+          <div style={{ padding: "12px 16px", borderTop: `1px solid ${S.border}`, fontSize: 11, color: S.muted, fontWeight: 600, background: "#F9FAFB" }}>
             {filtrados.length} de {lista.length} fornecedor(es)
           </div>
         )}

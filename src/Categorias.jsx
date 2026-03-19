@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { api } from "./api";
 
+const C = {
+  primary: "#F26B25",
+  blue: "#1A73E8",
+  green: "#22A06B",
+  red: "#D93025",
+  text: "#2A2B2D",
+  muted: "#8E9093",
+  subtle: "#636466",
+  border: "#E5E7EB",
+  bg: "#FFFFFF",
+  bgAlt: "#F9FAFB"
+};
+
 export default function Categorias({ styles }) {
   const [categorias, setCategorias] = useState([]);
   const [centrosCusto, setCentrosCusto] = useState([]);
@@ -69,6 +82,7 @@ export default function Categorias({ styles }) {
   };
 
   const handleExcluirCategoria = async (id) => {
+    if(!window.confirm("Deseja realmente excluir esta categoria?")) return;
     try {
       setLoading(true);
       await api.delete(`/financeiro/categorias/${id}`);
@@ -107,6 +121,7 @@ export default function Categorias({ styles }) {
   };
 
   const handleExcluirCentro = async (id) => {
+    if(!window.confirm("Deseja realmente excluir este centro de custo?")) return;
     try {
       setLoading(true);
       await api.delete(`/financeiro/centros-custo/${id}`);
@@ -119,145 +134,165 @@ export default function Categorias({ styles }) {
     }
   };
 
-  // Declaração do objeto s antes do return para evitar erro de escopo
   const s = {
-    container: { padding: "24px", color: "#f1f5f9" },
+    container: { padding: "24px", fontFamily: "system-ui, sans-serif" },
     header: {
       display: "flex",
-      justifyContent: "space-between",
       alignItems: "center",
+      gap: "12px",
       marginBottom: "24px",
     },
-    title: { fontSize: "20px", fontWeight: "700", color: "#eab308" },
+    title: { fontSize: "22px", fontWeight: "900", color: C.text },
     grid: {
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: "24px",
     },
     card: {
-      background: "rgba(15,23,42,0.7)",
-      border: "1px solid rgba(234,179,8,0.15)",
-      borderRadius: "12px",
-      padding: "20px",
+      background: "#FFFFFF",
+      border: `1px solid ${C.border}`,
+      borderRadius: "16px",
+      padding: "0",
+      overflow: "hidden",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
     },
     cardHeader: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: "16px",
+      padding: "20px 24px",
+      background: C.bgAlt,
+      borderBottom: `1px solid ${C.border}`,
     },
-    cardTitle: { fontSize: "16px", fontWeight: "600", color: "#eab308" },
+    cardTitle: { fontSize: "15px", fontWeight: "800", color: C.text, textTransform: "uppercase", letterSpacing: "0.05em" },
     btnAdd: {
-      background: "rgba(234,179,8,0.15)",
-      border: "1px solid rgba(234,179,8,0.3)",
-      color: "#eab308",
-      padding: "6px 14px",
-      borderRadius: "8px",
+      background: C.primary,
+      border: "none",
+      color: "#FFF",
+      padding: "8px 16px",
+      borderRadius: "10px",
       cursor: "pointer",
-      fontSize: "13px",
-      fontWeight: "600",
+      fontSize: "12px",
+      fontWeight: "800",
+      boxShadow: `0 4px 10px ${C.primary}33`,
+      transition: "all 0.2s"
     },
     table: { width: "100%", borderCollapse: "collapse" },
     th: {
       textAlign: "left",
-      padding: "10px 12px",
-      fontSize: "12px",
-      color: "#94a3b8",
-      borderBottom: "1px solid rgba(234,179,8,0.1)",
+      padding: "14px 16px",
+      fontSize: "10px",
+      fontWeight: "800",
+      color: C.muted,
       textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      borderBottom: `1px solid ${C.border}`,
     },
     td: {
-      padding: "10px 12px",
+      padding: "14px 16px",
       fontSize: "13px",
-      color: "#e2e8f0",
-      borderBottom: "1px solid rgba(255,255,255,0.05)",
+      color: C.subtle,
+      fontWeight: "600",
+      borderBottom: `1px solid ${C.border}`,
     },
     btnEdit: {
-      background: "rgba(59,130,246,0.15)",
-      border: "1px solid rgba(59,130,246,0.3)",
-      color: "#60a5fa",
-      padding: "4px 10px",
-      borderRadius: "6px",
+      background: "none",
+      border: `1px solid ${C.border}`,
+      color: C.blue,
+      padding: "6px 12px",
+      borderRadius: "8px",
       cursor: "pointer",
       fontSize: "12px",
-      marginRight: "6px",
+      fontWeight: "700",
+      marginRight: "8px",
+      transition: "all 0.2s"
     },
     btnDel: {
-      background: "rgba(239,68,68,0.15)",
-      border: "1px solid rgba(239,68,68,0.3)",
-      color: "#f87171",
-      padding: "4px 10px",
-      borderRadius: "6px",
+      background: "none",
+      border: `1px solid ${C.border}`,
+      color: C.red,
+      padding: "6px 12px",
+      borderRadius: "8px",
       cursor: "pointer",
       fontSize: "12px",
+      fontWeight: "700",
+      transition: "all 0.2s"
     },
     overlay: {
       position: "fixed",
       inset: 0,
-      background: "rgba(0,0,0,0.7)",
+      background: "rgba(42, 43, 45, 0.6)",
+      backdropFilter: "blur(4px)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 1000,
+      zIndex: 10000,
     },
     modal: {
-      background: "#0f172a",
-      border: "1px solid rgba(234,179,8,0.2)",
-      borderRadius: "16px",
-      padding: "28px",
-      width: "420px",
-      maxWidth: "95vw",
+      background: "#FFFFFF",
+      border: `1px solid ${C.border}`,
+      borderRadius: "20px",
+      padding: "32px",
+      width: "400px",
+      maxWidth: "90vw",
+      boxShadow: "0 20px 50px rgba(0,0,0,0.15)"
     },
     modalTitle: {
       fontSize: "18px",
-      fontWeight: "700",
-      color: "#eab308",
-      marginBottom: "20px",
+      fontWeight: "900",
+      color: C.text,
+      marginBottom: "24px",
     },
     label: {
       display: "block",
-      fontSize: "12px",
-      color: "#94a3b8",
+      fontSize: "10px",
+      color: C.muted,
+      fontWeight: "800",
       marginBottom: "6px",
       textTransform: "uppercase",
+      letterSpacing: "0.05em"
     },
     input: {
       width: "100%",
-      background: "rgba(255,255,255,0.05)",
-      border: "1px solid rgba(234,179,8,0.2)",
-      borderRadius: "8px",
-      padding: "10px 12px",
-      color: "#f1f5f9",
+      background: "#FFFFFF",
+      border: `1px solid #D4D5D6`,
+      borderRadius: "10px",
+      padding: "12px 14px",
+      color: C.text,
       fontSize: "14px",
-      marginBottom: "16px",
+      marginBottom: "20px",
       boxSizing: "border-box",
+      outline: "none"
     },
     modalFooter: {
       display: "flex",
       justifyContent: "flex-end",
-      gap: "10px",
+      gap: "12px",
       marginTop: "8px",
     },
     btnCancel: {
-      background: "rgba(255,255,255,0.05)",
-      border: "1px solid rgba(255,255,255,0.1)",
-      color: "#94a3b8",
-      padding: "8px 18px",
-      borderRadius: "8px",
-      cursor: "pointer",
-    },
-    btnSave: {
-      background: "linear-gradient(135deg,#eab308,#ca8a04)",
-      border: "none",
-      color: "#000",
-      padding: "8px 18px",
-      borderRadius: "8px",
+      background: C.bgAlt,
+      border: `1px solid ${C.border}`,
+      color: C.subtle,
+      padding: "10px 20px",
+      borderRadius: "10px",
       cursor: "pointer",
       fontWeight: "700",
+      fontSize: "13px"
+    },
+    btnSave: {
+      background: C.primary,
+      border: "none",
+      color: "#FFF",
+      padding: "10px 24px",
+      borderRadius: "10px",
+      cursor: "pointer",
+      fontWeight: "800",
+      fontSize: "13px",
+      boxShadow: `0 4px 12px ${C.primary}33`
     },
   };
 
-  // Modal reutilizável para Categoria e Centro de Custo
   const ModalForm = ({ titulo, form, setForm, onSalvar, onFechar }) => (
     <div style={s.overlay}>
       <div style={s.modal}>
@@ -267,21 +302,21 @@ export default function Categorias({ styles }) {
           style={s.input}
           value={form.nome}
           onChange={e => setForm({ ...form, nome: e.target.value })}
-          placeholder="Nome"
+          placeholder="Ex: Marketing, Manutenção..."
         />
         <label style={s.label}>Descrição</label>
         <input
           style={s.input}
           value={form.descricao}
           onChange={e => setForm({ ...form, descricao: e.target.value })}
-          placeholder="Descrição (opcional)"
+          placeholder="Breve detalhamento"
         />
         <div style={s.modalFooter}>
           <button style={s.btnCancel} onClick={onFechar}>
             Cancelar
           </button>
           <button style={s.btnSave} onClick={onSalvar} disabled={loading}>
-            {loading ? "Salvando..." : "Salvar"}
+            {loading ? "Salvando..." : "Salvar Dados"}
           </button>
         </div>
       </div>
@@ -290,20 +325,20 @@ export default function Categorias({ styles }) {
 
   return (
     <div style={s.container}>
-
       {toast && (
         <div
           style={{
             position: "fixed",
-            bottom: "24px",
-            right: "24px",
-            padding: "12px 20px",
-            borderRadius: "10px",
-            fontSize: "14px",
-            fontWeight: "600",
+            bottom: "32px",
+            right: "32px",
+            padding: "14px 24px",
+            borderRadius: "12px",
+            fontSize: "13px",
+            fontWeight: "800",
             zIndex: 9999,
-            background: toast.tipo === "error" ? "rgba(239,68,68,0.9)" : "rgba(34,197,94,0.9)",
+            background: toast.tipo === "error" ? C.red : C.green,
             color: "#fff",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.15)"
           }}
         >
           {toast.msg}
@@ -339,11 +374,11 @@ export default function Categorias({ styles }) {
       )}
 
       <div style={s.header}>
-        <span style={s.title}>⚙️ Categorias e Centros de Custo</span>
+        <div style={{ width: 4, height: 28, background: C.primary, borderRadius: 2 }} />
+        <span style={s.title}>Categorias e Centros de Custo</span>
       </div>
 
       <div style={s.grid}>
-        {/* Categorias */}
         <div style={s.card}>
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>🏷️ Categorias</span>
@@ -355,58 +390,51 @@ export default function Categorias({ styles }) {
                 setModalCategoria(true);
               }}
             >
-              + Nova Categoria
+              + Adicionar
             </button>
           </div>
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>Nome</th>
-                <th style={s.th}>Descrição</th>
-                <th style={s.th}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categorias.length === 0 ? (
+          <div style={{ overflowX: "auto" }}>
+            <table style={s.table}>
+              <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...s.td, textAlign: "center", color: "#64748b" }}>
-                    Nenhuma categoria cadastrada
-                  </td>
+                  <th style={s.th}>Nome</th>
+                  <th style={s.th}>Descrição</th>
+                  <th style={s.th}>Ações</th>
                 </tr>
-              ) : (
-                categorias.map((cat) => (
-                  <tr key={cat.id}>
-                    <td style={s.td}>{cat.nome}</td>
-                    <td style={s.td}>{cat.descricao || "-"}</td>
-                    <td style={s.td}>
-                      <button
-                        style={s.btnEdit}
-                        onClick={() => {
-                          setEditandoCategoria(cat);
-                          setFormCategoria({
-                            nome: cat.nome,
-                            descricao: cat.descricao || "",
-                          });
-                          setModalCategoria(true);
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        style={s.btnDel}
-                        onClick={() => handleExcluirCategoria(cat.id)}
-                      >
-                        Excluir
-                      </button>
+              </thead>
+              <tbody>
+                {categorias.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ ...s.td, textAlign: "center", color: C.muted, padding: 40 }}>
+                      Nenhuma categoria cadastrada
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  categorias.map((cat) => (
+                    <tr key={cat.id} onMouseEnter={e => e.currentTarget.style.background = C.bgAlt} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{transition: "0.2s"}}>
+                      <td style={{ ...s.td, color: C.text, fontWeight: "800" }}>{cat.nome}</td>
+                      <td style={s.td}>{cat.descricao || "-"}</td>
+                      <td style={s.td}>
+                        <button
+                          style={s.btnEdit}
+                          onClick={() => {
+                            setEditandoCategoria(cat);
+                            setFormCategoria({ nome: cat.nome, descricao: cat.descricao || "" });
+                            setModalCategoria(true);
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button style={s.btnDel} onClick={() => handleExcluirCategoria(cat.id)}>🗑️</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Centros de Custo */}
         <div style={s.card}>
           <div style={s.cardHeader}>
             <span style={s.cardTitle}>🏢 Centros de Custo</span>
@@ -418,52 +446,49 @@ export default function Categorias({ styles }) {
                 setModalCentro(true);
               }}
             >
-              + Novo Centro
+              + Adicionar
             </button>
           </div>
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>Nome</th>
-                <th style={s.th}>Descrição</th>
-                <th style={s.th}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {centrosCusto.length === 0 ? (
+          <div style={{ overflowX: "auto" }}>
+            <table style={s.table}>
+              <thead>
                 <tr>
-                  <td colSpan={3} style={{ ...s.td, textAlign: "center", color: "#64748b" }}>
-                    Nenhum centro de custo cadastrado
-                  </td>
+                  <th style={s.th}>Nome</th>
+                  <th style={s.th}>Descrição</th>
+                  <th style={s.th}>Ações</th>
                 </tr>
-              ) : (
-                centrosCusto.map((cc) => (
-                  <tr key={cc.id}>
-                    <td style={s.td}>{cc.nome}</td>
-                    <td style={s.td}>{cc.descricao || "-"}</td>
-                    <td style={s.td}>
-                      <button
-                        style={s.btnEdit}
-                        onClick={() => {
-                          setEditandoCentro(cc);
-                          setFormCentro({ nome: cc.nome, descricao: cc.descricao || "" });
-                          setModalCentro(true);
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        style={s.btnDel}
-                        onClick={() => handleExcluirCentro(cc.id)}
-                      >
-                        Excluir
-                      </button>
+              </thead>
+              <tbody>
+                {centrosCusto.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} style={{ ...s.td, textAlign: "center", color: C.muted, padding: 40 }}>
+                      Nenhum centro de custo cadastrado
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  centrosCusto.map((cc) => (
+                    <tr key={cc.id} onMouseEnter={e => e.currentTarget.style.background = C.bgAlt} onMouseLeave={e => e.currentTarget.style.background = "transparent"} style={{transition: "0.2s"}}>
+                      <td style={{ ...s.td, color: C.text, fontWeight: "800" }}>{cc.nome}</td>
+                      <td style={s.td}>{cc.descricao || "-"}</td>
+                      <td style={s.td}>
+                        <button
+                          style={s.btnEdit}
+                          onClick={() => {
+                            setEditandoCentro(cc);
+                            setFormCentro({ nome: cc.nome, descricao: cc.descricao || "" });
+                            setModalCentro(true);
+                          }}
+                        >
+                          ✏️
+                        </button>
+                        <button style={s.btnDel} onClick={() => handleExcluirCentro(cc.id)}>🗑️</button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

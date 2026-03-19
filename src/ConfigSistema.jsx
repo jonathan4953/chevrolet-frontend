@@ -1,32 +1,39 @@
-// ConfigSistema.jsx
-// Personalização Visual do Sistema
+import React from "react";
 
 const DEFAULT_COLOR_PALETTE = {
-  primary:    "#f97316",
-  primaryDark:"#ea580c",
-  accent:     "#f59e0b",
-  success:    "#10b981",
-  danger:     "#ef4444",
-  info:       "#3b82f6",
-  sidebar:    "#1e293b",
-  background: "linear-gradient(135deg, #f0f4f8 0%, #e8edf5 100%)",
-  cardBg:     "#ffffff",
-  border:     "#e2e8f0",
-  text:       "#1e293b",
-  textMuted:  "#64748b",
-  navActive:  "#f97316",
+  primary: "#F26B25",
+  primaryDark: "#D95A1E",
+  accent: "#F26B25",
+  success: "#22A06B",
+  danger: "#D93025",
+  info: "#1A73E8",
+  sidebar: "#FFFFFF",
+  background: "#F9FAFB",
+  cardBg: "#FFFFFF",
+  border: "#E5E7EB",
+  text: "#2A2B2D",
+  textMuted: "#8E9093",
+  navActive: "#F26B25",
+};
+
+const C = {
+  primary: "#F26B25",
+  text: "#2A2B2D",
+  muted: "#8E9093",
+  subtle: "#636466",
+  border: "#E5E7EB",
+  bgAlt: "#F9FAFB"
 };
 
 export default function ConfigSistema({
   styles,
   currentUser,
   activeTab,
-  sysLogos,        setSysLogos,
+  sysLogos,
+  setSysLogos,
   OMNI26_DEFAULT_LOGO,
-  colorPalette,    setColorPalette,
-  savedScenarios,
-  setTaxaJurosMensal,
-  setPercentualAplicado,
+  colorPalette,
+  setColorPalette,
   logAction,
 }) {
 
@@ -50,102 +57,122 @@ export default function ConfigSistema({
 
   if (activeTab !== "config_sistema") return null;
 
+  const sectionTitleStyle = {
+    fontSize: '12px',
+    color: C.primary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    borderLeft: `4px solid ${C.primary}`,
+    paddingLeft: '12px',
+    marginBottom: '24px',
+    display: 'flex',
+    alignItems: 'center'
+  };
+
   return (
-    <div style={styles.cardFull}>
-      <h2 style={styles.cardTitle}>Personalização Visual do Sistema</h2>
-      <p style={{ color: '#64748b', fontSize: 13, marginBottom: 30 }}>
-        Somente administradores podem alterar logos e paleta de cores.
-      </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, fontFamily: 'system-ui, sans-serif' }}>
+      
+      {/* HEADER */}
+      <div style={{ background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 16, padding: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <h2 style={{ fontSize: '22px', fontWeight: 900, color: C.text, margin: 0 }}>Personalização Visual</h2>
+        <p style={{ color: C.muted, fontSize: 13, margin: '4px 0 0', fontWeight: 600 }}>
+          Controle a identidade visual da plataforma. Alterações em logos e paleta refletem em todo o sistema.
+        </p>
+      </div>
 
       {/* ── LOGOS ── */}
-      <h3 style={{ fontSize: '13px', color: '#f97316', textTransform: 'uppercase', borderLeft: '3px solid #f97316', paddingLeft: '10px', marginBottom: '20px' }}>
-        Logos do Sistema
-      </h3>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '40px' }}>
-
-        {[
-          { key: 'login',   label: 'Tela de Login',          bg: '#f1f5f9' },
-          { key: 'sidebar', label: 'Sidebar (Menu Lateral)',  bg: '#1e293b' },
-          { key: 'pdf',     label: 'Proposta PDF (Download)', bg: '#ffffff' },
-        ].map(({ key, label, bg }) => (
-          <div key={key} style={{ background: '#f8fafc', padding: '25px', borderRadius: '16px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', marginBottom: '16px', fontWeight: 800 }}>{label}</h3>
-            <div style={{ height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px', background: bg, borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-              <img src={sysLogos[key]} alt={label} style={{ maxHeight: '60px', maxWidth: '80%', objectFit: 'contain' }} />
+      <div style={{ background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 16, padding: '32px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <h3 style={sectionTitleStyle}>🖼️ Identidade Visual (Logos)</h3>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '10px' }}>
+          {[
+            { key: 'login', label: 'Tela de Acesso', bg: '#F1F5F9' },
+            { key: 'sidebar', label: 'Menu Lateral (Sidebar)', bg: '#F8FAFC' },
+            { key: 'pdf', label: 'Proposta Comercial (PDF)', bg: '#FFFFFF' },
+          ].map(({ key, label, bg }) => (
+            <div key={key} style={{ background: C.bgAlt, padding: '24px', borderRadius: '16px', textAlign: 'center', border: `1px solid ${C.border}` }}>
+              <h4 style={{ fontSize: '10px', color: C.muted, textTransform: 'uppercase', marginBottom: '16px', fontWeight: 900, letterSpacing: '0.05em' }}>{label}</h4>
+              
+              <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: bg, borderRadius: '12px', border: `1px solid ${C.border}`, padding: '10px', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                <img src={sysLogos[key]} alt={label} style={{ maxHeight: '70px', maxWidth: '90%', objectFit: 'contain' }} />
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <input type="file" id={`logo_${key}`} accept=".jpg,.png,.jpeg,.svg" style={{ display: 'none' }} onChange={(e) => handleLogoChange(e, key)} />
+                <label htmlFor={`logo_${key}`} style={{ background: '#FFF', border: `1px solid ${C.border}`, color: C.text, cursor: 'pointer', padding: '10px', borderRadius: '10px', fontSize: '12px', fontWeight: 800, transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = C.primary}>
+                  📁 Substituir Logo
+                </label>
+                <button
+                  onClick={() => {
+                    const u = { ...sysLogos, [key]: OMNI26_DEFAULT_LOGO };
+                    setSysLogos(u);
+                    try { sessionStorage.setItem('omni26_logos', JSON.stringify(u)); } catch(e) {}
+                  }}
+                  style={{ background: 'none', border: 'none', color: C.primary, cursor: 'pointer', padding: '8px', fontSize: '11px', fontWeight: 800 }}
+                >
+                  ↺ Restaurar Padrão
+                </button>
+              </div>
             </div>
-            <input type="file" id={`logo_${key}`} accept=".jpg,.png,.jpeg,.svg" style={{ display: 'none' }} onChange={(e) => handleLogoChange(e, key)} />
-            <label htmlFor={`logo_${key}`} style={{ ...styles.clearBtn, color: '#475569', border: '1px solid #cbd5e1', cursor: 'pointer', display: 'block', padding: '10px', borderRadius: '8px', marginBottom: '8px', fontSize: 12 }}>
-              📁 Substituir Imagem
-            </label>
-            <button
-              onClick={() => {
-                const u = { ...sysLogos, [key]: OMNI26_DEFAULT_LOGO };
-                setSysLogos(u);
-                try { sessionStorage.setItem('omni26_logos', JSON.stringify(u)); } catch(e) {}
-              }}
-              style={{ ...styles.clearBtn, color: '#f97316', border: '1px solid rgba(249,115,22,0.3)', cursor: 'pointer', display: 'block', width: '100%', padding: '8px', borderRadius: '8px', fontSize: '11px' }}
-            >
-              ↺ Restaurar Padrão
-            </button>
-          </div>
-        ))}
-
+          ))}
+        </div>
       </div>
 
       {/* ── PALETA ── */}
-      <h3 style={{ fontSize: '13px', color: '#f97316', textTransform: 'uppercase', borderLeft: '3px solid #f97316', paddingLeft: '10px', marginBottom: '20px' }}>
-        Paleta de Cores do Sistema
-      </h3>
-      <p style={{ color: '#64748b', fontSize: 12, marginBottom: '20px' }}>
-        Suporta hex (ex: <code style={{ color:'#f97316' }}>#FF6600</code>) e RGB (ex: <code style={{ color:'#f97316' }}>rgb(255,102,0)</code>).
-      </p>
+      <div style={{ background: '#FFFFFF', border: `1px solid ${C.border}`, borderRadius: 16, padding: '32px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+        <h3 style={sectionTitleStyle}>🎨 Cores do Ecossistema</h3>
+        <p style={{ color: C.subtle, fontSize: 13, marginBottom: '24px', fontWeight: 600 }}>
+          Defina as cores globais. Utilize o seletor ou insira o código hexadecimal (ex: <span style={{ color: C.primary }}>#F26B25</span>).
+        </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-        {[
-          { key: 'primary',   label: 'Cor Primária (botões)',      hint: '#f97316' },
-          { key: 'accent',    label: 'Cor de Acento (títulos)',    hint: '#f59e0b' },
-          { key: 'success',   label: 'Cor de Sucesso',             hint: '#10b981' },
-          { key: 'danger',    label: 'Cor de Erro/Perigo',         hint: '#ef4444' },
-          { key: 'info',      label: 'Cor Informativa',            hint: '#3b82f6' },
-          { key: 'navActive', label: 'Item Ativo no Menu',         hint: '#f97316' },
-        ].map(({ key, label, hint }) => (
-          <div key={key} style={{ background: '#f8fafc', padding: '18px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-            <label style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', display: 'block', marginBottom: '10px', fontWeight: 800 }}>
-              {label}
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <input
-                type="color"
-                value={(() => { try { const c = colorPalette[key]; return (c && c.startsWith('#') && c.length === 7) ? c : '#f97316'; } catch(e) { return '#f97316'; } })()}
-                onChange={(e) => savePalette({ ...colorPalette, [key]: e.target.value })}
-                style={{ width: '40px', height: '36px', borderRadius: '8px', border: '1px solid #e2e8f0', cursor: 'pointer', padding: '2px', background: 'none' }}
-              />
-              <input
-                type="text"
-                value={colorPalette[key] || ''}
-                onChange={(e) => savePalette({ ...colorPalette, [key]: e.target.value })}
-                placeholder={hint}
-                style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', background: '#ffffff', border: '1px solid #d1d5db', color: '#1e293b', fontSize: '12px' }}
-              />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          {[
+            { key: 'primary', label: 'Cor Primária (Ações)', hint: '#F26B25' },
+            { key: 'success', label: 'Sucesso (Pagtos/OK)', hint: '#22A06B' },
+            { key: 'danger', label: 'Erro / Perigo', hint: '#D93025' },
+            { key: 'info', label: 'Info / Links', hint: '#1A73E8' },
+            { key: 'navActive', label: 'Destaque de Menu', hint: '#F26B25' },
+            { key: 'sidebar', label: 'Fundo do Menu', hint: '#FFFFFF' },
+          ].map(({ key, label, hint }) => (
+            <div key={key} style={{ background: C.bgAlt, padding: '18px', borderRadius: '12px', border: `1px solid ${C.border}`, transition: 'all 0.2s' }}>
+              <label style={{ fontSize: '10px', color: C.muted, textTransform: 'uppercase', display: 'block', marginBottom: '12px', fontWeight: 900 }}>
+                {label}
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <input
+                  type="color"
+                  value={(() => { try { const c = colorPalette[key]; return (c && c.startsWith('#') && c.length === 7) ? c : hint; } catch(e) { return hint; } })()}
+                  onChange={(e) => savePalette({ ...colorPalette, [key]: e.target.value })}
+                  style={{ width: '44px', height: '40px', borderRadius: '10px', border: `1px solid ${C.border}`, cursor: 'pointer', padding: '3px', background: '#FFF' }}
+                />
+                <input
+                  type="text"
+                  value={colorPalette[key] || ''}
+                  onChange={(e) => savePalette({ ...colorPalette, [key]: e.target.value })}
+                  placeholder={hint}
+                  style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', background: '#FFFFFF', border: `1px solid #D4D5D6`, color: C.text, fontSize: '13px', fontWeight: 700, outline: 'none' }}
+                />
+              </div>
+              <div style={{ height: '6px', borderRadius: '3px', background: colorPalette[key] || hint, border: `1px solid rgba(0,0,0,0.05)` }} />
             </div>
-            <div style={{ height: '5px', borderRadius: '3px', background: colorPalette[key] || hint, border: '1px solid #e2e8f0' }} />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
-        <button
-          onClick={() => { savePalette(DEFAULT_COLOR_PALETTE); alert('Paleta restaurada para o padrão Omni26!'); }}
-          style={{ ...styles.clearResultsBtn, padding: '12px 24px' }}
-        >
-          ↺ Restaurar Paleta Padrão
-        </button>
-        <button
-          onClick={() => alert('Paleta salva e aplicada ao sistema!')}
-          style={{ ...styles.exportBtn, background: colorPalette.primary || '#f97316', boxShadow: `0 4px 15px ${colorPalette.primary || '#f97316'}66` }}
-        >
-          ✔ Confirmar Paleta
-        </button>
+        <div style={{ display: 'flex', gap: '16px', borderTop: `1px solid ${C.border}`, paddingTop: '24px' }}>
+          <button
+            onClick={() => { savePalette(DEFAULT_COLOR_PALETTE); alert('Configurações originais Omni26 restauradas!'); }}
+            style={{ background: '#FFF', border: `1px solid ${C.border}`, color: C.subtle, padding: '14px 28px', borderRadius: '12px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}
+          >
+            ↺ Restaurar Padrões
+          </button>
+          <button
+            onClick={() => alert('As novas cores foram aplicadas ao ambiente!')}
+            style={{ background: C.primary, color: "#fff", border: "none", padding: '14px 32px', borderRadius: '12px', fontSize: '13px', fontWeight: 900, cursor: "pointer", boxShadow: `0 4px 15px ${C.primary}44` }}
+          >
+            ✔ Confirmar Alterações
+          </button>
+        </div>
       </div>
 
     </div>

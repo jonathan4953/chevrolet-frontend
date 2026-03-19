@@ -5,7 +5,7 @@ export const styles = {
     overflowY: "auto",
     overflowX: "hidden",
     background: "transparent",
-    color: "#e2e8f0",
+    color: "#2A2B2D", // Texto escuro para modo claro
     fontFamily: "'Inter', sans-serif",
   },
   inventoryGrid: { 
@@ -21,53 +21,52 @@ export const styles = {
     left: 0, 
     right: 0, 
     bottom: 0, 
-    backgroundColor: 'rgba(2, 6, 23, 0.75)', 
-    backdropFilter: 'blur(10px)',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)', // Overlay mais suave
+    backdropFilter: 'blur(4px)',
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center', 
     zIndex: 9999 
   },
   modalContent: { 
-    backgroundColor: 'rgba(15, 23, 42, 0.85)', 
-    backdropFilter: 'blur(20px)',
+    backgroundColor: '#FFFFFF', // Modal branco
     padding: '40px', 
     borderRadius: '25px', 
     width: '80%', 
     maxWidth: '900px', 
-    border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 30px 60px rgba(0,0,0,0.6), 0 0 20px rgba(234, 179, 8, 0.05)'
+    border: '1px solid #E5E7EB',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)' // Sombra limpa e leve
   },
   modalTableBox: { 
     maxHeight: '400px', 
     overflowY: 'auto', 
     marginTop: 20, 
-    border: '1px solid rgba(255,255,255,0.05)', 
+    border: '1px solid #E5E7EB', 
     borderRadius: '12px',
-    background: 'rgba(0,0,0,0.2)'
+    background: '#F9FAFB' // Cinza super claro
   },
   bulkActionBox: { 
     display: 'flex', 
     alignItems: 'center', 
     gap: 15, 
-    background: 'rgba(234, 179, 8, 0.1)', 
+    background: 'rgba(242, 107, 37, 0.05)', // Fundo laranja super translúcido
     padding: '15px 20px', 
     borderRadius: '16px', 
     marginBottom: '20px', 
-    border: '1px solid rgba(234, 179, 8, 0.3)',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.2)'
+    border: '1px solid rgba(242, 107, 37, 0.2)', 
+    boxShadow: '0 4px 10px rgba(0,0,0,0.02)'
   },
   unselectBtn: { 
     background: 'none', 
     border: 'none', 
-    color: '#94a3b8', 
+    color: '#636466', 
     fontSize: '11px', 
     cursor: 'pointer', 
     textDecoration: 'underline' 
   },
   brandTag: { 
     fontSize: 10, 
-    color: '#eab308', 
+    color: '#F26B25', 
     fontWeight: 900, 
     textTransform: 'uppercase', 
     letterSpacing: '1px' 
@@ -75,13 +74,13 @@ export const styles = {
   qtyContainer: { 
     marginTop: '12px', 
     padding: '10px', 
-    background: 'rgba(0,0,0,0.3)', 
+    background: '#F9FAFB', 
     borderRadius: '12px',
-    border: '1px solid rgba(255,255,255,0.05)'
+    border: '1px solid #E5E7EB'
   },
   qtyLabel: { 
     fontSize: '8px', 
-    color: '#94a3b8', 
+    color: '#8E9093', 
     display: 'block', 
     marginBottom: '6px', 
     fontWeight: 'bold', 
@@ -94,9 +93,9 @@ export const styles = {
     gap: '8px' 
   },
   qtyBtn: { 
-    background: 'rgba(255,255,255,0.1)', 
+    background: '#E5E7EB', // Botão de qtde cinza claro
     border: 'none', 
-    color: '#fff', 
+    color: '#2A2B2D', 
     width: '32px', 
     height: '32px', 
     borderRadius: '8px', 
@@ -109,8 +108,8 @@ export const styles = {
     lineHeight: 1 
   },
   qtyValBox: { 
-    background: 'rgba(0,0,0,0.4)', 
-    color: '#fff', 
+    background: '#FFFFFF', 
+    color: '#2A2B2D', 
     fontWeight: 'bold', 
     fontSize: '15px', 
     minWidth: '40px', 
@@ -119,11 +118,11 @@ export const styles = {
     alignItems: 'center', 
     justifyContent: 'center', 
     borderRadius: '6px', 
-    border: '1px solid rgba(255,255,255,0.05)' 
+    border: '1px solid #D4D5D6' 
   },
   fleetTotal: { 
     fontSize: '10px', 
-    color: '#4ade80', 
+    color: '#22A06B', // Verde sucesso padronizado
     fontWeight: 'bold', 
     marginTop: '4px' 
   },
@@ -131,9 +130,9 @@ export const styles = {
     width: '100%', 
     marginTop: '15px', 
     padding: '12px', 
-    background: '#fde68a', 
-    color: '#000', 
-    border: 'none', 
+    background: '#FDECE3', // Laranja bem clarinho
+    color: '#F26B25', 
+    border: '1px solid rgba(242, 107, 37, 0.2)', 
     borderRadius: '12px', 
     fontWeight: 'bold', 
     fontSize: '11px', 
@@ -142,34 +141,33 @@ export const styles = {
     alignItems: 'center', 
     justifyContent: 'center', 
     gap: '8px',
-    boxShadow: '0 4px 15px rgba(253, 230, 138, 0.3)'
+    boxShadow: 'none'
   },
-page: {
-  display: "flex",
-  height: "100vh",
-  width: "100vw",
-  background: "radial-gradient(circle at top right, #1e293b, #020617)",
-  color: "#f1f5f9",
-  fontFamily: "'Inter', sans-serif",
-  overflow: "hidden",
-},
-sidebar: {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "240px",
-  minWidth: "240px",
-  height: "100vh",
-  backgroundColor: "rgba(15, 23, 42, 0.95)",
-  backdropFilter: "blur(15px)",
-  borderRight: "1px solid rgba(255,255,255,0.05)",
-  flexShrink: 0,
-  display: "flex",
-  flexDirection: "column",
-  overflow: "hidden",
-  boxShadow: "4px 0 24px rgba(0,0,0,0.4)",
-  zIndex: 10,
-},
+  page: {
+    display: "flex",
+    height: "100vh",
+    width: "100vw",
+    background: "#F5F6F8", // Fundo do sistema off-white limpo
+    color: "#2A2B2D",
+    fontFamily: "'Inter', sans-serif",
+    overflow: "hidden",
+  },
+  sidebar: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "240px",
+    minWidth: "240px",
+    height: "100vh",
+    backgroundColor: "#FFFFFF", // Sidebar branca
+    borderRight: "1px solid #E5E7EB",
+    flexShrink: 0,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    boxShadow: "2px 0 10px rgba(0,0,0,0.02)", // Sombra bem sutil
+    zIndex: 10,
+  },
   sidebarLogoBox: { 
     padding: "45px 20px", 
     textAlign: "center" 
@@ -191,35 +189,36 @@ sidebar: {
     fontSize: "13px", 
     display: 'flex', 
     alignItems: 'center',
-    transition: 'background 0.2s, box-shadow 0.2s'
+    transition: 'background 0.2s, color 0.2s',
+    color: '#636466' // Texto padrão da sidebar
   },
   logoutBtn: { 
     margin: "20px", 
     padding: "12px", 
     borderRadius: "12px", 
-    border: "1px solid rgba(248, 113, 113, 0.3)", 
-    background: "rgba(248, 113, 113, 0.05)", 
-    color: "#f87171", 
+    border: "1px solid rgba(217, 48, 37, 0.2)", 
+    background: "rgba(217, 48, 37, 0.05)", 
+    color: "#D93025", 
     cursor: "pointer" 
   },
-mainContent: {
-  flex: 1,
-  marginLeft: "240px",    // Espaço para sidebar fixa
-  display: "flex",
-  flexDirection: "column",
-  minWidth: 0,
-  height: "100vh",
-  overflowY: "auto",
-  padding: "30px 40px",
-  boxSizing: "border-box",
-  background: "transparent",
-},
+  mainContent: {
+    flex: 1,
+    marginLeft: "240px",
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+    height: "100vh",
+    overflowY: "auto",
+    padding: "30px 40px",
+    boxSizing: "border-box",
+    background: "transparent",
+  },
   header: { 
     padding: "20px 40px", 
-    background: "rgba(15, 23, 42, 0.5)",
+    background: "rgba(255, 255, 255, 0.95)", // Header branco com blur leve
     backdropFilter: "blur(10px)",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
-    boxShadow: "0 4px 30px rgba(0,0,0,0.2)",
+    borderBottom: "1px solid #E5E7EB",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
     position: 'sticky',
     top: 0,
     zIndex: 5
@@ -227,10 +226,11 @@ mainContent: {
   title: { 
     margin: 0, 
     fontSize: 24, 
-    fontWeight: 900 
+    fontWeight: 900,
+    color: '#2A2B2D'
   },
   subtitle: { 
-    color: "#94a3b8", 
+    color: "#8E9093", 
     fontSize: 12 
   },
   dashboardWrapper: { 
@@ -244,26 +244,26 @@ mainContent: {
     gap: '20px' 
   },
   statCard: { 
-    background: 'rgba(30, 41, 59, 0.6)', 
-    backdropFilter: 'blur(12px)',
+    background: '#FFFFFF', 
     padding: '25px', 
     borderRadius: '20px', 
-    border: '1px solid rgba(255,255,255,0.08)', 
+    border: '1px solid #E5E7EB', 
     display: 'flex', 
     alignItems: 'center', 
     gap: '15px',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)', // Sombra super limpa
     transform: 'translateY(-2px)'
   },
   statLabel: { 
     fontSize: '9px', 
-    color: '#94a3b8', 
+    color: '#8E9093', 
     textTransform: 'uppercase',
     letterSpacing: '1px'
   },
   statValue: { 
     fontSize: '20px', 
-    fontWeight: 800 
+    fontWeight: 800,
+    color: '#2A2B2D'
   },
   actionGrid: { 
     display: 'grid', 
@@ -271,13 +271,12 @@ mainContent: {
     gap: '20px' 
   },
   actionCard: { 
-    background: 'rgba(30, 41, 59, 0.6)', 
-    backdropFilter: 'blur(12px)',
+    background: '#FFFFFF', 
     padding: '25px', 
     borderRadius: '20px', 
-    border: '1px solid rgba(255,255,255,0.08)', 
+    border: '1px solid #E5E7EB', 
     cursor: 'pointer',
-    boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
     transform: 'translateY(-2px)'
   },
   calculatorWrapper: { 
@@ -293,22 +292,20 @@ mainContent: {
   cardVehicles: { 
     flex: 1.2, 
     minWidth: 0, 
-    background: "rgba(30, 41, 59, 0.45)", 
-    backdropFilter: "blur(16px)",
+    background: "#FFFFFF", 
     borderRadius: "24px", 
     padding: "30px", 
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.04)"
   },
   cardParams: { 
     flex: 1, 
     minWidth: 0, 
-    background: "rgba(30, 41, 59, 0.45)", 
-    backdropFilter: "blur(16px)",
+    background: "#FFFFFF", 
     borderRadius: "24px", 
     padding: "30px", 
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.04)"
   },
   headerTitleAction: { 
     display: 'flex', 
@@ -320,24 +317,24 @@ mainContent: {
     marginTop: 0, 
     fontSize: 18, 
     fontWeight: 800, 
-    borderLeft: "4px solid #eab308", 
+    borderLeft: "4px solid #F26B25", 
     paddingLeft: 12,
-    textShadow: '0 2px 5px rgba(0,0,0,0.5)'
+    color: '#2A2B2D' // Removemos o text-shadow
   },
   modelsBox: { 
     height: "300px", 
     overflowY: "auto", 
-    background: "rgba(0,0,0,0.3)", 
+    background: "#F9FAFB", 
     padding: 15, 
     borderRadius: "16px", 
     marginTop: 15,
-    border: "1px solid rgba(255,255,255,0.05)"
+    border: "1px solid #E5E7EB"
   },
   modelItem: { 
     display: "flex", 
     alignItems: "center", 
     padding: "12px", 
-    borderBottom: "1px solid rgba(255,255,255,0.05)", 
+    borderBottom: "1px solid #E5E7EB", 
     cursor: 'pointer' 
   },
   modelText: { 
@@ -345,35 +342,36 @@ mainContent: {
   },
   modelName: { 
     fontSize: 12, 
-    fontWeight: 500 
+    fontWeight: 500,
+    color: '#2A2B2D'
   },
   inputSearch: { 
     width: "100%", 
     padding: "14px", 
     borderRadius: "12px", 
-    border: "1px solid rgba(255,255,255,0.1)", 
-    background: "rgba(15, 23, 42, 0.6)", 
-    color: "white", 
+    border: "1px solid #D4D5D6", 
+    background: "#FFFFFF", // Input branco puro
+    color: "#2A2B2D", 
     boxSizing: 'border-box',
-    boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)"
+    boxShadow: "none" // Removido inset escuro
   },
   buttonProcess: { 
     width: '100%', 
     marginTop: '20px', 
     padding: "16px", 
     borderRadius: "14px", 
-    background: "#eab308", 
-    color: "#000", 
+    background: "#F26B25", 
+    color: "#FFFFFF", 
     fontWeight: 900, 
     cursor: "pointer", 
     border: 'none',
     textAlign: 'center',
-    boxShadow: '0 8px 20px rgba(234, 179, 8, 0.4)'
+    boxShadow: '0 8px 20px rgba(242, 107, 37, 0.3)' 
   },
   clearBtn: { 
-    background: 'rgba(248, 113, 113, 0.1)', 
-    color: '#f87171', 
-    border: '1px solid rgba(248, 113, 113, 0.2)', 
+    background: 'rgba(217, 48, 37, 0.05)', 
+    color: '#D93025', 
+    border: '1px solid rgba(217, 48, 37, 0.2)', 
     padding: '6px 12px', 
     borderRadius: '8px', 
     fontSize: '11px', 
@@ -391,20 +389,20 @@ mainContent: {
   },
   exportBtn: { 
     padding: '12px 20px', 
-    background: '#10b981', 
+    background: '#1A73E8', 
     color: '#fff', 
     border: 'none', 
     borderRadius: '12px', 
     fontWeight: 'bold', 
     cursor: 'pointer', 
     fontSize: 12,
-    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+    boxShadow: '0 4px 15px rgba(26, 115, 232, 0.3)'
   },
   clearResultsBtn: { 
     padding: '12px 20px', 
-    background: 'rgba(248, 113, 113, 0.15)', 
-    color: '#f87171', 
-    border: '1px solid rgba(248, 113, 113, 0.3)', 
+    background: 'rgba(217, 48, 37, 0.05)', 
+    color: '#D93025', 
+    border: '1px solid rgba(217, 48, 37, 0.2)', 
     borderRadius: '12px', 
     fontWeight: 'bold', 
     cursor: 'pointer', 
@@ -418,20 +416,19 @@ mainContent: {
   compareCardItem: { 
     flex: '1 1 300px', 
     maxWidth: 'calc(25% - 15px)', 
-    background: 'rgba(15, 23, 42, 0.8)', 
-    backdropFilter: 'blur(20px)',
+    background: '#FFFFFF', 
     borderRadius: '24px', 
-    border: '1px solid rgba(255,255,255,0.1)', 
+    border: '1px solid #E5E7EB', 
     overflow: 'hidden', 
     display: 'flex', 
     flexDirection: 'column',
-    boxShadow: '0 15px 35px rgba(0,0,0,0.4)'
+    boxShadow: '0 8px 20px rgba(0,0,0,0.04)'
   },
   compareHeader: { 
     padding: '20px 15px', 
     textAlign: 'center', 
-    background: 'rgba(255,255,255,0.03)', 
-    borderBottom: '1px solid rgba(255,255,255,0.05)' 
+    background: '#F9FAFB', 
+    borderBottom: '1px solid #E5E7EB' 
   },
   vehicleTitle: { 
     fontSize: 14, 
@@ -440,7 +437,7 @@ mainContent: {
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center',
-    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+    color: '#2A2B2D'
   },
   compareBody: { 
     padding: '15px', 
@@ -448,34 +445,33 @@ mainContent: {
   },
   compareRow: { 
     padding: '15px 10px', 
-    borderBottom: '1px solid rgba(255,255,255,0.03)', 
+    borderBottom: '1px solid #E5E7EB', 
     textAlign: 'center' 
   },
   prazoBadge: { 
     fontSize: '10px', 
-    color: '#eab308', 
+    color: '#F26B25', 
     fontWeight: 900 
   },
   mainValue: { 
     fontSize: '22px', 
     fontWeight: 900, 
-    color: '#fff',
+    color: '#2A2B2D',
     marginTop: '10px'
   },
   cardFull: { 
-    background: "rgba(30, 41, 59, 0.45)", 
-    backdropFilter: 'blur(16px)',
+    background: "#FFFFFF", 
     borderRadius: "24px", 
     padding: "35px", 
-    border: "1px solid rgba(255,255,255,0.08)",
-    boxShadow: "0 15px 35px rgba(0,0,0,0.3)"
+    border: "1px solid #E5E7EB",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.04)"
   },
   tableWrapper: { 
     overflowX: 'auto', 
     marginTop: 20,
-    background: 'rgba(0,0,0,0.2)',
+    background: '#FFFFFF',
     borderRadius: '16px',
-    border: '1px solid rgba(255,255,255,0.05)'
+    border: '1px solid #E5E7EB'
   },
   tableMassa: { 
     width: '100%', 
@@ -484,17 +480,17 @@ mainContent: {
   thMassa: { 
     textAlign: 'left', 
     padding: '18px 15px', 
-    background: 'rgba(15, 23, 42, 0.6)', 
-    color: '#94a3b8', 
+    background: '#F3F4F6', 
+    color: '#636466', 
     fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
   tdMassa: {
     padding: "16px 24px",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
+    borderBottom: "1px solid #E5E7EB",
     fontSize: "13px",
-    color: "#cbd5e1",
+    color: "#3D3E40",
     verticalAlign: "middle"
   },
   trBody: {
@@ -506,17 +502,16 @@ mainContent: {
     display: "flex", 
     alignItems: "center", 
     justifyContent: "center", 
-    background: "linear-gradient(135deg, #0f172a 0%, #020617 100%)"
+    background: "#F5F6F8" // Fundo liso cinza clarinho
   },
   loginCard: { 
     width: "500px", 
     padding: "60px 40px", 
     borderRadius: "32px", 
-    background: "rgba(15, 23, 42, 0.6)", 
-    backdropFilter: "blur(20px)",
-    border: "1px solid rgba(255,255,255,0.1)", 
+    background: "#FFFFFF", 
+    border: "1px solid #E5E7EB", 
     textAlign: "center", 
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.05)"
+    boxShadow: "0 20px 50px -12px rgba(0, 0, 0, 0.08)" // Sombra maior, mas leve
   },
   loginLogoContainer: { 
     display: "flex", 
@@ -533,32 +528,31 @@ mainContent: {
     fontSize: 22, 
     fontWeight: 800, 
     marginBottom: 40, 
-    color: "#fde68a", 
+    color: "#2A2B2D", 
     letterSpacing: "1px", 
-    textTransform: 'uppercase',
-    textShadow: '0 4px 10px rgba(0,0,0,0.5)'
+    textTransform: 'uppercase'
   },
   loginButton: { 
     width: "100%", 
     padding: "18px", 
     borderRadius: "14px", 
-    background: "#eab308", 
+    background: "#F26B25", 
     fontWeight: 900, 
     border: 'none', 
     cursor: 'pointer', 
     fontSize: '15px', 
-    color: '#000',
-    boxShadow: '0 10px 25px rgba(234, 179, 8, 0.4)'
+    color: '#FFFFFF', 
+    boxShadow: '0 8px 20px rgba(242, 107, 37, 0.3)' 
   },
   input: { 
     width: "100%", 
     padding: "16px", 
     borderRadius: "12px", 
-    background: "rgba(0,0,0,0.3)", 
-    border: "1px solid rgba(255,255,255,0.1)", 
-    color: "#fff", 
+    background: "#FFFFFF", 
+    border: "1px solid #D4D5D6", 
+    color: "#2A2B2D", 
     boxSizing: 'border-box',
-    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+    boxShadow: 'none'
   },
   inputGroup: { 
     marginBottom: 18, 
@@ -566,7 +560,7 @@ mainContent: {
   },
   label: { 
     fontSize: 10, 
-    color: '#94a3b8', 
+    color: '#8E9093', 
     textTransform: 'uppercase', 
     display: 'block', 
     marginBottom: 8,
@@ -582,15 +576,15 @@ mainContent: {
     width: "100%", 
     padding: "12px", 
     borderRadius: "10px", 
-    background: "rgba(0,0,0,0.3)", 
-    border: "1px solid rgba(255,255,255,0.1)", 
-    color: "#fff", 
+    background: "#FFFFFF", 
+    border: "1px solid #D4D5D6", 
+    color: "#2A2B2D", 
     boxSizing: 'border-box',
-    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+    boxShadow: 'none'
   },
   fieldLabel: { 
     fontSize: 10, 
-    color: '#cbd5e1', 
+    color: '#8E9093', 
     textTransform: 'uppercase', 
     display: 'block', 
     marginBottom: 6,

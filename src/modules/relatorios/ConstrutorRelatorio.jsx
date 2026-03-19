@@ -1,5 +1,19 @@
 import React, { useState } from "react";
 
+const C = {
+  primary: "#F26B25",
+  blue: "#1A73E8",
+  green: "#22A06B",
+  red: "#D93025",
+  yellow: "#F59E0B",
+  text: "#2A2B2D",
+  muted: "#8E9093",
+  subtle: "#636466",
+  border: "#E5E7EB",
+  bg: "#FFFFFF",
+  bgAlt: "#F9FAFB"
+};
+
 const TIPOS_PARAM = [
   { value: "texto", label: "Texto" },
   { value: "numero", label: "Número" },
@@ -47,143 +61,192 @@ export default function ConstrutorRelatorio({ styles, relatorio, onSave, onCance
     onSave({ ...form, id: relatorio?.id });
   };
 
-  const inputStyle = styles.inputSmall;
-  const labelStyle = styles.fieldLabel;
+  const inputStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: "10px",
+    fontSize: "13px",
+    background: "#FFFFFF",
+    color: C.text,
+    border: `1px solid #D4D5D6`,
+    outline: "none",
+    transition: "border 0.2s",
+    boxSizing: "border-box"
+  };
+
+  const labelStyle = {
+    fontSize: "10px",
+    color: C.muted,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    marginBottom: "6px",
+    display: "block"
+  };
+
+  const cardStyle = {
+    background: "#FFFFFF",
+    border: `1px solid ${C.border}`,
+    borderRadius: "16px",
+    padding: "24px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
+  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "system-ui, sans-serif" }}>
+      {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <button onClick={onCancel} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#94a3b8", borderRadius: 10, padding: "8px 14px", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>← Voltar</button>
-        <div>
-          <h2 style={{ ...styles.cardTitle, margin: 0 }}>{isNew ? "Novo Relatório" : `Editar: ${relatorio.nome}`}</h2>
-          <p style={{ color: "#64748b", fontSize: 12, margin: "4px 0 0" }}>Defina a query SQL, parâmetros e permissões.</p>
+        <button 
+          onClick={onCancel} 
+          style={{ background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle, borderRadius: 10, padding: "8px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 800 }}
+        >
+          ← Voltar
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 4, height: 32, borderRadius: 2, background: C.primary }} />
+          <div>
+            <h2 style={{ margin: 0, fontSize: "20px", color: C.text, fontWeight: 900 }}>
+              {isNew ? "Novo Relatório" : `Editar: ${relatorio.nome}`}
+            </h2>
+            <p style={{ color: C.muted, fontSize: "12px", margin: "2px 0 0", fontWeight: 600 }}>Defina a query SQL, parâmetros e permissões.</p>
+          </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        
         {/* DADOS BÁSICOS */}
-        <div style={{ background: "rgba(15,23,42,0.7)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 24 }}>
-          <h3 style={{ color: "#8b5cf6", fontSize: 14, fontWeight: 800, margin: "0 0 16px" }}>📋 Dados do Relatório</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={cardStyle}>
+          <h3 style={{ color: C.primary, fontSize: "14px", fontWeight: "900", margin: "0 0 20px", textTransform: "uppercase", letterSpacing: "0.05em" }}>📋 Dados do Relatório</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={{ gridColumn: "1/-1" }}>
-              <label style={labelStyle}>Nome *</label>
-              <input style={inputStyle} value={form.nome} onChange={e => updateField("nome", e.target.value)} placeholder="Ex: Contas a Pagar por Período" required />
+              <label style={labelStyle}>Nome do Relatório *</label>
+              <input style={inputStyle} value={form.nome} onChange={e => updateField("nome", e.target.value)} placeholder="Ex: Faturamento Mensal por Cliente" required />
             </div>
             <div style={{ gridColumn: "1/-1" }}>
-              <label style={labelStyle}>Descrição</label>
-              <input style={inputStyle} value={form.descricao} onChange={e => updateField("descricao", e.target.value)} placeholder="Breve descrição do relatório" />
+              <label style={labelStyle}>Descrição / Objetivo</label>
+              <input style={inputStyle} value={form.descricao} onChange={e => updateField("descricao", e.target.value)} placeholder="Para que serve este relatório?" />
             </div>
             <div>
               <label style={labelStyle}>Tipo de Saída</label>
               <select style={inputStyle} value={form.tipo_saida} onChange={e => updateField("tipo_saida", e.target.value)}>
-                <option value="tabela">Tabela</option>
-                <option value="grafico">Gráfico + Tabela</option>
+                <option value="tabela">Apenas Tabela de Dados</option>
+                <option value="grafico">Gráfico de Indicadores + Tabela</option>
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Perfis Permitidos</label>
+              <label style={labelStyle}>Perfis com Acesso</label>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                {PERFIS.map(p => (
-                  <label key={p} style={{
-                    display: "flex", alignItems: "center", gap: 5, cursor: "pointer", padding: "6px 12px", borderRadius: 8,
-                    background: form.perfis_permitidos.includes(p) ? "rgba(139,92,246,0.2)" : "rgba(255,255,255,0.04)",
-                    border: `1px solid ${form.perfis_permitidos.includes(p) ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`,
-                    color: form.perfis_permitidos.includes(p) ? "#a78bfa" : "#64748b", fontSize: 11, fontWeight: 700,
-                  }}>
-                    <input type="checkbox" checked={form.perfis_permitidos.includes(p)} onChange={() => togglePerfil(p)} style={{ accentColor: "#8b5cf6" }} />
-                    {p}
-                  </label>
-                ))}
+                {PERFIS.map(p => {
+                  const active = form.perfis_permitidos.includes(p);
+                  return (
+                    <label key={p} style={{
+                      display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "8px 14px", borderRadius: "10px",
+                      background: active ? `${C.primary}10` : "#F9FAFB",
+                      border: `1px solid ${active ? C.primary : C.border}`,
+                      color: active ? C.primary : C.subtle, fontSize: "11px", fontWeight: "800", transition: "all 0.2s"
+                    }}>
+                      <input type="checkbox" checked={active} onChange={() => togglePerfil(p)} style={{ accentColor: C.primary }} />
+                      {p.toUpperCase()}
+                    </label>
+                  );
+                })}
               </div>
-              <span style={{ fontSize: 10, color: "#475569", marginTop: 4, display: "block" }}>Vazio = todos os perfis</span>
+              <span style={{ fontSize: "10px", color: C.muted, marginTop: "6px", display: "block", fontWeight: "600" }}>Se nenhum for marcado, todos os perfis verão o relatório.</span>
             </div>
           </div>
         </div>
 
         {/* QUERY SQL */}
-        <div style={{ background: "rgba(15,23,42,0.7)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 24 }}>
-          <h3 style={{ color: "#10b981", fontSize: 14, fontWeight: 800, margin: "0 0 12px" }}>🗄️ Query SQL</h3>
-          <p style={{ color: "#64748b", fontSize: 11, marginBottom: 12 }}>
-            Use <code style={{ background: "rgba(139,92,246,0.15)", color: "#a78bfa", padding: "2px 6px", borderRadius: 4 }}>:nome_parametro</code> para parâmetros dinâmicos. Ex: <code style={{ background: "rgba(139,92,246,0.15)", color: "#a78bfa", padding: "2px 6px", borderRadius: 4 }}>WHERE data_vencimento BETWEEN :data_inicio AND :data_fim</code>
+        <div style={cardStyle}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h3 style={{ color: C.blue, fontSize: "14px", fontWeight: "900", margin: 0, textTransform: "uppercase", letterSpacing: "0.05em" }}>🗄️ Query SQL (Banco de Dados)</h3>
+            <span style={{ fontSize: "10px", background: `${C.blue}10`, color: C.blue, padding: "4px 10px", borderRadius: "6px", fontWeight: "800" }}>SELECT ONLY</span>
+          </div>
+          <p style={{ color: C.subtle, fontSize: "12px", marginBottom: "12px", fontWeight: "600", lineHeight: "1.5" }}>
+            Utilize <code style={{ background: "#F1F5F9", color: C.primary, padding: "2px 6px", borderRadius: "4px", fontWeight: "800" }}>:parametro</code> para criar filtros dinâmicos.
           </p>
           <textarea
             style={{
-              ...inputStyle, width: "100%", minHeight: 180, fontFamily: "'Fira Code', 'Cascadia Code', monospace",
-              fontSize: 12, lineHeight: 1.6, resize: "vertical", whiteSpace: "pre",
-              background: "rgba(0,0,0,0.4)", color: "#e2e8f0",
+              ...inputStyle, width: "100%", minHeight: "220px", fontFamily: "monospace",
+              fontSize: "13px", lineHeight: "1.6", resize: "vertical",
+              background: "#F8FAFC", color: "#1E293B", border: `1px solid ${C.border}`,
+              padding: "16px"
             }}
             value={form.query_sql}
             onChange={e => updateField("query_sql", e.target.value)}
-            placeholder={`SELECT \n  f.razao_social AS fornecedor,\n  p.valor_parcela AS valor,\n  p.data_vencimento,\n  p.status\nFROM parcela_obrigacao p\nJOIN obrigacao_pagar o ON p.id_obrigacao = o.id_obrigacao\nLEFT JOIN fornecedor f ON o.id_fornecedor = f.id_fornecedor\nWHERE p.data_vencimento BETWEEN :data_inicio AND :data_fim`}
+            placeholder={`SELECT \n  nome, \n  valor \nFROM tabela \nWHERE data >= :data_inicio`}
             spellCheck={false}
           />
         </div>
 
         {/* PARÂMETROS */}
-        <div style={{ background: "rgba(15,23,42,0.7)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, padding: 24 }}>
-          <h3 style={{ color: "#f59e0b", fontSize: 14, fontWeight: 800, margin: "0 0 16px" }}>⚡ Parâmetros de Execução</h3>
+        <div style={cardStyle}>
+          <h3 style={{ color: C.yellow, fontSize: "14px", fontWeight: "900", margin: "0 0 20px", textTransform: "uppercase", letterSpacing: "0.05em" }}>⚡ Parâmetros de Filtro</h3>
 
           {/* Lista de parâmetros existentes */}
           {form.parametros.length > 0 && (
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: "20px" }}>
               {form.parametros.map((p, i) => (
                 <div key={i} style={{
                   display: "flex", justifyContent: "space-between", alignItems: "center",
-                  background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: 10, padding: "10px 14px", marginBottom: 8,
+                  background: "#F9FAFB", border: `1px solid ${C.border}`,
+                  borderRadius: "12px", padding: "12px 16px", marginBottom: "8px",
                 }}>
                   <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-                    <span style={{ fontFamily: "monospace", color: "#a78bfa", fontSize: 12, fontWeight: 700 }}>:{p.nome}</span>
-                    <span style={{ color: "#94a3b8", fontSize: 11 }}>{p.label}</span>
+                    <span style={{ fontFamily: "monospace", color: C.primary, fontSize: "13px", fontWeight: "800" }}>:{p.nome}</span>
+                    <span style={{ color: C.text, fontSize: "12px", fontWeight: "700" }}>{p.label}</span>
                     <span style={{
-                      background: "rgba(139,92,246,0.12)", color: "#a78bfa", padding: "2px 8px",
-                      borderRadius: 8, fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                      background: `${C.blue}10`, color: C.blue, padding: "2px 10px",
+                      borderRadius: "20px", fontSize: "10px", fontWeight: "800", textTransform: "uppercase"
                     }}>{p.tipo}</span>
-                    {p.obrigatorio && <span style={{ color: "#ef4444", fontSize: 10, fontWeight: 700 }}>Obrigatório</span>}
+                    {p.obrigatorio && <span style={{ color: C.red, fontSize: "10px", fontWeight: "800", textTransform: "uppercase" }}>Obrigatório</span>}
                   </div>
-                  <button type="button" onClick={() => removeParam(i)} style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 6, padding: "4px 8px", cursor: "pointer", fontSize: 11 }}>✕</button>
+                  <button type="button" onClick={() => removeParam(i)} style={{ background: "none", border: "none", color: C.red, cursor: "pointer", fontSize: "14px", fontWeight: "800" }}>✕</button>
                 </div>
               ))}
             </div>
           )}
 
           {/* Adicionar parâmetro */}
-          <div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 14 }}>
-            <div style={{ flex: "1 1 120px" }}>
-              <label style={labelStyle}>Nome (bind)</label>
-              <input style={inputStyle} value={newParam.nome} onChange={e => setNewParam(p => ({ ...p, nome: e.target.value.replace(/\s/g, "_").toLowerCase() }))} placeholder="data_inicio" />
+          <div style={{ display: "flex", gap: "12px", alignItems: "flex-end", flexWrap: "wrap", background: "#F9FAFB", border: `1px dashed ${C.border}`, borderRadius: "12px", padding: "20px" }}>
+            <div style={{ flex: "1 1 140px" }}>
+              <label style={labelStyle}>ID no SQL</label>
+              <input style={inputStyle} value={newParam.nome} onChange={e => setNewParam(p => ({ ...p, nome: e.target.value.replace(/\s/g, "_").toLowerCase() }))} placeholder="Ex: id_cliente" />
             </div>
-            <div style={{ flex: "1 1 160px" }}>
-              <label style={labelStyle}>Label (exibição)</label>
-              <input style={inputStyle} value={newParam.label} onChange={e => setNewParam(p => ({ ...p, label: e.target.value }))} placeholder="Data Inicial" />
+            <div style={{ flex: "1 1 180px" }}>
+              <label style={labelStyle}>Título do Filtro</label>
+              <input style={inputStyle} value={newParam.label} onChange={e => setNewParam(p => ({ ...p, label: e.target.value }))} placeholder="Ex: Selecione o Cliente" />
             </div>
-            <div style={{ flex: "0 0 120px" }}>
+            <div style={{ flex: "0 0 130px" }}>
               <label style={labelStyle}>Tipo</label>
               <select style={inputStyle} value={newParam.tipo} onChange={e => setNewParam(p => ({ ...p, tipo: e.target.value }))}>
                 {TIPOS_PARAM.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
-            <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#94a3b8", cursor: "pointer", padding: "8px 0" }}>
-              <input type="checkbox" checked={newParam.obrigatorio} onChange={e => setNewParam(p => ({ ...p, obrigatorio: e.target.checked }))} style={{ accentColor: "#8b5cf6" }} />
-              Obrig.
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "12px", color: C.subtle, cursor: "pointer", padding: "10px 0", fontWeight: "700" }}>
+              <input type="checkbox" checked={newParam.obrigatorio} onChange={e => setNewParam(p => ({ ...p, obrigatorio: e.target.checked }))} style={{ accentColor: C.primary }} />
+              Obrigatório
             </label>
             {newParam.tipo === "select" && (
-              <div style={{ flex: "1 1 200px" }}>
-                <label style={labelStyle}>SQL para opções</label>
-                <input style={inputStyle} value={newParam.opcoes_sql} onChange={e => setNewParam(p => ({ ...p, opcoes_sql: e.target.value }))} placeholder="SELECT id, nome FROM fornecedor" />
+              <div style={{ flex: "1 1 100%", marginTop: "10px" }}>
+                <label style={labelStyle}>Query para carregar a lista (deve retornar ID e NOME)</label>
+                <input style={inputStyle} value={newParam.opcoes_sql} onChange={e => setNewParam(p => ({ ...p, opcoes_sql: e.target.value }))} placeholder="SELECT id_cliente as id, nome_cliente as nome FROM clientes" />
               </div>
             )}
-            <button type="button" onClick={addParam} style={{ background: "#f59e0b", color: "#000", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer", fontSize: 11, fontWeight: 800 }}>➕ Adicionar</button>
+            <button type="button" onClick={addParam} style={{ background: C.green, color: "#fff", border: "none", borderRadius: "10px", padding: "10px 20px", cursor: "pointer", fontSize: "12px", fontWeight: "800", boxShadow: `0 4px 10px ${C.green}33` }}>
+              ＋ Adicionar Filtro
+            </button>
           </div>
         </div>
 
-        {/* AÇÕES */}
-        <div style={{ display: "flex", gap: 12 }}>
-          <button type="submit" style={{ flex: 1, background: "linear-gradient(135deg, #8b5cf6, #6366f1)", color: "#fff", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>
-            {isNew ? "➕ Criar Relatório" : "💾 Salvar Alterações"}
+        {/* AÇÕES FINAIS */}
+        <div style={{ display: "flex", gap: 16, marginTop: "10px" }}>
+          <button type="submit" style={{ flex: 2, background: C.primary, color: "#fff", border: "none", borderRadius: "12px", padding: "16px", fontSize: "14px", fontWeight: "800", cursor: "pointer", boxShadow: `0 4px 15px ${C.primary}33` }}>
+            {isNew ? "🚀 CRIAR RELATÓRIO AGORA" : "💾 SALVAR TODAS AS ALTERAÇÕES"}
           </button>
-          <button type="button" onClick={onCancel} style={{ flex: 1, background: "rgba(255,255,255,0.06)", color: "#94a3b8", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "14px 0", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
-            Cancelar
+          <button type="button" onClick={onCancel} style={{ flex: 1, background: "#F9FAFB", color: C.subtle, border: `1px solid ${C.border}`, borderRadius: "12px", padding: "16px", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>
+            CANCELAR
           </button>
         </div>
       </form>

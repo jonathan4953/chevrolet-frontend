@@ -6,6 +6,19 @@ import { api } from "./api";
 // Controle de limite por contrato, soft delete, isolamento empresa
 // ============================================================
 
+const C = {
+  primary: "#F26B25",
+  blue: "#1A73E8",
+  green: "#22A06B",
+  red: "#D93025",
+  yellow: "#F59E0B",
+  purple: "#8b5cf6",
+  text: "#2A2B2D",
+  muted: "#8E9093",
+  subtle: "#636466",
+  border: "#E5E7EB",
+};
+
 const formatDate = (d) => {
   if (!d || d === "None") return "—";
   try { return new Date(d).toLocaleDateString("pt-BR"); } catch { return d; }
@@ -17,11 +30,11 @@ function AcoesDropdown({ items }) {
   useEffect(() => { const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }; document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h); }, []);
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button onClick={e => { e.stopPropagation(); setOpen(!open); }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "5px 10px", fontSize: 14, cursor: "pointer", color: "#94a3b8", lineHeight: 1 }}>⋮</button>
-      {open && <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50, background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, padding: "4px 0", minWidth: 190, boxShadow: "0 8px 30px rgba(0,0,0,0.6)" }}>
+      <button onClick={e => { e.stopPropagation(); setOpen(!open); }} style={{ background: "#F9FAFB", border: `1px solid ${C.border}`, borderRadius: 8, padding: "5px 10px", fontSize: 14, cursor: "pointer", color: C.subtle, lineHeight: 1, transition: "all 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#E5E7EB"} onMouseLeave={e => e.currentTarget.style.background = "#F9FAFB"}>⋮</button>
+      {open && <div style={{ position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50, background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: 10, padding: "4px 0", minWidth: 190, boxShadow: "0 8px 30px rgba(0,0,0,0.1)" }}>
         {items.map((it, i) => it.sep
-          ? <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
-          : <div key={i} onClick={e => { e.stopPropagation(); it.onClick(); setOpen(false); }} style={{ padding: "8px 14px", fontSize: 12, cursor: "pointer", color: it.danger ? "#f87171" : it.success ? "#34d399" : "#cbd5e1" }} onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>{it.label}</div>
+          ? <div key={i} style={{ height: 1, background: C.border, margin: "4px 0" }} />
+          : <div key={i} onClick={e => { e.stopPropagation(); it.onClick(); setOpen(false); }} style={{ padding: "8px 14px", fontSize: 12, cursor: "pointer", fontWeight: 600, color: it.danger ? C.red : it.success ? C.green : C.text }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>{it.label}</div>
         )}
       </div>}
     </div>
@@ -149,17 +162,18 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   // ESTILOS
   // ============================================================
   const s = {
-    card: { background: "rgba(15,23,42,0.6)", borderRadius: 16, border: "1px solid rgba(255,255,255,0.06)", padding: 24 },
-    input: { width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 13, background: "rgba(15,23,42,0.9)", color: "#f1f5f9", border: "1px solid rgba(255,255,255,0.1)", outline: "none" },
-    label: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 4, display: "block" },
-    primaryBtn: { padding: "10px 22px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "none", background: "linear-gradient(135deg, #eab308, #d97706)", color: "#000" },
-    dangerBtn: { padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600, cursor: "pointer", border: "1px solid rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.1)", color: "#f87171" },
-    th: { padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: 0.8, borderBottom: "1px solid rgba(255,255,255,0.06)" },
-    td: { padding: "12px 14px", fontSize: 12, color: "#cbd5e1", borderBottom: "1px solid rgba(255,255,255,0.04)" },
-    modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" },
-    modalContent: { background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: 30, maxWidth: 550, width: "90%", maxHeight: "85vh", overflowY: "auto" },
-    sectionBtn: (a) => ({ padding: "8px 18px", borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid", background: a ? "rgba(234,179,8,0.9)" : "rgba(255,255,255,0.04)", color: a ? "#000" : "#94a3b8", borderColor: a ? "#eab308" : "rgba(255,255,255,0.08)" }),
-    statCard: (c) => ({ background: "rgba(15,23,42,0.6)", borderRadius: 16, border: `1px solid ${c}22`, padding: "20px 24px", position: "relative", overflow: "hidden" }),
+    card: { background: "#FFFFFF", borderRadius: 16, border: `1px solid ${C.border}`, padding: 24, boxShadow: "0 4px 12px rgba(0,0,0,0.03)" },
+    input: { width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 13, background: "#FFFFFF", color: C.text, border: "1px solid #D4D5D6", outline: "none", transition: "border 0.2s" },
+    label: { fontSize: 10, color: C.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, display: "block" },
+    primaryBtn: { padding: "10px 22px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", border: "none", background: C.primary, color: "#FFFFFF", boxShadow: `0 4px 10px ${C.primary}33` },
+    dangerBtn: { padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer", border: `1px solid ${C.red}40`, background: `${C.red}15`, color: C.red },
+    successBtn: { padding: "8px 16px", borderRadius: 10, fontSize: 12, fontWeight: 800, cursor: "pointer", border: `1px solid ${C.green}40`, background: `${C.green}15`, color: C.green },
+    th: { padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}`, background: "#F9FAFB" },
+    td: { padding: "14px 16px", fontSize: 13, color: C.subtle, borderBottom: `1px solid ${C.border}`, fontWeight: 600 },
+    modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(42, 43, 45, 0.7)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" },
+    modalContent: { background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: 24, padding: 32, maxWidth: 550, width: "90%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 40px rgba(0,0,0,0.1)" },
+    sectionBtn: (a) => ({ padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", border: a ? `1px solid ${C.primary}` : `1px solid ${C.border}`, background: a ? C.primary : "#F9FAFB", color: a ? "#FFFFFF" : C.subtle, transition: "all 0.2s", boxShadow: a ? `0 4px 12px ${C.primary}33` : "none" }),
+    statCard: (c) => ({ background: "#FFFFFF", borderRadius: 16, border: `1px solid ${c}33`, padding: "20px 24px", position: "relative", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.02)" }),
   };
 
   // ============================================================
@@ -167,23 +181,23 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   // ============================================================
   const renderLimitBar = () => {
     const pct = limiteInfo.limite_usuarios > 0 ? (limiteInfo.usuarios_ativos / limiteInfo.limite_usuarios) * 100 : 0;
-    const corBarra = pct >= 90 ? "#f87171" : pct >= 70 ? "#eab308" : "#10b981";
+    const corBarra = pct >= 90 ? C.red : pct >= 70 ? C.yellow : C.green;
     return (
-      <div style={{ ...s.card, padding: "14px 20px", display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+      <div style={{ ...s.card, padding: "18px 24px", display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 12, color: "#94a3b8" }}>
-              Usuários: <strong style={{ color: "#f1f5f9" }}>{limiteInfo.usuarios_ativos}</strong> / {limiteInfo.limite_usuarios}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 13, color: C.subtle, fontWeight: 600 }}>
+              Usuários: <strong style={{ color: C.text, fontWeight: 800 }}>{limiteInfo.usuarios_ativos}</strong> / {limiteInfo.limite_usuarios}
             </span>
-            <span style={{ fontSize: 11, color: corBarra, fontWeight: 700 }}>
+            <span style={{ fontSize: 12, color: corBarra, fontWeight: 800 }}>
               {limiteInfo.vagas_disponiveis} vaga{limiteInfo.vagas_disponiveis !== 1 ? "s" : ""} disponíve{limiteInfo.vagas_disponiveis !== 1 ? "is" : "l"}
             </span>
           </div>
-          <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: 8, background: "#F9FAFB", borderRadius: 4, overflow: "hidden", border: `1px solid ${C.border}` }}>
             <div style={{ height: "100%", width: `${Math.min(pct, 100)}%`, background: corBarra, borderRadius: 3, transition: "width 0.5s ease" }} />
           </div>
         </div>
-        <span style={{ fontSize: 10, color: "#64748b", padding: "4px 10px", background: "rgba(255,255,255,0.04)", borderRadius: 6, fontWeight: 600 }}>
+        <span style={{ fontSize: 11, color: C.text, padding: "6px 12px", background: "#F9FAFB", borderRadius: 8, border: `1px solid ${C.border}`, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
           Plano: {limiteInfo.plano}
         </span>
       </div>
@@ -194,44 +208,44 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   // DASHBOARD
   // ============================================================
   const renderDashboard = () => {
-    if (!dashboard) return <p style={{ color: "#94a3b8", textAlign: "center", padding: 40 }}>Carregando...</p>;
+    if (!dashboard) return <p style={{ color: C.muted, textAlign: "center", padding: 40, fontWeight: 600 }}>Carregando dashboard...</p>;
     const d = dashboard;
     const emp = d.empresa || {};
     const pct = emp.percentual_uso || 0;
-    const corBarra = pct >= 90 ? "#f87171" : pct >= 70 ? "#eab308" : "#10b981";
+    const corBarra = pct >= 90 ? C.red : pct >= 70 ? C.yellow : C.green;
 
     return (
       <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
         {/* BARRA DE LIMITE */}
-        <div style={{ ...s.card, borderColor: `${corBarra}33` }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div style={{ ...s.card, borderColor: `${corBarra}50`, background: `${corBarra}05` }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9" }}>{emp.nome}</span>
-              <span style={{ fontSize: 11, color: "#64748b", marginLeft: 10 }}>Plano: {emp.plano}</span>
+              <span style={{ fontSize: 16, fontWeight: 900, color: C.text }}>{emp.nome}</span>
+              <span style={{ fontSize: 12, color: C.subtle, marginLeft: 12, fontWeight: 600 }}>Plano: {emp.plano}</span>
             </div>
-            <span style={{ fontSize: 22, fontWeight: 800, color: corBarra }}>{pct}%</span>
+            <span style={{ fontSize: 26, fontWeight: 900, color: corBarra }}>{pct}%</span>
           </div>
-          <div style={{ height: 8, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden", marginBottom: 8 }}>
+          <div style={{ height: 10, background: "#FFFFFF", borderRadius: 5, overflow: "hidden", marginBottom: 10, border: `1px solid ${corBarra}30` }}>
             <div style={{ height: "100%", width: `${Math.min(pct, 100)}%`, background: corBarra, borderRadius: 4, transition: "width 0.5s ease" }} />
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#94a3b8" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.subtle, fontWeight: 600 }}>
             <span>{d.ativos} ativos de {emp.limite_usuarios} permitidos</span>
-            <span style={{ color: corBarra, fontWeight: 700 }}>{emp.vagas_disponiveis} vagas</span>
+            <span style={{ color: corBarra, fontWeight: 800 }}>{emp.vagas_disponiveis} vagas disponíveis</span>
           </div>
         </div>
 
         {/* CARDS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
           {[
-            { label: "Total", value: d.total, icon: "👥", color: "#3b82f6" },
-            { label: "Ativos", value: d.ativos, icon: "✅", color: "#10b981" },
-            { label: "Inativos", value: d.inativos, icon: "⛔", color: "#f87171" },
-            { label: "Masters", value: d.masters, icon: "👑", color: "#eab308" },
+            { label: "Total", value: d.total, icon: "👥", color: C.blue },
+            { label: "Ativos", value: d.ativos, icon: "✅", color: C.green },
+            { label: "Inativos", value: d.inativos, icon: "⛔", color: C.red },
+            { label: "Masters", value: d.masters, icon: "👑", color: C.yellow },
           ].map((c, i) => (
             <div key={i} style={s.statCard(c.color)}>
-              <div style={{ fontSize: 20, marginBottom: 4 }}>{c.icon}</div>
-              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>{c.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: c.color, marginTop: 2 }}>{c.value}</div>
+              <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
+              <div style={{ fontSize: 10, color: C.subtle, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>{c.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: c.color, marginTop: 4 }}>{c.value}</div>
             </div>
           ))}
         </div>
@@ -239,33 +253,33 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* POR PERFIL */}
           <div style={s.card}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <div style={{ width: 4, height: 22, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #3b82f6)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Por Perfil</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: `linear-gradient(to bottom, ${C.purple}, ${C.blue})` }} />
+              <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>Por Perfil</span>
             </div>
             {d.por_perfil?.length > 0 ? d.por_perfil.map((p, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
-                <span style={{ color: "#f1f5f9" }}>{p.perfil}</span>
-                <span style={{ color: "#8b5cf6", fontWeight: 700 }}>{p.quantidade}</span>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}`, fontSize: 13 }}>
+                <span style={{ color: C.text, fontWeight: 700 }}>{p.perfil}</span>
+                <span style={{ color: C.purple, fontWeight: 800 }}>{p.quantidade}</span>
               </div>
-            )) : <p style={{ fontSize: 12, color: "#64748b" }}>Sem dados</p>}
+            )) : <p style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>Sem dados</p>}
           </div>
 
           {/* ÚLTIMOS CRIADOS */}
           <div style={s.card}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-              <div style={{ width: 4, height: 22, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #eab308)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Últimos Cadastrados</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: `linear-gradient(to bottom, ${C.green}, ${C.yellow})` }} />
+              <span style={{ fontSize: 15, fontWeight: 800, color: C.text }}>Últimos Cadastrados</span>
             </div>
             {d.recentes?.length > 0 ? d.recentes.map((u, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12 }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${C.border}`, fontSize: 13 }}>
                 <div>
-                  <span style={{ color: "#f1f5f9", fontWeight: 600 }}>{u.nome}</span>
-                  <span style={{ color: "#64748b", marginLeft: 6, fontSize: 10 }}>{u.role}</span>
+                  <span style={{ color: C.text, fontWeight: 700 }}>{u.nome}</span>
+                  <span style={{ color: C.subtle, marginLeft: 8, fontSize: 11, fontWeight: 600 }}>{u.role}</span>
                 </div>
-                <span style={{ color: "#64748b", fontSize: 11 }}>{formatDate(u.criado_em)}</span>
+                <span style={{ color: C.muted, fontSize: 12, fontWeight: 600 }}>{formatDate(u.criado_em)}</span>
               </div>
-            )) : <p style={{ fontSize: 12, color: "#64748b" }}>Sem dados</p>}
+            )) : <p style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>Sem dados</p>}
           </div>
         </div>
       </div>
@@ -280,12 +294,12 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
       {renderLimitBar()}
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <input placeholder="🔍 Buscar usuário..." value={busca} onChange={e => setBusca(e.target.value)} style={{ ...s.input, maxWidth: 280 }} />
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#94a3b8", cursor: "pointer" }}>
-          <input type="checkbox" checked={incluirInativos} onChange={e => setIncluirInativos(e.target.checked)} />
+        <input placeholder="🔍 Buscar usuário..." value={busca} onChange={e => setBusca(e.target.value)} style={{ ...s.input, maxWidth: 280 }} onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: C.text, fontWeight: 600, cursor: "pointer", background: "#FFFFFF", padding: "10px 14px", borderRadius: 10, border: `1px solid ${C.border}` }}>
+          <input type="checkbox" checked={incluirInativos} onChange={e => setIncluirInativos(e.target.checked)} style={{ width: 16, height: 16, cursor: "pointer", accentColor: C.primary }} />
           Mostrar inativos
         </label>
-        <select value={perPage} onChange={e => setPerPage(Number(e.target.value))} style={{ ...s.input, maxWidth: 120 }}>
+        <select value={perPage} onChange={e => setPerPage(Number(e.target.value))} style={{ ...s.input, maxWidth: 120 }} onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"}>
           <option value={10}>10 linhas</option><option value={20}>20 linhas</option><option value={30}>30 linhas</option><option value={500}>Todas</option>
         </select>
         <button onClick={() => {
@@ -302,37 +316,39 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
       <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr style={{ background: "rgba(255,255,255,0.02)" }}>
+            <thead><tr>
               {["Nome", "E-mail", "Perfil", "Master", "Status", "Criado em", "Ações"].map(h => <th key={h} style={s.th}>{h}</th>)}
             </tr></thead>
             <tbody>
               {usuarios.length === 0 ? (
-                <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>{loading ? "Carregando..." : "Nenhum usuário encontrado"}</td></tr>
+                <tr><td colSpan={7} style={{ ...s.td, textAlign: "center", color: C.muted, padding: 40, fontWeight: 600 }}>{loading ? "Carregando..." : "Nenhum usuário encontrado"}</td></tr>
               ) : usuarios.map(u => (
-                <tr key={u.id}>
-                  <td style={{ ...s.td, fontWeight: 600, color: u.ativo ? "#f1f5f9" : "#64748b" }}>{u.nome}</td>
-                  <td style={{ ...s.td, color: u.ativo ? "#94a3b8" : "#475569" }}>{u.email}</td>
+                <tr key={u.id} style={{ transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <td style={{ ...s.td, fontWeight: 800, color: u.ativo ? C.text : C.muted }}>{u.nome}</td>
+                  <td style={{ ...s.td, color: u.ativo ? C.subtle : C.muted }}>{u.email}</td>
                   <td style={s.td}>
                     <span style={{
-                      padding: "3px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-                      background: u.role === "admin" ? "rgba(248,113,113,0.15)" : u.role === "gestor" ? "rgba(96,165,250,0.15)" : "rgba(255,255,255,0.06)",
-                      color: u.role === "admin" ? "#f87171" : u.role === "gestor" ? "#60a5fa" : "#94a3b8",
+                      padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+                      background: u.role === "admin" ? `${C.red}15` : u.role === "gestor" ? `${C.blue}15` : `${C.muted}15`,
+                      color: u.role === "admin" ? C.red : u.role === "gestor" ? C.blue : C.subtle,
+                      border: `1px solid ${u.role === "admin" ? C.red : u.role === "gestor" ? C.blue : C.muted}40`
                     }}>{u.role_name || u.role}</span>
                   </td>
                   <td style={s.td}>
                     {u.is_master
-                      ? <span style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "#000", padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 800 }}>👑 MASTER</span>
-                      : <span style={{ fontSize: 11, color: "#475569" }}>—</span>
+                      ? <span style={{ background: `${C.yellow}15`, color: C.yellow, border: `1px solid ${C.yellow}40`, padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 800 }}>👑 MASTER</span>
+                      : <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>—</span>
                     }
                   </td>
                   <td style={s.td}>
                     <span style={{
-                      padding: "3px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                      background: u.ativo ? "rgba(16,185,129,0.15)" : "rgba(248,113,113,0.15)",
-                      color: u.ativo ? "#34d399" : "#f87171",
+                      padding: "4px 10px", borderRadius: 20, fontSize: 10, fontWeight: 800,
+                      background: u.ativo ? `${C.green}15` : `${C.red}15`,
+                      color: u.ativo ? C.green : C.red,
+                      border: `1px solid ${u.ativo ? C.green : C.red}40`
                     }}>{u.ativo ? "Ativo" : "Inativo"}</span>
                   </td>
-                  <td style={{ ...s.td, fontSize: 11, color: "#64748b" }}>{formatDate(u.criado_em)}</td>
+                  <td style={{ ...s.td, fontSize: 12, color: C.muted }}>{formatDate(u.criado_em)}</td>
                   <td style={s.td}>
                     <AcoesDropdown items={[
                       { label: "✏️ Editar", onClick: () => editarUsuario(u) },
@@ -355,13 +371,13 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
 
       {/* PAGINAÇÃO */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 12, color: "#64748b", background: "rgba(0,0,0,0.3)", padding: "8px 15px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+        <span style={{ fontSize: 12, color: C.subtle, background: "#F9FAFB", padding: "8px 15px", borderRadius: 8, border: `1px solid ${C.border}`, fontWeight: 600 }}>
           {pagination.total > 0 ? `${Math.min((pagination.page - 1) * pagination.per_page + 1, pagination.total)}–${Math.min(pagination.page * pagination.per_page, pagination.total)} de ${pagination.total}` : "0 usuários"}
         </span>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <button disabled={pagination.page <= 1} onClick={() => loadUsuarios(pagination.page - 1)} style={{ ...s.dangerBtn, opacity: pagination.page <= 1 ? 0.4 : 1 }}>Anterior</button>
-          <span style={{ fontSize: 12, color: "#94a3b8", background: "rgba(0,0,0,0.3)", padding: "8px 15px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>Página {pagination.page} de {pagination.total_pages}</span>
-          <button disabled={pagination.page >= pagination.total_pages} onClick={() => loadUsuarios(pagination.page + 1)} style={{ ...s.dangerBtn, opacity: pagination.page >= pagination.total_pages ? 0.4 : 1 }}>Próxima</button>
+          <button disabled={pagination.page <= 1} onClick={() => loadUsuarios(pagination.page - 1)} style={{ ...s.dangerBtn, opacity: pagination.page <= 1 ? 0.4 : 1, background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle }}>Anterior</button>
+          <span style={{ fontSize: 12, color: C.text, background: "#F9FAFB", padding: "8px 15px", borderRadius: 8, border: `1px solid ${C.border}`, fontWeight: 800 }}>Página {pagination.page} de {pagination.total_pages}</span>
+          <button disabled={pagination.page >= pagination.total_pages} onClick={() => loadUsuarios(pagination.page + 1)} style={{ ...s.dangerBtn, opacity: pagination.page >= pagination.total_pages ? 0.4 : 1, background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle }}>Próxima</button>
         </div>
       </div>
     </div>
@@ -373,51 +389,54 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   const renderForm = () => showForm && (
     <div style={s.modalOverlay} onClick={() => { setShowForm(false); resetForm(); }}>
       <div style={s.modalContent} onClick={e => e.stopPropagation()}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>{editing ? "✏️ Editar Usuário" : "👤 Novo Usuário"}</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+          <div style={{ width: 4, height: 28, borderRadius: 2, background: `linear-gradient(to bottom, ${C.primary}, #FF9B6A)` }} />
+          <h3 style={{ color: C.text, fontSize: 20, fontWeight: 900, margin: 0 }}>{editing ? "Editar Usuário" : "Novo Usuário"}</h3>
+        </div>
 
         {!editing && (
-          <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 11, color: "#34d399" }}>
-            Vagas disponíveis: <strong>{limiteInfo.vagas_disponiveis}</strong> de {limiteInfo.limite_usuarios} (Plano: {limiteInfo.plano})
+          <div style={{ background: `${C.green}10`, border: `1px solid ${C.green}30`, borderRadius: 12, padding: "12px 16px", marginBottom: 20, fontSize: 12, color: C.green, fontWeight: 600 }}>
+            Vagas disponíveis: <strong style={{ fontWeight: 800, fontSize: 14 }}>{limiteInfo.vagas_disponiveis}</strong> de {limiteInfo.limite_usuarios} <span style={{ color: C.subtle, marginLeft: 8 }}>(Plano: {limiteInfo.plano})</span>
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>Nome Completo *</label>
-            <input style={s.input} value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Nome do colaborador" />
+            <input style={s.input} value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} placeholder="Nome do colaborador" onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
           </div>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>E-mail (Login) *</label>
-            <input style={s.input} type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="email@empresa.com" />
+            <input style={{...s.input, background: editing ? "#F9FAFB" : "#FFFFFF", opacity: editing ? 0.7 : 1}} disabled={editing} type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="email@empresa.com" onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
           </div>
           {!editing && (
             <div>
               <label style={s.label}>Senha Inicial</label>
-              <input style={s.input} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="123" />
-              <span style={{ fontSize: 10, color: "#64748b" }}>Obrigatório trocar no 1º login</span>
+              <input style={s.input} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} placeholder="123" onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
+              <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, display: "block", marginTop: 4 }}>Obrigatório trocar no 1º login</span>
             </div>
           )}
-          <div>
+          <div style={{ gridColumn: editing ? "1 / -1" : "auto" }}>
             <label style={s.label}>Perfil (Role) *</label>
-            <select style={s.input} value={form.role_id} onChange={e => setForm({ ...form, role_id: Number(e.target.value) })}>
+            <select style={s.input} value={form.role_id} onChange={e => setForm({ ...form, role_id: Number(e.target.value) })} onFocus={e => e.target.style.borderColor = C.primary} onBlur={e => e.target.style.borderColor = "#D4D5D6"}>
               <option value="">Selecione...</option>
               {roles.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
             </select>
           </div>
           {!editing && currentUser?.is_master && (
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#94a3b8", cursor: "pointer" }}>
-                <input type="checkbox" checked={form.is_master} onChange={e => setForm({ ...form, is_master: e.target.checked })} />
+            <div style={{ gridColumn: "1 / -1", marginTop: 8 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: C.text, fontWeight: 700, cursor: "pointer", background: "#F9FAFB", padding: "12px 16px", borderRadius: 10, border: `1px solid ${C.border}` }}>
+                <input type="checkbox" checked={form.is_master} onChange={e => setForm({ ...form, is_master: e.target.checked })} style={{ width: 18, height: 18, accentColor: C.primary, cursor: "pointer" }} />
                 👑 Acesso MASTER (acesso total ao sistema)
               </label>
             </div>
           )}
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-          <button onClick={() => { setShowForm(false); resetForm(); }} style={s.dangerBtn}>Cancelar</button>
+        <div style={{ display: "flex", gap: 12, marginTop: 28, justifyContent: "flex-end" }}>
+          <button onClick={() => { setShowForm(false); resetForm(); }} style={{ ...s.dangerBtn, background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle }}>Cancelar</button>
           <button onClick={salvarUsuario} disabled={loading || !form.nome || !form.email || !form.role_id}
             style={{ ...s.primaryBtn, opacity: loading || !form.nome || !form.email || !form.role_id ? 0.5 : 1 }}>
-            {loading ? "Salvando..." : editing ? "Atualizar" : "Criar Usuário"}
+            {loading ? "Salvando..." : editing ? "💾 Salvar Alterações" : "➕ Criar Usuário"}
           </button>
         </div>
       </div>
@@ -429,17 +448,22 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   // ============================================================
   const renderResetSenha = () => showResetSenha && (
     <div style={s.modalOverlay} onClick={() => setShowResetSenha(null)}>
-      <div style={{ ...s.modalContent, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 16 }}>🔄 Resetar Senha</h3>
-        <p style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16 }}>
-          Resetar senha de <strong style={{ color: "#f1f5f9" }}>{showResetSenha.nome}</strong>
+      <div style={{ ...s.modalContent, maxWidth: 450 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <div style={{ width: 4, height: 28, borderRadius: 2, background: `linear-gradient(to bottom, ${C.blue}, #60A5FA)` }} />
+          <h3 style={{ color: C.text, fontSize: 20, fontWeight: 900, margin: 0 }}>🔄 Resetar Senha</h3>
+        </div>
+        <p style={{ fontSize: 14, color: C.subtle, marginBottom: 20, fontWeight: 600 }}>
+          Resetar senha do usuário <strong style={{ color: C.text, fontWeight: 800 }}>{showResetSenha.nome}</strong>
         </p>
-        <label style={s.label}>Nova Senha Provisória</label>
-        <input style={s.input} value={novaSenha} onChange={e => setNovaSenha(e.target.value)} placeholder="123" />
-        <span style={{ fontSize: 10, color: "#64748b" }}>O usuário será obrigado a trocar no próximo login</span>
-        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
-          <button onClick={() => setShowResetSenha(null)} style={s.dangerBtn}>Cancelar</button>
-          <button onClick={resetSenha} style={s.primaryBtn}>Resetar Senha</button>
+        <div style={{ background: "#F9FAFB", padding: 16, borderRadius: 12, border: `1px solid ${C.border}` }}>
+          <label style={s.label}>Nova Senha Provisória</label>
+          <input style={s.input} value={novaSenha} onChange={e => setNovaSenha(e.target.value)} placeholder="123" onFocus={e => e.target.style.borderColor = C.blue} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
+          <span style={{ fontSize: 11, color: C.muted, fontWeight: 600, display: "block", marginTop: 8 }}>O usuário será obrigado a trocar a senha no próximo login</span>
+        </div>
+        <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
+          <button onClick={() => setShowResetSenha(null)} style={{ ...s.dangerBtn, background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle }}>Cancelar</button>
+          <button onClick={resetSenha} style={{ ...s.primaryBtn, background: C.blue, boxShadow: `0 4px 10px ${C.blue}33` }}>Confirmar Reset</button>
         </div>
       </div>
     </div>
@@ -449,17 +473,17 @@ export default function GestaoUsuarios({ styles, currentUser, showToast, logActi
   // RENDER PRINCIPAL
   // ============================================================
   return (
-    <div>
+    <div style={{ fontFamily: "system-ui, sans-serif", color: C.text }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #f97316, #eab308)" }} />
-        <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20, fontWeight: 800 }}>Gestão de Usuários</h2>
+        <div style={{ width: 4, height: 36, borderRadius: 2, background: `linear-gradient(to bottom, ${C.primary}, #FF9B6A)` }} />
+        <h2 style={{ color: C.text, margin: 0, fontSize: 24, fontWeight: 900 }}>Gestão de Usuários</h2>
       </div>
-      <p style={{ color: "#64748b", fontSize: 12, marginBottom: 20, marginLeft: 16 }}>Administração de usuários da empresa com controle de limite por contrato</p>
+      <p style={{ color: C.muted, fontSize: 13, fontWeight: 600, marginBottom: 24, marginLeft: 16 }}>Administração de usuários da empresa com controle de limite por contrato</p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: `1px solid ${C.border}`, paddingBottom: 16 }}>
         {[{ key: "dashboard", label: "Dashboard", icon: "📊" }, { key: "lista", label: "Usuários", icon: "👤" }].map(sec => (
           <button key={sec.key} onClick={() => setSection(sec.key)} style={s.sectionBtn(section === sec.key)}>
-            <span style={{ marginRight: 6 }}>{sec.icon}</span>{sec.label}
+            <span style={{ marginRight: 8 }}>{sec.icon}</span>{sec.label}
           </button>
         ))}
       </div>

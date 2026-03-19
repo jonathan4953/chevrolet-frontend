@@ -35,23 +35,22 @@ const formatar_moeda_brl = (valor) => {
     currency: 'BRL'
   }).format(valor);
 };
-// Paleta de cores padrão do sistema
+// Paleta de cores Modo Claro - Omni26
 const DEFAULT_COLOR_PALETTE = {
-  primary: "#f97316",       // Laranja Omni26
-  primaryDark: "#ea6c0a",
-  accent: "#eab308",        // Amarelo destaque
-  success: "#10b981",
-  danger: "#f87171",
-  info: "#3b82f6",
-  sidebar: "rgba(15, 23, 42, 0.7)",
-  background: "linear-gradient(135deg, #0f172a 0%, #020617 100%)",
-  cardBg: "rgba(15, 23, 42, 0.6)",
-  border: "rgba(255,255,255,0.1)",
-  text: "#f1f5f9",
-  textMuted: "#94a3b8",
-  navActive: "#f97316",
+  primary: "#F26B25",       // Laranja Omni26 Principal
+  primaryDark: "#CC4E0E",   // Laranja mais escuro (para hover/active)
+  accent: "#F26B25",        // Cor de destaque (substituindo o amarelo antigo)
+  success: "#22A06B",       // Verde padrão de sucesso
+  danger: "#D93025",        // Vermelho padrão de erro/perigo
+  info: "#1A73E8",          // Azul de informação
+  sidebar: "#FFFFFF",       // Fundo da barra lateral (Branco)
+  background: "#E8EAED",    // Fundo do sistema (Cinza off-white super limpo)
+  cardBg: "#FFFFFF",        // Fundo dos cartões/gráficos (Branco puro)
+  border: "#D1D5DB",        // Cor das linhas divisórias (Cinza muito sutil)
+  text: "#2A2B2D",          // Cor do texto principal (Escuro para contraste no fundo claro)
+  textMuted: "#8E9093",     // Cor de textos secundários e legendas
+  navActive: "#F26B25",     // Cor do ícone/texto do menu ativo
 };
-
 export default function App() {
 
   const [showAddReceberModal, setShowAddReceberModal] = useState(false);
@@ -1034,7 +1033,7 @@ const handleExcluirFornecedor = (id, nome) => {
       case "ABERTO":
       case "A RECEBER":
       case "SUGESTÃO":
-        return "#facc15"; // Amarelo
+        return "#F26B25"; // Amarelo
       default: 
         return "#94a3b8"; // Cinza padrão
     }
@@ -2422,8 +2421,8 @@ const clienteDadosExtras = clienteSelecionado ? {
                     <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"8px 16px",borderRadius:10,border:`1px solid ${baixaReceberData.tipo_baixa==="total"?"rgba(16,185,129,0.5)":"rgba(255,255,255,0.1)"}`,background:baixaReceberData.tipo_baixa==="total"?"rgba(16,185,129,0.12)":"transparent",color:baixaReceberData.tipo_baixa==="total"?"#34d399":"#94a3b8",fontSize:12,fontWeight:700}}>
                       <input type="radio" name="tipobx" value="total" checked={baixaReceberData.tipo_baixa==="total"} onChange={e=>setBaixaReceberData({...baixaReceberData, tipo_baixa:"total", valor_recebido:""})} style={{accentColor:"#10b981"}} /> Total
                     </label>
-                    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"8px 16px",borderRadius:10,border:`1px solid ${baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.5)":"rgba(255,255,255,0.1)"}`,background:baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.12)":"transparent",color:baixaReceberData.tipo_baixa==="parcial"?"#eab308":"#94a3b8",fontSize:12,fontWeight:700}}>
-                      <input type="radio" name="tipobx" value="parcial" checked={baixaReceberData.tipo_baixa==="parcial"} onChange={e=>setBaixaReceberData({...baixaReceberData, tipo_baixa:"parcial"})} style={{accentColor:"#eab308"}} /> Parcial
+                    <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",padding:"8px 16px",borderRadius:10,border:`1px solid ${baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.5)":"rgba(255,255,255,0.1)"}`,background:baixaReceberData.tipo_baixa==="parcial"?"rgba(234,179,8,0.12)":"transparent",color:baixaReceberData.tipo_baixa==="parcial"?"#F26B25":"#94a3b8",fontSize:12,fontWeight:700}}>
+                      <input type="radio" name="tipobx" value="parcial" checked={baixaReceberData.tipo_baixa==="parcial"} onChange={e=>setBaixaReceberData({...baixaReceberData, tipo_baixa:"parcial"})} style={{accentColor:"#F26B25"}} /> Parcial
                     </label>
                   </div>
                 </div>
@@ -2446,7 +2445,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                 </div>
               </div>
               <div style={{display:"flex",gap:12,marginTop:20}}>
-                <button type="submit" disabled={loading} style={{...styles.exportBtn, flex:1, background:baixaReceberData.tipo_baixa==="parcial"?"linear-gradient(135deg,#b45309,#eab308)":"linear-gradient(135deg,#059669,#10b981)", color:baixaReceberData.tipo_baixa==="parcial"?"#000":"#fff", border:"none"}}>
+                <button type="submit" disabled={loading} style={{...styles.exportBtn, flex:1, background:baixaReceberData.tipo_baixa==="parcial"?"linear-gradient(135deg,#b45309,#F26B25)":"linear-gradient(135deg,#059669,#10b981)", color:baixaReceberData.tipo_baixa==="parcial"?"#000":"#fff", border:"none"}}>
                   {loading ? "⌛ PROCESSANDO..." : baixaReceberData.tipo_baixa === "parcial" ? "📊 REGISTRAR PARCIAL" : "✅ CONFIRMAR RECEBIMENTO"}
                 </button>
                 <button type="button" style={{...styles.clearResultsBtn, flex:1}} onClick={()=>{setShowBaixaReceberModal(false);setReceberToBaixa(null);}}>CANCELAR</button>
@@ -2478,7 +2477,7 @@ const clienteDadosExtras = clienteSelecionado ? {
         <header style={styles.header}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <div>
-              <span style={{color: '#eab308', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>Olá, {currentUser?.name}{currentUser?.is_master ? ' 👑' : ''}</span>
+              <span style={{color: '#F26B25', fontWeight: 'bold', fontSize: '14px', display: 'block', marginBottom: '5px', textShadow: '0 2px 4px rgba(0,0,0,0.5)'}}>Olá, {currentUser?.name}{currentUser?.is_master ? ' 👑' : ''}</span>
               <h1 style={styles.title}>{activeTab.replace('_', ' ').toUpperCase()}</h1>
               <p style={styles.subtitle}>{currentUser?.empresa_nome ? `${currentUser.empresa_nome} • ` : ''}Sistema v3.0 • 2026</p>
             </div>
@@ -2490,14 +2489,14 @@ const clienteDadosExtras = clienteSelecionado ? {
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "30px 40px", overflowY: "auto", overflowX: "hidden" }}>
+        <main style={{ flex: 1, padding: "30px 40px", overflowY: "auto", overflowX: "auto", minWidth: 0 }}>
           
       
         {/* TAB: DASHBOARD */}
          {activeTab === "dashboard" && (
                     <div style={styles.dashboardWrapper}>       
               {/* SEÇÃO 1: RESUMO FINANCEIRO REALIZADO (NIBO STYLE) */}
-              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Consolidado Bancário e Mercado</h2>
+              <h2 style={{...styles.sectionTitle, color: '#F26B25', fontSize: '18px', marginBottom: '15px'}}>Consolidado Bancário e Mercado</h2>
               <div style={{...styles.statsGrid, marginBottom: '30px'}}>
                 <StatCard 
                   title="SALDO EM CONTA (REAL)" 
@@ -2530,7 +2529,7 @@ const clienteDadosExtras = clienteSelecionado ? {
               </div> 
 
               {/* SEÇÃO 2: INDICADORES DE OPERAÇÃO E FROTA */}
-              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Indicadores de Frota</h2>
+              <h2 style={{...styles.sectionTitle, color: '#F26B25', fontSize: '18px', marginBottom: '15px'}}>Indicadores de Frota</h2>
               <div style={{...styles.statsGrid, marginBottom: '30px'}}>
                 <StatCard title="Estoque (Vendas)" value={fullInventoryVendas?.length || 0} icon="🏠" breakdown={vendasBreakdown} />
                 <StatCard title="Estoque (Locação)" value={fullInventoryLocacao?.length || 0} icon="🔑" breakdown={locacaoBreakdown} />
@@ -2539,10 +2538,10 @@ const clienteDadosExtras = clienteSelecionado ? {
               </div>
               
               {/* SEÇÃO 3: AÇÕES RÁPIDAS (ATALHOS) */}
-              <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '15px'}}>Ações Rápidas</h2>
+              <h2 style={{...styles.sectionTitle, color: '#F26B25', fontSize: '18px', marginBottom: '15px'}}>Ações Rápidas</h2>
               <div style={styles.actionGrid}>
                 {hasEditPermission && (
-                  <div style={{...styles.actionCard, borderLeft: '4px solid #eab308'}} onClick={() => setActiveTab("financeiro")}>
+                  <div style={{...styles.actionCard, borderLeft: '4px solid #F26B25'}} onClick={() => setActiveTab("financeiro")}>
                     <span style={{fontSize: 30}}>💸</span>
                     <h3>Conciliação Bancária</h3>
                     <p>Subir OFX e processar baixas rápidas</p>
@@ -2677,7 +2676,7 @@ const clienteDadosExtras = clienteSelecionado ? {
             </select>
           </div>
           
-          <button onClick={loadContasPagar} style={{...styles.exportBtn, background:"#eab308", color:"#000", boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>
+          <button onClick={loadContasPagar} style={{...styles.exportBtn, background:"#F26B25", color:"#000", boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>
             🔍 BUSCAR
           </button>
 
@@ -2904,7 +2903,7 @@ const clienteDadosExtras = clienteSelecionado ? {
               <option value="CONCILIADO">Conciliado</option>
             </select>
           </div>
-          <button onClick={loadContasReceber} style={{...styles.exportBtn,background:"#eab308",color:"#000",boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>🔍 BUSCAR</button>
+          <button onClick={loadContasReceber} style={{...styles.exportBtn,background:"#F26B25",color:"#000",boxShadow:"0 4px 15px rgba(234,179,8,0.4)"}}>🔍 BUSCAR</button>
           <div>
             <input type="file" id="ofxUploadReceber" accept=".ofx,.pdf" style={{display:"none"}} onChange={handleImportOFXReceber}/>
             <label htmlFor="ofxUploadReceber" style={{...styles.exportBtn,background:"#10b981",display:"inline-flex",alignItems:"center",gap:8,boxShadow:"0 4px 15px rgba(16,185,129,0.4)",cursor:"pointer",borderRadius:12,padding:"12px 20px",fontWeight:"bold",fontSize:12,color:"#fff"}}>
@@ -3067,14 +3066,14 @@ const clienteDadosExtras = clienteSelecionado ? {
                     <label style={styles.fieldLabel}>Fim</label>
                     <input type="date" style={styles.inputSmall} value={filterEnd} onChange={e => setFilterEnd(e.target.value)} />
                   </div>
-                  <button onClick={loadInventoryVendas} style={{...styles.exportBtn, background: '#eab308', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
+                  <button onClick={loadInventoryVendas} style={{...styles.exportBtn, background: '#F26B25', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
                   <button onClick={() => exportInventoryXLSX('venda')} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 XLSX</button>
                 </div>
               </div>
 
               {hasEditPermission && selectedInventoryItems.length > 0 && (
                 <div style={styles.bulkActionBox}>
-                  <span style={{fontSize: '13px', fontWeight: 'bold', color: '#eab308'}}>{selectedInventoryItems.length} veículo(s) selecionado(s)</span>
+                  <span style={{fontSize: '13px', fontWeight: 'bold', color: '#F26B25'}}>{selectedInventoryItems.length} veículo(s) selecionado(s)</span>
                   <div style={{width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)'}} />
                   <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
                     <label style={{fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8'}}>Alterar Status:</label>
@@ -3144,7 +3143,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                         <td style={styles.tdMassa}>
                           <span style={{
                             background: v.status === 'Disponível' ? 'rgba(16,185,129,0.15)' : v.status === 'Vendido' ? 'rgba(59,130,246,0.15)' : v.status === 'Manutenção' ? 'rgba(234,179,8,0.15)' : 'rgba(148,163,184,0.1)',
-                            color: v.status === 'Disponível' ? '#10b981' : v.status === 'Vendido' ? '#3b82f6' : v.status === 'Manutenção' ? '#eab308' : '#94a3b8',
+                            color: v.status === 'Disponível' ? '#10b981' : v.status === 'Vendido' ? '#3b82f6' : v.status === 'Manutenção' ? '#F26B25' : '#94a3b8',
                             padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 800
                           }}>{v.status}</span>
                         </td>
@@ -3220,7 +3219,7 @@ const clienteDadosExtras = clienteSelecionado ? {
           <label style={styles.fieldLabel}>Fim</label>
           <input type="date" style={styles.inputSmall} value={filterEndLocacao} onChange={e => setFilterEndLocacao(e.target.value)} />
         </div>
-        <button onClick={loadInventoryLocacao} style={{...styles.exportBtn, background: '#eab308', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
+        <button onClick={loadInventoryLocacao} style={{...styles.exportBtn, background: '#F26B25', color: '#000', boxShadow: '0 4px 15px rgba(234, 179, 8, 0.4)'}}>🔍 PESQUISAR</button>
         <button onClick={() => exportInventoryXLSX('locacao')} style={{...styles.exportBtn, boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'}}>📥 XLSX</button>
       </div>
     </div>
@@ -3228,7 +3227,7 @@ const clienteDadosExtras = clienteSelecionado ? {
     {/* AÇÕES EM MASSA */}
     {hasEditPermission && selectedInventoryItemsLocacao.length > 0 && (
       <div style={styles.bulkActionBox}>
-        <span style={{fontSize: '13px', fontWeight: 'bold', color: '#eab308'}}>{selectedInventoryItemsLocacao.length} veículo(s) selecionado(s)</span>
+        <span style={{fontSize: '13px', fontWeight: 'bold', color: '#F26B25'}}>{selectedInventoryItemsLocacao.length} veículo(s) selecionado(s)</span>
         <div style={{width: '1px', height: '20px', background: 'rgba(255,255,255,0.1)'}} />
         <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
           <label style={{fontSize: '11px', textTransform: 'uppercase', color: '#94a3b8'}}>Alterar Status:</label>
@@ -3300,7 +3299,7 @@ const clienteDadosExtras = clienteSelecionado ? {
               <td style={styles.tdMassa}>
                 <span style={{
                   background: v.status === 'Ociosos' || v.status === 'Disponível' ? 'rgba(16,185,129,0.15)' : v.status === 'Locados' || v.status === 'Locado' ? 'rgba(59,130,246,0.15)' : v.status === 'Manutenção' ? 'rgba(234,179,8,0.15)' : 'rgba(148,163,184,0.1)',
-                  color: v.status === 'Ociosos' || v.status === 'Disponível' ? '#10b981' : v.status === 'Locados' || v.status === 'Locado' ? '#3b82f6' : v.status === 'Manutenção' ? '#eab308' : '#94a3b8',
+                  color: v.status === 'Ociosos' || v.status === 'Disponível' ? '#10b981' : v.status === 'Locados' || v.status === 'Locado' ? '#3b82f6' : v.status === 'Manutenção' ? '#F26B25' : '#94a3b8',
                   padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 800
                 }}>{v.status}</span>
               </td>
@@ -3362,9 +3361,9 @@ const clienteDadosExtras = clienteSelecionado ? {
                     <h2 style={styles.cardTitle}>Cadastro de Estoque Real</h2>
                     <form onSubmit={handleManualSubmit} style={styles.inventoryGrid}>
                       
-                      <div style={{...styles.inputGroup, gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', padding: 15, borderRadius: 12, border: '1px solid #eab308'}}>
-                        <label style={{...styles.fieldLabel, color: '#eab308'}}>ESTOQUE DE DESTINO DO VEÍCULO:</label>
-                        <select style={{...styles.inputSmall, border: '1px solid #eab308'}} value={newVehicle.tipo_estoque} onChange={e => setNewVehicle({...newVehicle, tipo_estoque: e.target.value})} required>
+                      <div style={{...styles.inputGroup, gridColumn: 'span 2', background: 'rgba(234, 179, 8, 0.15)', padding: 15, borderRadius: 12, border: '1px solid #F26B25'}}>
+                        <label style={{...styles.fieldLabel, color: '#F26B25'}}>ESTOQUE DE DESTINO DO VEÍCULO:</label>
+                        <select style={{...styles.inputSmall, border: '1px solid #F26B25'}} value={newVehicle.tipo_estoque} onChange={e => setNewVehicle({...newVehicle, tipo_estoque: e.target.value})} required>
                           <option value="Venda">ESTOQUE DE VENDAS</option>
                           <option value="Locação">ESTOQUE DE LOCAÇÃO</option>
                         </select>
@@ -3455,7 +3454,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                     <h2 style={styles.cardTitle}>Importação Rápida</h2>
                     <div style={{marginTop: '30px', textAlign: 'center'}}>
                         
-                       <button onClick={handleDownloadModel} style={{...styles.clearBtn, color: '#eab308', border: '1px solid #eab308', width: '100%', marginBottom: 15, padding: 12}}>
+                       <button onClick={handleDownloadModel} style={{...styles.clearBtn, color: '#F26B25', border: '1px solid #F26B25', width: '100%', marginBottom: 15, padding: 12}}>
                           📥 BAIXAR MODELO XLSX
                        </button>
                        
@@ -3500,7 +3499,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                <div style={{display: 'flex', gap: '30px', marginTop: '20px', alignItems: 'flex-start'}}>
                  
                  <div style={{flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', padding: '25px', borderRadius: '20px'}}>
-                     <h3 style={{fontSize: '14px', marginBottom: '15px', color: '#eab308'}}>Novo Acesso</h3>
+                     <h3 style={{fontSize: '14px', marginBottom: '15px', color: '#F26B25'}}>Novo Acesso</h3>
                      <form onSubmit={handleAddUser}>
                         <div style={styles.inputGroup}>
                           <label style={styles.fieldLabel}>Nome</label>
@@ -3619,7 +3618,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                         {auditLogs.length > 0 ? auditLogs.map((log, i) => (
                            <tr key={i} style={styles.trBody}>
                               <td style={{...styles.tdMassa, fontSize: '11px'}}>{log.date}</td>
-                              <td style={{...styles.tdMassa, fontWeight: 'bold', color: '#eab308'}}>{log.user}</td>
+                              <td style={{...styles.tdMassa, fontWeight: 'bold', color: '#F26B25'}}>{log.user}</td>
                               <td style={styles.tdMassa}>
                                 <span style={{
                                   fontSize: '9px', 
@@ -3686,11 +3685,11 @@ const clienteDadosExtras = clienteSelecionado ? {
               {syncingFipe && (
                 <div style={{marginBottom: '20px', background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '15px', border: '1px solid rgba(255,255,255,0.05)'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '10px'}}>
-                    <span style={{fontSize: '12px', color: '#eab308', fontWeight: 'bold'}}>Status do Sincronizador Estrito:</span>
-                    <span style={{fontSize: '12px', color: '#eab308', fontWeight: 'bold'}}>{syncProgress}%</span>
+                    <span style={{fontSize: '12px', color: '#F26B25', fontWeight: 'bold'}}>Status do Sincronizador Estrito:</span>
+                    <span style={{fontSize: '12px', color: '#F26B25', fontWeight: 'bold'}}>{syncProgress}%</span>
                   </div>
                   <div style={{width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden'}}>
-                    <div style={{width: `${syncProgress}%`, height: '100%', background: '#eab308', transition: 'width 0.4s ease', boxShadow: '0 0 10px rgba(234, 179, 8, 0.5)'}}></div>
+                    <div style={{width: `${syncProgress}%`, height: '100%', background: '#F26B25', transition: 'width 0.4s ease', boxShadow: '0 0 10px rgba(234, 179, 8, 0.5)'}}></div>
                   </div>
                 </div>
               )}
@@ -3777,12 +3776,12 @@ const clienteDadosExtras = clienteSelecionado ? {
                </p>
 
                {/* LOGOS */}
-<h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', borderLeft: '3px solid #eab308', paddingLeft: '10px', marginBottom: '20px'}}>Logos do Sistema</h3>
+<h3 style={{fontSize: '13px', color: '#F26B25', textTransform: 'uppercase', borderLeft: '3px solid #F26B25', paddingLeft: '10px', marginBottom: '20px'}}>Logos do Sistema</h3>
 <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '40px'}}>
   
   {/* LOGO DA TELA DE LOGIN */}
   <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Tela de Login</h3>
+      <h3 style={{fontSize: '12px', color: '#F26B25', textTransform: 'uppercase', marginBottom: '20px'}}>Tela de Login</h3>
       <div style={{minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)', padding: '20px'}}>
         <img src={sysLogos.login || LogoOmni} alt="Login Logo" style={{width: '100%', height: 'auto', maxHeight: '120px', objectFit: 'contain'}} />
       </div>
@@ -3793,7 +3792,7 @@ const clienteDadosExtras = clienteSelecionado ? {
 
   {/* LOGO DA SIDEBAR */}
   <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Sidebar (Menu Lateral)</h3>
+      <h3 style={{fontSize: '12px', color: '#F26B25', textTransform: 'uppercase', marginBottom: '20px'}}>Sidebar (Menu Lateral)</h3>
       <div style={{minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', boxShadow: 'inset 0 4px 15px rgba(0,0,0,0.3)', padding: '20px'}}>
         <img src={sysLogos.sidebar || LogoOmni} alt="Sidebar Logo" style={{width: '100%', height: 'auto', maxHeight: '120px', objectFit: 'contain'}} />
       </div>
@@ -3804,7 +3803,7 @@ const clienteDadosExtras = clienteSelecionado ? {
 
   {/* LOGO DO PDF */}
   <div style={{background: 'rgba(0,0,0,0.3)', padding: '25px', borderRadius: '20px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)'}}>
-      <h3 style={{fontSize: '12px', color: '#eab308', textTransform: 'uppercase', marginBottom: '20px'}}>Proposta PDF (Download)</h3>
+      <h3 style={{fontSize: '12px', color: '#F26B25', textTransform: 'uppercase', marginBottom: '20px'}}>Proposta PDF (Download)</h3>
       <div style={{minHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', background: '#fff', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)', padding: '20px'}}>
         <img src={sysLogos.pdf || LogoOmni} alt="PDF Logo" style={{width: '100%', height: 'auto', maxHeight: '120px', objectFit: 'contain'}} />
       </div>
@@ -3814,12 +3813,12 @@ const clienteDadosExtras = clienteSelecionado ? {
   </div>
 </div>
                {/* PALETA DE CORES */}
-               <h3 style={{fontSize: '13px', color: '#eab308', textTransform: 'uppercase', borderLeft: '3px solid #eab308', paddingLeft: '10px', marginBottom: '20px'}}>Paleta de Cores do Sistema</h3>
+               <h3 style={{fontSize: '13px', color: '#F26B25', textTransform: 'uppercase', borderLeft: '3px solid #F26B25', paddingLeft: '10px', marginBottom: '20px'}}>Paleta de Cores do Sistema</h3>
                <p style={{color: '#64748b', fontSize: 12, marginBottom: '20px'}}>Defina a identidade visual do sistema. Suporta nomes de cores (ex: <code style={{color:'#f97316'}}>orange</code>), hex (ex: <code style={{color:'#f97316'}}>#FF6600</code>) e RGB (ex: <code style={{color:'#f97316'}}>rgb(255,102,0)</code>).</p>
                <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px'}}>
                  {[
                    {key: 'primary', label: 'Cor Primária (botões, destaque)', hint: 'Ex: #f97316 ou rgb(249,115,22)'},
-                   {key: 'accent', label: 'Cor de Acento (títulos, bordas)', hint: 'Ex: #eab308'},
+                   {key: 'accent', label: 'Cor de Acento (títulos, bordas)', hint: 'Ex: #F26B25'},
                    {key: 'success', label: 'Cor de Sucesso', hint: 'Ex: #10b981'},
                    {key: 'danger', label: 'Cor de Erro/Perigo', hint: 'Ex: #f87171'},
                    {key: 'info', label: 'Cor Informativa', hint: 'Ex: #3b82f6'},
@@ -3920,7 +3919,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                       alert(`Cenário ${s.name} aplicado!`); 
                     }}
                   >
-                    <h3 style={{color: '#eab308'}}>{s.name}</h3>
+                    <h3 style={{color: '#F26B25'}}>{s.name}</h3>
                     <p style={{fontSize: 12, color: '#94a3b8'}}>
                       Taxa: {(s.taxa*100).toFixed(2)}% | Margem: {(s.margem*100).toFixed(1)}%
                     </p>
@@ -4051,7 +4050,7 @@ const clienteDadosExtras = clienteSelecionado ? {
                   ))
                 ) : (
                   <div style={{background:'rgba(245,158,11,0.05)',padding:'15px',borderRadius:'12px',border:'1px dashed rgba(245,158,11,0.4)'}}>
-                    <p style={{color:'#eab308',fontSize:'12px',marginBottom:'12px',fontWeight:'bold'}}>
+                    <p style={{color:'#F26B25',fontSize:'12px',marginBottom:'12px',fontWeight:'bold'}}>
                       {item.sugestao_regra
                         ? `✨ MEMÓRIA DO SISTEMA: "${item.extrato_descricao}" costuma ser da empresa ${item.sugestao_regra.fornecedor_nome}.`
                         : `⚡ LANÇAMENTO RÁPIDO: Não encontramos provisão de R$ ${item.extrato_valor}. Selecione quem pagou/recebeu:`}
@@ -4060,12 +4059,12 @@ const clienteDadosExtras = clienteSelecionado ? {
                       <select
                         value={fornRapidoSelecionado[index] !== undefined ? fornRapidoSelecionado[index] : (item.sugestao_regra ? String(item.sugestao_regra.id_fornecedor) : "")}
                         onChange={e=>setFornRapidoSelecionado(prev=>({...prev,[index]:e.target.value}))}
-                        style={{...styles.inputSmall,flex:1,height:'40px',background:'rgba(0,0,0,0.5)',borderColor:item.sugestao_regra?'#eab308':'rgba(255,255,255,0.15)',color:'#f1f5f9'}}
+                        style={{...styles.inputSmall,flex:1,height:'40px',background:'rgba(0,0,0,0.5)',borderColor:item.sugestao_regra?'#F26B25':'rgba(255,255,255,0.15)',color:'#f1f5f9'}}
                       >
                         <option value="">-- Selecionar Empresa / Cliente --</option>
                         {fornecedores?.map(f => (<option key={f.id} value={f.id}>{f.nome_razao||f.razao_social}</option>))}
                       </select>
-                      <button onClick={()=>handleLancarEConciliar(item,index)} style={{background:'linear-gradient(135deg,#b45309,#eab308)',color:'#000',padding:'0 25px',borderRadius:'8px',border:'none',cursor:'pointer',fontWeight:900,fontSize:'12px',boxShadow:'0 4px 15px rgba(234,179,8,0.3)',flexShrink:0}}>
+                      <button onClick={()=>handleLancarEConciliar(item,index)} style={{background:'linear-gradient(135deg,#b45309,#F26B25)',color:'#000',padding:'0 25px',borderRadius:'8px',border:'none',cursor:'pointer',fontWeight:900,fontSize:'12px',boxShadow:'0 4px 15px rgba(234,179,8,0.3)',flexShrink:0}}>
                         {item.sugestao_regra?"CONFIRMAR E BAIXAR":"CRIAR E CONCILIAR"}
                       </button>
                     </div>
@@ -4116,7 +4115,7 @@ function ToastContainer({ toasts }) {
     success: { bg: "rgba(16,185,129,0.15)", border: "#10b981", color: "#34d399" },
     error:   { bg: "rgba(239,68,68,0.15)", border: "#ef4444", color: "#f87171" },
     info:    { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", color: "#60a5fa" },
-    warning: { bg: "rgba(234,179,8,0.15)", border: "#eab308", color: "#facc15" },
+    warning: { bg: "rgba(234,179,8,0.15)", border: "#F26B25", color: "#F26B25" },
   };
   if (!toasts.length) return null;
 
@@ -4184,7 +4183,7 @@ function FluxoCaixaChart({ data, maxValue }) {
 
   return (
     <div style={{...styles.cardFull, marginTop: '20px', marginBottom: '30px', padding: '30px'}}>
-      <h2 style={{...styles.sectionTitle, color: '#eab308', fontSize: '18px', marginBottom: '30px'}}>
+      <h2 style={{...styles.sectionTitle, color: '#F26B25', fontSize: '18px', marginBottom: '30px'}}>
         Fluxo de Caixa Mensal
       </h2>
       

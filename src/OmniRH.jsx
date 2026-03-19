@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { api } from "./api";
 
 // ============================================================
-// OmniRH.jsx — Módulo Completo de Gestão de RH
+// OmniRH.jsx — Módulo Completo de Gestão de RH (MODO CLARO)
 // ============================================================
 
 const formatBRL = (n) => Number(n || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -12,86 +12,86 @@ const formatDate = (d) => d ? new Date(d + "T00:00:00").toLocaleDateString("pt-B
 const Tab = ({ active, label, icon, onClick }) => (
   <button onClick={onClick} style={{
     padding: '8px 16px', borderRadius: 10, fontSize: 11, fontWeight: 700, cursor: 'pointer',
-    border: 'none', transition: 'all 0.2s',
-    background: active ? 'rgba(234,179,8,0.9)' : 'rgba(255,255,255,0.05)',
-    color: active ? '#000' : '#94a3b8',
-    boxShadow: active ? '0 4px 12px rgba(234,179,8,0.25)' : 'none',
+    border: active ? '1px solid #F26B25' : '1px solid #E5E7EB', transition: 'all 0.2s',
+    background: active ? '#F26B25' : '#F9FAFB',
+    color: active ? '#FFFFFF' : '#636466',
+    boxShadow: active ? '0 4px 12px rgba(242, 107, 37, 0.25)' : 'none',
   }}>
     <span style={{ marginRight: 6 }}>{icon}</span>{label}
   </button>
 );
 
 // KPI card
-const KPI = ({ icon, label, value, color = '#eab308' }) => (
+const KPI = ({ icon, label, value, color = '#F26B25' }) => (
   <div style={{
-    background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
+    background: '#FFFFFF', border: '1px solid #E5E7EB',
     borderRadius: 16, padding: '20px 18px', flex: 1, minWidth: 160,
-    borderLeft: `3px solid ${color}`,
+    borderLeft: `3px solid ${color}`, boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
   }}>
     <div style={{ fontSize: 24, marginBottom: 4 }}>{icon}</div>
-    <div style={{ fontSize: 22, fontWeight: 800, color: '#f1f5f9' }}>{value}</div>
-    <div style={{ fontSize: 10, color: '#64748b', textTransform: 'uppercase', fontWeight: 700, marginTop: 4 }}>{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 800, color: '#2A2B2D' }}>{value}</div>
+    <div style={{ fontSize: 10, color: '#8E9093', textTransform: 'uppercase', fontWeight: 700, marginTop: 4 }}>{label}</div>
   </div>
 );
 
 // Data table row cell
 const Td = ({ children, w }) => (
-  <td style={{ padding: '10px 12px', fontSize: 12, color: '#cbd5e1', width: w }}>{children}</td>
+  <td style={{ padding: '10px 12px', fontSize: 12, color: '#3D3E40', width: w }}>{children}</td>
 );
 
 const Th = ({ children }) => (
-  <th style={{ padding: '8px 12px', fontSize: 10, color: '#64748b', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.06)', fontWeight: 700, textTransform: 'uppercase' }}>{children}</th>
+  <th style={{ padding: '8px 12px', fontSize: 10, color: '#636466', textAlign: 'left', borderBottom: '1px solid #E5E7EB', fontWeight: 700, textTransform: 'uppercase' }}>{children}</th>
 );
 
-const Badge = ({ text, color = '#94a3b8' }) => (
+const Badge = ({ text, color = '#636466' }) => (
   <span style={{
     padding: '3px 10px', borderRadius: 6, fontSize: 10, fontWeight: 700,
-    background: `${color}20`, color, border: `1px solid ${color}33`
+    background: `${color}15`, color, border: `1px solid ${color}33`
   }}>{text}</span>
 );
 
 const Card = ({ children, style = {} }) => (
   <div style={{
-    background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
-    borderRadius: 16, padding: 24, ...style
+    background: '#FFFFFF', border: '1px solid #E5E7EB',
+    borderRadius: 16, padding: 24, boxShadow: '0 4px 12px rgba(0,0,0,0.03)', ...style
   }}>{children}</div>
 );
 
 const SectionTitle = ({ icon, text }) => (
-  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#eab308', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#F26B25', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
     {icon} {text}
   </h3>
 );
 
-const Btn = ({ children, onClick, color = '#eab308', disabled = false, small = false }) => (
+const Btn = ({ children, onClick, color = '#F26B25', disabled = false, small = false }) => (
   <button onClick={onClick} disabled={disabled} style={{
     padding: small ? '6px 14px' : '10px 20px', borderRadius: 10, fontWeight: 700,
     fontSize: small ? 10 : 12, border: 'none', cursor: disabled ? 'default' : 'pointer',
-    background: color, color: color === '#eab308' ? '#000' : '#fff',
-    opacity: disabled ? 0.5 : 1, boxShadow: `0 4px 12px ${color}44`,
+    background: color, color: '#FFFFFF',
+    opacity: disabled ? 0.5 : 1, boxShadow: disabled ? 'none' : `0 4px 12px ${color}44`,
   }}>{children}</button>
 );
 
 const Input = ({ label, value, onChange, type = 'text', placeholder = '', required = false }) => (
   <div style={{ marginBottom: 10 }}>
-    <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{label}</label>
+    <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{label}</label>
     <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
       required={required}
       style={{
         width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12,
-        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
-        color: '#f1f5f9', outline: 'none', boxSizing: 'border-box'
+        background: '#FFFFFF', border: '1px solid #D4D5D6',
+        color: '#2A2B2D', outline: 'none', boxSizing: 'border-box'
       }} />
   </div>
 );
 
 const Select = ({ label, value, onChange, options, placeholder = 'Selecione...' }) => (
   <div style={{ marginBottom: 10 }}>
-    <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{label}</label>
+    <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{label}</label>
     <select value={value} onChange={e => onChange(e.target.value)} style={{
       width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12,
-      background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
-      color: '#f1f5f9', outline: 'none', boxSizing: 'border-box'
+      background: '#FFFFFF', border: '1px solid #D4D5D6',
+      color: '#2A2B2D', outline: 'none', boxSizing: 'border-box'
     }}>
       <option value="">{placeholder}</option>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -478,16 +478,16 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
   // ORGANOGRAMA: Cores e ícones por nível hierárquico
   // ============================================================
   const levelConfig = {
-    'Diretor':      { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)', icon: '👑' },
-    'Gerente':      { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)', icon: '🎯' },
-    'Coordenador':  { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', border: 'rgba(139,92,246,0.3)', icon: '📋' },
-    'Supervisor':   { color: '#ec4899', bg: 'rgba(236,72,153,0.12)', border: 'rgba(236,72,153,0.3)', icon: '🔧' },
-    'Pleno':        { color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', icon: '💼' },
-    'Sênior':       { color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', icon: '💼' },
-    'Júnior':       { color: '#64748b', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', icon: '🔹' },
-    'Assistente':   { color: '#64748b', bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.3)', icon: '📎' },
-    'Auxiliar':     { color: '#475569', bg: 'rgba(71,85,105,0.12)', border: 'rgba(71,85,105,0.3)', icon: '📌' },
-    'Estagiário':   { color: '#475569', bg: 'rgba(71,85,105,0.12)', border: 'rgba(71,85,105,0.3)', icon: '🎓' },
+    'Diretor':      { color: '#F26B25', bg: 'rgba(242, 107, 37, 0.08)', border: 'rgba(242, 107, 37, 0.3)', icon: '👑' },
+    'Gerente':      { color: '#1A73E8', bg: 'rgba(26, 115, 232, 0.08)', border: 'rgba(26, 115, 232, 0.3)', icon: '🎯' },
+    'Coordenador':  { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.08)', border: 'rgba(139, 92, 246, 0.3)', icon: '📋' },
+    'Supervisor':   { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.08)', border: 'rgba(236, 72, 153, 0.3)', icon: '🔧' },
+    'Pleno':        { color: '#22A06B', bg: 'rgba(34, 160, 107, 0.08)', border: 'rgba(34, 160, 107, 0.3)', icon: '💼' },
+    'Sênior':       { color: '#22A06B', bg: 'rgba(34, 160, 107, 0.08)', border: 'rgba(34, 160, 107, 0.3)', icon: '💼' },
+    'Júnior':       { color: '#636466', bg: 'rgba(99, 100, 102, 0.08)', border: 'rgba(99, 100, 102, 0.3)', icon: '🔹' },
+    'Assistente':   { color: '#636466', bg: 'rgba(99, 100, 102, 0.08)', border: 'rgba(99, 100, 102, 0.3)', icon: '📎' },
+    'Auxiliar':     { color: '#8E9093', bg: 'rgba(142, 144, 147, 0.08)', border: 'rgba(142, 144, 147, 0.3)', icon: '📌' },
+    'Estagiário':   { color: '#8E9093', bg: 'rgba(142, 144, 147, 0.08)', border: 'rgba(142, 144, 147, 0.3)', icon: '🎓' },
   };
 
   const getLevelConfig = (posName) => {
@@ -516,7 +516,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
   // Recolher todos
   const collapseAll = () => setExpandedNodes({});
 
-  // Buscar no organograma: encontra o colaborador e expande o caminho até ele
+  // Buscar no organograma
   const searchOrgChart = (term) => {
     setOrgSearch(term);
     if (!term.trim()) { setOrgHighlight(null); return; }
@@ -524,7 +524,6 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
     const found = flat.find(e => e.name?.toLowerCase().includes(term.toLowerCase()));
     if (!found) { setOrgHighlight(null); return; }
     setOrgHighlight(found.id);
-    // Expandir caminho até o nó encontrado
     const idsToExpand = { ...expandedNodes };
     let current = found;
     while (current) {
@@ -542,22 +541,22 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
       return (
         <img src={photoUrl} alt={name} style={{
           width: size, height: size, borderRadius: '50%', objectFit: 'cover',
-          border: '2px solid rgba(234,179,8,0.3)', flexShrink: 0
+          border: '2px solid rgba(242, 107, 37, 0.3)', flexShrink: 0
         }} />
       );
     }
     return (
       <div style={{
-        width: size, height: size, borderRadius: '50%', background: 'rgba(234,179,8,0.2)',
+        width: size, height: size, borderRadius: '50%', background: 'rgba(242, 107, 37, 0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize, fontWeight: 700, color: '#eab308', flexShrink: 0
+        fontSize, fontWeight: 700, color: '#F26B25', flexShrink: 0
       }}>
         {name?.[0]?.toUpperCase() || '?'}
       </div>
     );
   };
 
-  // Renderizar nó da árvore (recursivo, colapsável) — estilo LISTA LATERAL (mantido como fallback)
+  // Renderizar nó da árvore (fallback lateral)
   const renderOrgNode = (node, level = 0) => {
     const hasSubs = node.subordinates?.length > 0;
     const isExpanded = expandedNodes[node.id] !== false;
@@ -570,23 +569,23 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
       <div key={node.id} style={{ marginLeft: level * 24, marginBottom: 4 }}>
         <div onClick={() => hasSubs && toggleNode(node.id)} style={{
             display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 12,
-            background: isHighlighted ? 'rgba(234,179,8,0.25)' : lc.bg,
-            border: `1px solid ${isHighlighted ? '#eab308' : lc.border}`,
+            background: isHighlighted ? 'rgba(242, 107, 37, 0.1)' : lc.bg,
+            border: `1px solid ${isHighlighted ? '#F26B25' : lc.border}`,
             cursor: hasSubs ? 'pointer' : 'default', transition: 'all 0.2s',
-            boxShadow: isHighlighted ? '0 0 12px rgba(234,179,8,0.3)' : 'none', marginBottom: 2,
+            boxShadow: isHighlighted ? '0 0 12px rgba(242, 107, 37, 0.2)' : 'none', marginBottom: 2,
           }}>
           <div style={{ width: 18, textAlign: 'center', fontSize: 10, color: lc.color, flexShrink: 0 }}>
             {hasSubs ? (showChildren ? '▼' : '▶') : <span style={{ fontSize: 8 }}>{lc.icon}</span>}
           </div>
           <Avatar name={node.name} photoUrl={node.photo_url} size={36} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? '#eab308' : '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</div>
-            <div style={{ fontSize: 10, color: '#64748b' }}><span style={{ color: lc.color, fontWeight: 600 }}>{node.position_name || '—'}</span> • {node.department_name || '—'}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: isHighlighted ? '#F26B25' : '#2A2B2D', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{node.name}</div>
+            <div style={{ fontSize: 10, color: '#636466' }}><span style={{ color: lc.color, fontWeight: 600 }}>{node.position_name || '—'}</span> • {node.department_name || '—'}</div>
           </div>
-          {hasSubs && <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.06)', color: '#94a3b8' }}>{node.subordinates.length}</span>}
+          {hasSubs && <span style={{ padding: '2px 8px', borderRadius: 8, fontSize: 9, fontWeight: 700, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#8E9093' }}>{node.subordinates.length}</span>}
         </div>
         {hasSubs && showChildren && (
-          <div style={{ borderLeft: '1px dashed rgba(255,255,255,0.06)', marginLeft: 9, paddingLeft: 8, marginTop: 2 }}>
+          <div style={{ borderLeft: '1px dashed #D4D5D6', marginLeft: 9, paddingLeft: 8, marginTop: 2 }}>
             {node.subordinates.map(s => renderOrgNode(s, level + 1))}
           </div>
         )}
@@ -594,7 +593,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
     );
   };
 
-  // Renderizar nó da árvore VISUAL TOP-DOWN (estilo family tree)
+  // Renderizar nó da árvore VISUAL TOP-DOWN
   const renderOrgTreeNode = (node, level = 0) => {
     const hasSubs = node.subordinates?.length > 0;
     const isExpanded = expandedNodes[node.id] !== false;
@@ -605,23 +604,21 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Card do colaborador */}
         <div
           onClick={() => hasSubs && toggleNode(node.id)}
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: hasSubs ? 'pointer' : 'default',
             padding: '10px 12px', borderRadius: 14, minWidth: 120, maxWidth: 160, textAlign: 'center',
-            background: isHighlighted ? 'rgba(234,179,8,0.2)' : lc.bg,
-            border: `2px solid ${isHighlighted ? '#eab308' : lc.border}`,
-            boxShadow: isHighlighted ? '0 0 16px rgba(234,179,8,0.3)' : '0 2px 8px rgba(0,0,0,0.2)',
+            background: isHighlighted ? 'rgba(242, 107, 37, 0.05)' : '#FFFFFF',
+            border: `2px solid ${isHighlighted ? '#F26B25' : lc.border}`,
+            boxShadow: isHighlighted ? '0 0 16px rgba(242, 107, 37, 0.2)' : '0 2px 8px rgba(0,0,0,0.04)',
             transition: 'all 0.2s', position: 'relative',
           }}
         >
-          {/* Foto circular */}
           <div style={{
             width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', marginBottom: 6,
-            border: `3px solid ${lc.color}`, boxShadow: `0 2px 10px ${lc.color}44`,
-            background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            border: `3px solid ${lc.color}`, boxShadow: `0 2px 10px ${lc.color}33`,
+            background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             {node.photo_url ? (
               <img src={node.photo_url} alt={node.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -629,38 +626,33 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <span style={{ fontSize: 20, fontWeight: 700, color: lc.color }}>{node.name?.[0]?.toUpperCase()}</span>
             )}
           </div>
-          {/* Nome */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#f1f5f9', lineHeight: 1.2, marginBottom: 2, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#2A2B2D', lineHeight: 1.2, marginBottom: 2, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {node.name}
           </div>
-          {/* Cargo com badge de nível */}
           <div style={{ fontSize: 9, color: lc.color, fontWeight: 600 }}>
             {lc.icon} {node.position_name || '—'}
           </div>
-          <div style={{ fontSize: 8, color: '#475569', marginTop: 1 }}>{node.department_name || ''}</div>
-          {/* Indicador de subordinados */}
+          <div style={{ fontSize: 8, color: '#8E9093', marginTop: 1 }}>{node.department_name || ''}</div>
           {hasSubs && (
-            <div style={{ fontSize: 8, color: '#64748b', marginTop: 4 }}>
+            <div style={{ fontSize: 8, color: '#636466', marginTop: 4 }}>
               {showChildren ? '▼' : '▶'} {node.subordinates.length} {node.subordinates.length === 1 ? 'subordinado' : 'subordinados'}
             </div>
           )}
         </div>
 
-        {/* Filhos */}
         {hasSubs && showChildren && (
           <>
-            <div style={{ width: 2, height: 16, background: `${lc.color}44` }} />
+            <div style={{ width: 2, height: 16, background: `${lc.color}55` }} />
             <div style={{ display: 'flex', gap: 0, justifyContent: 'center', position: 'relative' }}>
-              {/* Linha horizontal */}
               {node.subordinates.length > 1 && (
                 <div style={{
                   position: 'absolute', top: 0, left: 40, right: 40,
-                  height: 2, background: 'rgba(255,255,255,0.08)',
+                  height: 2, background: '#D4D5D6',
                 }} />
               )}
               {node.subordinates.map(s => (
                 <div key={s.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '0 6px' }}>
-                  <div style={{ width: 2, height: 14, background: 'rgba(255,255,255,0.08)' }} />
+                  <div style={{ width: 2, height: 14, background: '#D4D5D6' }} />
                   {renderOrgTreeNode(s, level + 1)}
                 </div>
               ))}
@@ -678,11 +670,11 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
     if (!selectedEmployee) return null;
     const emp = selectedEmployee;
     return (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: '#0f172a', borderRadius: 20, width: '90%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: '#FFFFFF', borderRadius: 20, width: '90%', maxWidth: 900, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#eab308', margin: 0 }}>👤 {emp.name}</h2>
-            <button onClick={() => setSelectedEmployee(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 20, cursor: 'pointer' }}>✕</button>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F26B25', margin: 0 }}>👤 {emp.name}</h2>
+            <button onClick={() => setSelectedEmployee(null)} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 20, cursor: 'pointer' }}>✕</button>
           </div>
           {/* Info grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
@@ -692,9 +684,9 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               ['Departamento', emp.department_name], ['Cargo', emp.position_name], ['Gestor', emp.manager_name],
               ['Vínculo', emp.employment_type], ['Status', emp.status], ['Gênero', emp.gender],
             ].map(([l, v], i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 10 }}>
-                <div style={{ fontSize: 9, color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>{l}</div>
-                <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 500, marginTop: 2 }}>{v || '—'}</div>
+              <div key={i} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', padding: '10px 14px', borderRadius: 10 }}>
+                <div style={{ fontSize: 9, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase' }}>{l}</div>
+                <div style={{ fontSize: 13, color: '#2A2B2D', fontWeight: 600, marginTop: 2 }}>{v || '—'}</div>
               </div>
             ))}
           </div>
@@ -702,9 +694,9 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
           {emp.profile && (
             <Card style={{ marginBottom: 14 }}>
               <SectionTitle icon="📝" text="Perfil" />
-              <p style={{ fontSize: 12, color: '#94a3b8' }}>{emp.profile.bio || 'Sem bio'}</p>
-              {emp.profile.skills && <div style={{ fontSize: 11, color: '#64748b', marginTop: 6 }}>Skills: {emp.profile.skills}</div>}
-              {emp.profile.emergency_contact && <div style={{ fontSize: 11, color: '#f87171', marginTop: 6 }}>Emergência: {emp.profile.emergency_contact}</div>}
+              <p style={{ fontSize: 12, color: '#636466' }}>{emp.profile.bio || 'Sem bio'}</p>
+              {emp.profile.skills && <div style={{ fontSize: 11, color: '#636466', marginTop: 6 }}>Skills: {emp.profile.skills}</div>}
+              {emp.profile.emergency_contact && <div style={{ fontSize: 11, color: '#D93025', marginTop: 6 }}>Emergência: {emp.profile.emergency_contact}</div>}
             </Card>
           )}
           {/* Education */}
@@ -712,7 +704,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <Card style={{ marginBottom: 14 }}>
               <SectionTitle icon="🎓" text={`Formação Acadêmica (${emp.education.length})`} />
               {emp.education.map((ed, i) => (
-                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 12, color: '#cbd5e1' }}>
+                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #E5E7EB', fontSize: 12, color: '#3D3E40' }}>
                   <strong>{ed.course}</strong> — {ed.institution} ({ed.degree}) {ed.status}
                 </div>
               ))}
@@ -723,7 +715,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <Card style={{ marginBottom: 14 }}>
               <SectionTitle icon="💼" text={`Experiência (${emp.experience.length})`} />
               {emp.experience.map((ex, i) => (
-                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 12, color: '#cbd5e1' }}>
+                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #E5E7EB', fontSize: 12, color: '#3D3E40' }}>
                   <strong>{ex.position}</strong> — {ex.company} ({formatDate(ex.start_date)} → {formatDate(ex.end_date)})
                 </div>
               ))}
@@ -734,9 +726,9 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <Card>
               <SectionTitle icon="🏆" text={`Promoções (${emp.promotions.length})`} />
               {emp.promotions.map((pr, i) => (
-                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 12, color: '#cbd5e1' }}>
-                  {pr.old_position_name} → <strong style={{ color: '#10b981' }}>{pr.new_position_name}</strong> em {formatDate(pr.promotion_date)}
-                  {pr.notes && <span style={{ color: '#64748b' }}> — {pr.notes}</span>}
+                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid #E5E7EB', fontSize: 12, color: '#3D3E40' }}>
+                  {pr.old_position_name} → <strong style={{ color: '#22A06B' }}>{pr.new_position_name}</strong> em {formatDate(pr.promotion_date)}
+                  {pr.notes && <span style={{ color: '#8E9093' }}> — {pr.notes}</span>}
                 </div>
               ))}
             </Card>
@@ -757,8 +749,8 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontSize: 32 }}>👔</span>
         <div>
-          <h2 style={{ margin: 0, fontSize: 20, color: '#f1f5f9', fontWeight: 700 }}>OmniRH — Gestão de Pessoas</h2>
-          <p style={{ margin: 0, fontSize: 11, color: '#64748b' }}>Módulo completo de Recursos Humanos</p>
+          <h2 style={{ margin: 0, fontSize: 20, color: '#2A2B2D', fontWeight: 700 }}>OmniRH — Gestão de Pessoas</h2>
+          <p style={{ margin: 0, fontSize: 11, color: '#8E9093' }}>Módulo completo de Recursos Humanos</p>
         </div>
       </div>
 
@@ -786,23 +778,23 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
         <div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
             <KPI icon="👥" label="Colaboradores Ativos" value={kpis.total_employees || 0} />
-            <KPI icon="🌟" label="Admissões (30d)" value={kpis.new_hires_30d || 0} color="#10b981" />
-            <KPI icon="📤" label="Desligamentos (30d)" value={kpis.terminations_30d || 0} color="#ef4444" />
-            <KPI icon="💵" label="Custo Folha" value={`R$ ${formatBRL(kpis.payroll_cost)}`} color="#3b82f6" />
-            <KPI icon="🏖️" label="Em Férias" value={kpis.on_vacation || 0} color="#f59e0b" />
+            <KPI icon="🌟" label="Admissões (30d)" value={kpis.new_hires_30d || 0} color="#22A06B" />
+            <KPI icon="📤" label="Desligamentos (30d)" value={kpis.terminations_30d || 0} color="#D93025" />
+            <KPI icon="💵" label="Custo Folha" value={`R$ ${formatBRL(kpis.payroll_cost)}`} color="#1A73E8" />
+            <KPI icon="🏖️" label="Em Férias" value={kpis.on_vacation || 0} color="#F26B25" />
             <KPI icon="⏱️" label="HE no Mês" value={`${kpis.overtime_hours || 0}h`} color="#8b5cf6" />
             <KPI icon="📋" label="Vagas Abertas" value={kpis.open_jobs || 0} color="#ec4899" />
           </div>
           {/* Feed */}
           <Card>
             <SectionTitle icon="🎉" text="Mural de Celebrações" />
-            {feed.length === 0 && <p style={{ fontSize: 12, color: '#475569' }}>Nenhum evento hoje</p>}
+            {feed.length === 0 && <p style={{ fontSize: 12, color: '#8E9093' }}>Nenhum evento hoje</p>}
             {feed.map((f, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid #E5E7EB' }}>
                 <span style={{ fontSize: 24 }}>{f.icon}</span>
                 <div>
-                  <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 500 }}>{f.message}</div>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>{f.type}</div>
+                  <div style={{ fontSize: 13, color: '#2A2B2D', fontWeight: 600 }}>{f.message}</div>
+                  <div style={{ fontSize: 10, color: '#8E9093' }}>{f.type}</div>
                 </div>
               </div>
             ))}
@@ -818,8 +810,8 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <input placeholder="Buscar por nome, CPF ou e-mail..." value={searchEmp} onChange={e => setSearchEmp(e.target.value)}
-                style={{ padding: '9px 16px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', width: 300, outline: 'none' }} />
-              <span style={{ fontSize: 11, color: '#64748b' }}>{filteredEmployees.length} resultados</span>
+                style={{ padding: '9px 16px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', width: 300, outline: 'none' }} />
+              <span style={{ fontSize: 11, color: '#8E9093' }}>{filteredEmployees.length} resultados</span>
             </div>
             <Btn onClick={() => setShowEmpForm(!showEmpForm)}>{showEmpForm ? '✕ Fechar' : '➕ Novo Colaborador'}</Btn>
           </div>
@@ -833,34 +825,21 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   <div style={{ textAlign: 'center' }}>
                     <div style={{
                       width: 90, height: 90, borderRadius: '50%', overflow: 'hidden',
-                      background: 'rgba(0,0,0,0.4)', border: '2px dashed rgba(234,179,8,0.3)',
+                      background: '#F9FAFB', border: '2px dashed rgba(242, 107, 37, 0.4)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       cursor: 'pointer', position: 'relative',
                     }} onClick={() => document.getElementById('photoInput')?.click()}>
                       {(photoPreview || empForm.photo_url) ? (
                         <img src={photoPreview || empForm.photo_url} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: 28, color: '#475569' }}>📷</span>
+                        <span style={{ fontSize: 28, color: '#D4D5D6' }}>📷</span>
                       )}
                     </div>
-                    <input
-                      id="photoInput"
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      onChange={(e) => {
+                    <input id="photoInput" type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
                         const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            setPhotoPreview(reader.result);
-                            setEmpForm({ ...empForm, photo_url: reader.result });
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <span style={{ fontSize: 9, color: '#64748b', marginTop: 4, display: 'block' }}>Clique para<br/>adicionar foto</span>
+                        if (file) { const reader = new FileReader(); reader.onloadend = () => { setPhotoPreview(reader.result); setEmpForm({ ...empForm, photo_url: reader.result }); }; reader.readAsDataURL(file); }
+                      }} />
+                    <span style={{ fontSize: 9, color: '#8E9093', marginTop: 4, display: 'block' }}>Clique para<br/>adicionar foto</span>
                   </div>
                   <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
                     <Input label="Nome Completo" value={empForm.name} onChange={v => setEmpForm({ ...empForm, name: v })} required />
@@ -896,29 +875,29 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th></Th><Th>Nome</Th><Th>CPF</Th><Th>Departamento</Th><Th>Cargo</Th><Th>Admissão</Th><Th>Salário</Th><Th>Status</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {filteredEmployees.map(e => (
-                  <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                  <tr key={e.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
                     <Td w="45px">
                       {e.photo_url ? (
-                        <img src={e.photo_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(234,179,8,0.3)' }} />
+                        <img src={e.photo_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(242, 107, 37, 0.3)' }} />
                       ) : (
-                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(234,179,8,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#eab308' }}>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(242, 107, 37, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#F26B25' }}>
                           {e.name?.[0]?.toUpperCase()}
                         </div>
                       )}
                     </Td>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9', cursor: 'pointer' }} onClick={() => viewEmployee(e.id)}>{e.name}</span></Td>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D', cursor: 'pointer' }} onClick={() => viewEmployee(e.id)}>{e.name}</span></Td>
                     <Td>{e.cpf || '—'}</Td>
                     <Td>{e.department_name || '—'}</Td>
                     <Td>{e.position_name || '—'}</Td>
                     <Td>{formatDate(e.hire_date)}</Td>
                     <Td>R$ {formatBRL(e.salary)}</Td>
-                    <Td><Badge text={e.status} color={e.status === 'Ativo' ? '#10b981' : '#ef4444'} /></Td>
+                    <Td><Badge text={e.status} color={e.status === 'Ativo' ? '#22A06B' : '#D93025'} /></Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => viewEmployee(e.id)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>👤</button>
-                        <button onClick={() => startEditEmployee(e)} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>✏️</button>
+                        <button onClick={() => viewEmployee(e.id)} style={{ background: 'none', border: 'none', color: '#1A73E8', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>👤</button>
+                        <button onClick={() => startEditEmployee(e)} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>✏️</button>
                         {e.status === 'Ativo' && (
-                          <button onClick={() => terminateEmployee(e.id, e.name)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>🚪</button>
+                          <button onClick={() => terminateEmployee(e.id, e.name)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>🚪</button>
                         )}
                       </div>
                     </Td>
@@ -930,21 +909,21 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
 
           {/* MODAL DE EDIÇÃO DE COLABORADOR */}
           {editingEmp && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#0f172a', borderRadius: 20, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: 20, width: '90%', maxWidth: 800, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#eab308', margin: 0 }}>✏️ Editar — {editingEmp.name}</h2>
-                  <button onClick={() => { setEditingEmp(null); setPhotoPreview(null); }} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 20, cursor: 'pointer' }}>✕</button>
+                  <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F26B25', margin: 0 }}>✏️ Editar — {editingEmp.name}</h2>
+                  <button onClick={() => { setEditingEmp(null); setPhotoPreview(null); }} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 20, cursor: 'pointer' }}>✕</button>
                 </div>
                 {/* Foto */}
                 <div style={{ display: 'flex', gap: 20, marginBottom: 16 }}>
                   <div style={{ textAlign: 'center' }}>
-                    <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: 'rgba(0,0,0,0.4)', border: '2px dashed rgba(234,179,8,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    <div style={{ width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', background: '#F9FAFB', border: '2px dashed rgba(242, 107, 37, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                       onClick={() => document.getElementById('editPhotoInput')?.click()}>
                       {(photoPreview || editingEmp.photo_url) ? (
                         <img src={photoPreview || editingEmp.photo_url} alt="Foto" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
-                        <span style={{ fontSize: 24, color: '#475569' }}>📷</span>
+                        <span style={{ fontSize: 24, color: '#D4D5D6' }}>📷</span>
                       )}
                     </div>
                     <input id="editPhotoInput" type="file" accept="image/*" style={{ display: 'none' }}
@@ -974,7 +953,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   <Input label="Endereço" value={editingEmp.address || ''} onChange={v => setEditingEmp({ ...editingEmp, address: v })} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
-                  <Btn onClick={() => { setEditingEmp(null); setPhotoPreview(null); }} color="#64748b">Cancelar</Btn>
+                  <Btn onClick={() => { setEditingEmp(null); setPhotoPreview(null); }} color="#8E9093">Cancelar</Btn>
                   <Btn onClick={saveEditEmployee} disabled={loading}>{loading ? '⌛...' : '💾 Salvar Alterações'}</Btn>
                 </div>
               </div>
@@ -993,31 +972,31 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <SectionTitle icon="🏢" text={`Departamentos (${departments.length})`} />
             <form onSubmit={createDepartment} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               <input placeholder="Nome do departamento" value={deptForm.name} onChange={e => setDeptForm({ ...deptForm, name: e.target.value })} required
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }} />
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none' }} />
               <input placeholder="Centro de custo" value={deptForm.cost_center} onChange={e => setDeptForm({ ...deptForm, cost_center: e.target.value })}
-                style={{ width: 120, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }} />
+                style={{ width: 120, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none' }} />
               <Btn small>➕</Btn>
             </form>
             {departments.map(d => (
-              <div key={d.id} style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <div key={d.id} style={{ padding: '10px 14px', borderBottom: '1px solid #E5E7EB' }}>
                 {editingDept?.id === d.id ? (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input value={editingDept.name} onChange={e => setEditingDept({ ...editingDept, name: e.target.value })}
-                      style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid #eab308', color: '#f1f5f9', outline: 'none' }} />
+                      style={{ flex: 1, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: '#FFFFFF', border: '1px solid #F26B25', color: '#2A2B2D', outline: 'none' }} />
                     <input value={editingDept.cost_center || ''} onChange={e => setEditingDept({ ...editingDept, cost_center: e.target.value })} placeholder="CC"
-                      style={{ width: 90, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid #eab308', color: '#f1f5f9', outline: 'none' }} />
-                    <button onClick={saveEditDept} style={{ background: '#10b981', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>💾</button>
-                    <button onClick={() => setEditingDept(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', fontSize: 10, cursor: 'pointer' }}>✕</button>
+                      style={{ width: 90, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: '#FFFFFF', border: '1px solid #F26B25', color: '#2A2B2D', outline: 'none' }} />
+                    <button onClick={saveEditDept} style={{ background: '#22A06B', border: 'none', color: '#FFFFFF', borderRadius: 8, padding: '6px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>💾</button>
+                    <button onClick={() => setEditingDept(null)} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#8E9093', borderRadius: 8, padding: '6px 12px', fontSize: 10, cursor: 'pointer' }}>✕</button>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{d.name}</span>
-                      {d.cost_center && <span style={{ fontSize: 10, color: '#64748b', marginLeft: 8 }}>CC: {d.cost_center}</span>}
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#2A2B2D' }}>{d.name}</span>
+                      {d.cost_center && <span style={{ fontSize: 10, color: '#8E9093', marginLeft: 8 }}>CC: {d.cost_center}</span>}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => startEditDept(d)} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                      <button onClick={() => deleteDept(d.id, d.name)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>🗑️</button>
+                      <button onClick={() => startEditDept(d)} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }}>✏️</button>
+                      <button onClick={() => deleteDept(d.id, d.name)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }}>🗑️</button>
                     </div>
                   </div>
                 )}
@@ -1030,14 +1009,14 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <SectionTitle icon="💼" text={`Cargos (${positions.length})`} />
             <form onSubmit={createPosition} style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               <input placeholder="Nome do cargo" value={posForm.name} onChange={e => setPosForm({ ...posForm, name: e.target.value })} required
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none' }} />
+                style={{ flex: 1, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none' }} />
               <select value={posForm.department_id} onChange={e => setPosForm({ ...posForm, department_id: e.target.value })}
-                style={{ width: 140, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9' }}>
+                style={{ width: 140, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D' }}>
                 <option value="">Departamento</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
               <select value={posForm.level} onChange={e => setPosForm({ ...posForm, level: e.target.value })}
-                style={{ width: 130, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9' }}>
+                style={{ width: 130, padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D' }}>
                 {['Diretor','Gerente','Coordenador','Supervisor','Sênior','Pleno','Júnior','Assistente','Auxiliar','Estagiário'].map(l => (
                   <option key={l} value={l}>{l}</option>
                 ))}
@@ -1045,35 +1024,35 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <Btn small>➕</Btn>
             </form>
             {positions.map(p => (
-              <div key={p.id} style={{ padding: '10px 14px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+              <div key={p.id} style={{ padding: '10px 14px', borderBottom: '1px solid #E5E7EB' }}>
                 {editingPos?.id === p.id ? (
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <input value={editingPos.name} onChange={e => setEditingPos({ ...editingPos, name: e.target.value })}
-                      style={{ flex: 1, minWidth: 120, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid #eab308', color: '#f1f5f9', outline: 'none' }} />
+                      style={{ flex: 1, minWidth: 120, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: '#FFFFFF', border: '1px solid #F26B25', color: '#2A2B2D', outline: 'none' }} />
                     <select value={editingPos.department_id} onChange={e => setEditingPos({ ...editingPos, department_id: e.target.value })}
-                      style={{ width: 130, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid #eab308', color: '#f1f5f9' }}>
+                      style={{ width: 130, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: '#FFFFFF', border: '1px solid #F26B25', color: '#2A2B2D' }}>
                       <option value="">Dept.</option>
                       {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                     <select value={editingPos.level || 'Pleno'} onChange={e => setEditingPos({ ...editingPos, level: e.target.value })}
-                      style={{ width: 120, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: 'rgba(0,0,0,0.5)', border: '1px solid #eab308', color: '#f1f5f9' }}>
+                      style={{ width: 120, padding: '7px 10px', borderRadius: 8, fontSize: 12, background: '#FFFFFF', border: '1px solid #F26B25', color: '#2A2B2D' }}>
                       {['Diretor','Gerente','Coordenador','Supervisor','Sênior','Pleno','Júnior','Assistente','Auxiliar','Estagiário'].map(l => (
                         <option key={l} value={l}>{l}</option>
                       ))}
                     </select>
-                    <button onClick={saveEditPos} style={{ background: '#10b981', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>💾</button>
-                    <button onClick={() => setEditingPos(null)} style={{ background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94a3b8', borderRadius: 8, padding: '6px 12px', fontSize: 10, cursor: 'pointer' }}>✕</button>
+                    <button onClick={saveEditPos} style={{ background: '#22A06B', border: 'none', color: '#FFFFFF', borderRadius: 8, padding: '6px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>💾</button>
+                    <button onClick={() => setEditingPos(null)} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', color: '#8E9093', borderRadius: 8, padding: '6px 12px', fontSize: 10, cursor: 'pointer' }}>✕</button>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{p.name}</span>
-                      <span style={{ fontSize: 10, color: '#64748b', marginLeft: 8 }}>{p.department_name || '—'}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#2A2B2D' }}>{p.name}</span>
+                      <span style={{ fontSize: 10, color: '#8E9093', marginLeft: 8 }}>{p.department_name || '—'}</span>
                       <Badge text={p.level || 'Pleno'} color={getLevelConfig(p.level || p.name).color} />
                     </div>
                     <div style={{ display: 'flex', gap: 4 }}>
-                      <button onClick={() => startEditPos(p)} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }}>✏️</button>
-                      <button onClick={async () => { if (!window.confirm(`Excluir cargo "${p.name}"?`)) return; try { await api.delete(`/rh/positions/${p.id}`); showToast?.('Cargo excluído', 'success'); load('positions', setPositions); } catch(e) { showToast?.('Erro', 'error'); } }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>🗑️</button>
+                      <button onClick={() => startEditPos(p)} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }}>✏️</button>
+                      <button onClick={async () => { if (!window.confirm(`Excluir cargo "${p.name}"?`)) return; try { await api.delete(`/rh/positions/${p.id}`); showToast?.('Cargo excluído', 'success'); load('positions', setPositions); } catch(e) { showToast?.('Erro', 'error'); } }} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }}>🗑️</button>
                     </div>
                   </div>
                 )}
@@ -1098,19 +1077,19 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   onChange={e => searchOrgChart(e.target.value)}
                   style={{
                     width: '100%', padding: '10px 16px', borderRadius: 12, fontSize: 13,
-                    background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)',
-                    color: '#f1f5f9', outline: 'none', boxSizing: 'border-box'
+                    background: '#FFFFFF', border: '1px solid #D4D5D6',
+                    color: '#2A2B2D', outline: 'none', boxSizing: 'border-box'
                   }}
                 />
                 {orgSearch && !orgHighlight && (
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#f87171' }}>
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 10, color: '#D93025' }}>
                     Não encontrado
                   </span>
                 )}
               </div>
-              <Btn onClick={() => expandAll(orgchart.tree || [])} color="#3b82f6" small>⊞ Expandir Todos</Btn>
-              <Btn onClick={collapseAll} color="#64748b" small>⊟ Recolher Todos</Btn>
-              <span style={{ fontSize: 10, color: '#64748b' }}>
+              <Btn onClick={() => expandAll(orgchart.tree || [])} color="#1A73E8" small>⊞ Expandir Todos</Btn>
+              <Btn onClick={collapseAll} color="#8E9093" small>⊟ Recolher Todos</Btn>
+              <span style={{ fontSize: 10, color: '#8E9093' }}>
                 {orgchart.flat?.length || 0} colaboradores
               </span>
             </div>
@@ -1130,18 +1109,18 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             {/* NÓ RAIZ: EMPRESA */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <div style={{
-                background: 'linear-gradient(135deg, rgba(234,179,8,0.2), rgba(245,158,11,0.1))',
-                border: '2px solid #eab308', borderRadius: 16, padding: '16px 30px',
-                textAlign: 'center', marginBottom: 8, boxShadow: '0 4px 20px rgba(234,179,8,0.15)',
+                background: '#FDECE3',
+                border: '2px solid #F26B25', borderRadius: 16, padding: '16px 30px',
+                textAlign: 'center', marginBottom: 8, boxShadow: '0 4px 20px rgba(242, 107, 37, 0.15)',
               }}>
                 <div style={{ fontSize: 24, marginBottom: 4 }}>🏢</div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#eab308' }}>{currentUser?.empresa_nome || 'Empresa'}</div>
-                <div style={{ fontSize: 10, color: '#94a3b8' }}>{orgchart.flat?.length || 0} colaboradores</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#F26B25' }}>{currentUser?.empresa_nome || 'Empresa'}</div>
+                <div style={{ fontSize: 10, color: '#636466' }}>{orgchart.flat?.length || 0} colaboradores</div>
               </div>
 
               {/* Linha vertical do topo */}
               {orgchart.tree?.length > 0 && (
-                <div style={{ width: 2, height: 24, background: 'rgba(234,179,8,0.3)' }} />
+                <div style={{ width: 2, height: 24, background: 'rgba(242, 107, 37, 0.3)' }} />
               )}
 
               {/* Ramos lateralizados */}
@@ -1151,13 +1130,13 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   {orgchart.tree.length > 1 && (
                     <div style={{
                       position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)',
-                      width: `calc(100% - 80px)`, height: 2, background: 'rgba(234,179,8,0.15)',
+                      width: `calc(100% - 80px)`, height: 2, background: 'rgba(242, 107, 37, 0.2)',
                     }} />
                   )}
                   {orgchart.tree.map((node, idx) => (
                     <div key={node.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 160, padding: '0 8px' }}>
                       {/* Linha vertical para cada ramo */}
-                      <div style={{ width: 2, height: 20, background: 'rgba(234,179,8,0.15)' }} />
+                      <div style={{ width: 2, height: 20, background: 'rgba(242, 107, 37, 0.2)' }} />
                       {renderOrgTreeNode(node, 0)}
                     </div>
                   ))}
@@ -1165,7 +1144,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               )}
 
               {orgchart.tree?.length === 0 && (
-                <p style={{ color: '#475569', fontSize: 12, textAlign: 'center', padding: 30, marginTop: 10 }}>
+                <p style={{ color: '#8E9093', fontSize: 12, textAlign: 'center', padding: 30, marginTop: 10 }}>
                   Nenhum colaborador com hierarquia definida.<br />
                   <span style={{ fontSize: 11 }}>Defina o campo "Gestor" no cadastro para montar a árvore.</span>
                 </p>
@@ -1184,7 +1163,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <Input label="Mês de Referência" value={payrollMonth} onChange={setPayrollMonth} type="month" />
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 10 }}>
               <Btn onClick={generatePayroll} disabled={loading}>{loading ? '⌛ Gerando...' : '⚡ Gerar Folha'}</Btn>
-              <Btn onClick={() => load('payroll', setPayrolls, payrollMonth ? `&reference_month=${payrollMonth}` : '')} color="#3b82f6" small>🔄 Atualizar</Btn>
+              <Btn onClick={() => load('payroll', setPayrolls, payrollMonth ? `&reference_month=${payrollMonth}` : '')} color="#1A73E8" small>🔄 Atualizar</Btn>
             </div>
           </div>
           <Card>
@@ -1192,26 +1171,26 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th>Colaborador</Th><Th>Competência</Th><Th>Salário Base</Th><Th>INSS</Th><Th>IRRF</Th><Th>FGTS</Th><Th>Líquido</Th><Th>Status</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {payrolls.map(p => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{p.employee_name}</span></Td>
+                  <tr key={p.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{p.employee_name}</span></Td>
                     <Td>{p.reference_month}</Td>
                     <Td>R$ {formatBRL(p.base_salary)}</Td>
                     <Td>R$ {formatBRL(p.inss)}</Td>
                     <Td>R$ {formatBRL(p.irrf)}</Td>
                     <Td>R$ {formatBRL(p.fgts)}</Td>
-                    <Td><span style={{ fontWeight: 700, color: '#10b981' }}>R$ {formatBRL(p.net_salary)}</span></Td>
-                    <Td><Badge text={p.status} color={p.status === 'Gerada' ? '#10b981' : '#f59e0b'} /></Td>
+                    <Td><span style={{ fontWeight: 700, color: '#22A06B' }}>R$ {formatBRL(p.net_salary)}</span></Td>
+                    <Td><Badge text={p.status} color={p.status === 'Gerada' ? '#22A06B' : '#F26B25'} /></Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button onClick={() => downloadPayslip(p.id)} style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: 12 }} title="Baixar PDF">📄</button>
-                        <button onClick={() => deletePayroll(p.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
+                        <button onClick={() => downloadPayslip(p.id)} style={{ background: 'none', border: 'none', color: '#1A73E8', cursor: 'pointer', fontSize: 12 }} title="Baixar PDF">📄</button>
+                        <button onClick={() => deletePayroll(p.id)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
                       </div>
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {payrolls.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Selecione um mês e clique em "Gerar Folha"</p>}
+            {payrolls.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Selecione um mês e clique em "Gerar Folha"</p>}
           </Card>
         </div>
       )}
@@ -1228,7 +1207,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                 <Input label="Buscar colaborador" value={attendanceSearch} onChange={setAttendanceSearch} placeholder="Nome..." />
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 10 }}>
-                <Btn onClick={() => load('attendance', setAttendance, attendanceMonth ? `&month=${attendanceMonth}` : '')} color="#3b82f6" small>🔍 Buscar</Btn>
+                <Btn onClick={() => load('attendance', setAttendance, attendanceMonth ? `&month=${attendanceMonth}` : '')} color="#1A73E8" small>🔍 Buscar</Btn>
                 <Btn onClick={() => { setShowAttendanceForm(!showAttendanceForm); if (!employees.length) load('employees', setEmployees); }} small>{showAttendanceForm ? '✕' : '➕ Registrar Ponto'}</Btn>
               </div>
             </div>
@@ -1251,32 +1230,32 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th>Colaborador</Th><Th>Data</Th><Th>Entrada</Th><Th>Saída</Th><Th>Total (h)</Th><Th>HE</Th><Th>Status</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {attendance.filter(a => !attendanceSearch || a.employee_name?.toLowerCase().includes(attendanceSearch.toLowerCase())).map(a => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{a.employee_name}</span></Td>
+                  <tr key={a.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{a.employee_name}</span></Td>
                     <Td>{formatDate(a.date)}</Td>
                     <Td>{a.check_in || '—'}</Td><Td>{a.check_out || '—'}</Td>
                     <Td>{a.total_hours}h</Td>
-                    <Td>{a.overtime > 0 ? <span style={{ color: '#f59e0b', fontWeight: 700 }}>{a.overtime}h</span> : '—'}</Td>
-                    <Td><Badge text={a.status} color={a.status === 'Normal' ? '#10b981' : a.status === 'Falta' ? '#ef4444' : '#f59e0b'} /></Td>
+                    <Td>{a.overtime > 0 ? <span style={{ color: '#F26B25', fontWeight: 700 }}>{a.overtime}h</span> : '—'}</Td>
+                    <Td><Badge text={a.status} color={a.status === 'Normal' ? '#22A06B' : a.status === 'Falta' ? '#D93025' : '#F26B25'} /></Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button onClick={() => setEditingAtt({ ...a })} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
-                        <button onClick={() => deleteAttendance(a.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
+                        <button onClick={() => setEditingAtt({ ...a })} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
+                        <button onClick={() => deleteAttendance(a.id)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
                       </div>
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {attendance.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Selecione um mês e clique "Buscar"</p>}
+            {attendance.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Selecione um mês e clique "Buscar"</p>}
           </Card>
           {/* Modal edição ponto */}
           {editingAtt && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#0f172a', borderRadius: 20, width: 500, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: 20, width: 500, border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#eab308', margin: 0 }}>✏️ Editar Ponto — {editingAtt.employee_name}</h3>
-                  <button onClick={() => setEditingAtt(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F26B25', margin: 0 }}>✏️ Editar Ponto — {editingAtt.employee_name}</h3>
+                  <button onClick={() => setEditingAtt(null)} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Input label="Entrada" value={editingAtt.check_in || ''} onChange={v => setEditingAtt({ ...editingAtt, check_in: v })} type="time" />
@@ -1285,7 +1264,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                     { value: 'Normal', label: 'Normal' }, { value: 'Falta', label: 'Falta' }, { value: 'Atraso', label: 'Atraso' }, { value: 'Saída Antecipada', label: 'Saída Antecipada' }]} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
-                  <Btn onClick={() => setEditingAtt(null)} color="#64748b">Cancelar</Btn>
+                  <Btn onClick={() => setEditingAtt(null)} color="#8E9093">Cancelar</Btn>
                   <Btn onClick={saveEditAttendance}>💾 Salvar</Btn>
                 </div>
               </div>
@@ -1310,7 +1289,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                 <Input label="Buscar colaborador" value={vacationSearch} onChange={setVacationSearch} placeholder="Nome..." />
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 10 }}>
-                <Btn onClick={() => load('vacations', setVacations, vacationStatus ? `&status=${vacationStatus}` : '')} color="#3b82f6" small>🔍 Buscar</Btn>
+                <Btn onClick={() => load('vacations', setVacations, vacationStatus ? `&status=${vacationStatus}` : '')} color="#1A73E8" small>🔍 Buscar</Btn>
                 <Btn onClick={() => { setShowVacationForm(!showVacationForm); if (!employees.length) load('employees', setEmployees); }} small>{showVacationForm ? '✕' : '🏖️ Solicitar Férias'}</Btn>
               </div>
             </div>
@@ -1333,43 +1312,43 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th>Colaborador</Th><Th>Início</Th><Th>Fim</Th><Th>Dias</Th><Th>Status</Th><Th>Aprovado por</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {vacations.filter(v => !vacationSearch || v.employee_name?.toLowerCase().includes(vacationSearch.toLowerCase())).map(v => (
-                  <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{v.employee_name}</span></Td>
+                  <tr key={v.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{v.employee_name}</span></Td>
                     <Td>{formatDate(v.start_date)}</Td><Td>{formatDate(v.end_date)}</Td>
                     <Td>{v.days}d</Td>
-                    <Td><Badge text={v.status} color={v.status === 'Aprovada' ? '#10b981' : v.status === 'Aprovada Gestor' ? '#3b82f6' : v.status === 'Rejeitada' ? '#ef4444' : '#f59e0b'} /></Td>
+                    <Td><Badge text={v.status} color={v.status === 'Aprovada' ? '#22A06B' : v.status === 'Aprovada Gestor' ? '#1A73E8' : v.status === 'Rejeitada' ? '#D93025' : '#F26B25'} /></Td>
                     <Td>{v.approved_by_name || '—'}</Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                         {v.status === 'Solicitada' && (
                           <>
-                            <button onClick={() => approveVacation(v.id)} style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>✅ Aprovar (Gestor)</button>
-                            <button onClick={() => rejectVacation(v.id)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>❌ Rejeitar</button>
+                            <button onClick={() => approveVacation(v.id)} style={{ background: 'rgba(34, 160, 107, 0.1)', border: '1px solid rgba(34, 160, 107, 0.3)', color: '#22A06B', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>✅ Aprovar (Gestor)</button>
+                            <button onClick={() => rejectVacation(v.id)} style={{ background: 'rgba(217, 48, 37, 0.1)', border: '1px solid rgba(217, 48, 37, 0.3)', color: '#D93025', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>❌ Rejeitar</button>
                           </>
                         )}
                         {v.status === 'Aprovada Gestor' && (
                           <>
-                            <button onClick={() => approveVacation(v.id)} style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>✅ Confirmar (RH)</button>
-                            <button onClick={() => rejectVacation(v.id)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>❌ Rejeitar</button>
+                            <button onClick={() => approveVacation(v.id)} style={{ background: 'rgba(26, 115, 232, 0.1)', border: '1px solid rgba(26, 115, 232, 0.3)', color: '#1A73E8', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>✅ Confirmar (RH)</button>
+                            <button onClick={() => rejectVacation(v.id)} style={{ background: 'rgba(217, 48, 37, 0.1)', border: '1px solid rgba(217, 48, 37, 0.3)', color: '#D93025', borderRadius: 6, padding: '4px 8px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>❌ Rejeitar</button>
                           </>
                         )}
-                        <button onClick={() => setEditingVac({ ...v })} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
-                        <button onClick={() => deleteVacation(v.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
+                        <button onClick={() => setEditingVac({ ...v })} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
+                        <button onClick={() => deleteVacation(v.id)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
                       </div>
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {vacations.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Nenhuma solicitação de férias</p>}
+            {vacations.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Nenhuma solicitação de férias</p>}
           </Card>
           {/* Modal edição férias */}
           {editingVac && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#0f172a', borderRadius: 20, width: 500, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: 20, width: 500, border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#eab308', margin: 0 }}>✏️ Editar Férias — {editingVac.employee_name}</h3>
-                  <button onClick={() => setEditingVac(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F26B25', margin: 0 }}>✏️ Editar Férias — {editingVac.employee_name}</h3>
+                  <button onClick={() => setEditingVac(null)} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Input label="Início" value={editingVac.start_date || ''} onChange={v => setEditingVac({ ...editingVac, start_date: v })} type="date" />
@@ -1379,7 +1358,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
-                  <Btn onClick={() => setEditingVac(null)} color="#64748b">Cancelar</Btn>
+                  <Btn onClick={() => setEditingVac(null)} color="#8E9093">Cancelar</Btn>
                   <Btn onClick={saveEditVacation}>💾 Salvar</Btn>
                 </div>
               </div>
@@ -1399,7 +1378,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                 <Input label="Buscar colaborador ou avaliador" value={reviewSearch} onChange={setReviewSearch} placeholder="Nome..." />
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 10 }}>
-                <Btn onClick={() => load('performance', setReviews)} color="#3b82f6" small>🔍 Atualizar</Btn>
+                <Btn onClick={() => load('performance', setReviews)} color="#1A73E8" small>🔍 Atualizar</Btn>
                 <Btn onClick={() => { setShowReviewForm(!showReviewForm); if (!employees.length) load('employees', setEmployees); }} small>{showReviewForm ? '✕' : '⭐ Nova Avaliação'}</Btn>
               </div>
             </div>
@@ -1416,14 +1395,14 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
                   <div>
-                    <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Feedback</label>
+                    <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Feedback</label>
                     <textarea value={revForm.feedback} onChange={e => setRevForm({ ...revForm, feedback: e.target.value })} rows={3}
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Metas</label>
+                    <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Metas</label>
                     <textarea value={revForm.goals} onChange={e => setRevForm({ ...revForm, goals: e.target.value })} rows={3}
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                   </div>
                 </div>
                 <div style={{ marginTop: 12 }}><Btn disabled={loading}>💾 Salvar Avaliação</Btn></div>
@@ -1436,53 +1415,53 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th>Colaborador</Th><Th>Avaliador</Th><Th>Período</Th><Th>Nota</Th><Th>Feedback</Th><Th>Metas</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {reviews.filter(r => !reviewSearch || r.employee_name?.toLowerCase().includes(reviewSearch.toLowerCase()) || r.reviewer_name?.toLowerCase().includes(reviewSearch.toLowerCase())).map(r => (
-                  <tr key={r.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{r.employee_name}</span></Td>
+                  <tr key={r.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{r.employee_name}</span></Td>
                     <Td>{r.reviewer_name || '—'}</Td>
-                    <Td><Badge text={r.period || '—'} color="#3b82f6" /></Td>
+                    <Td><Badge text={r.period || '—'} color="#1A73E8" /></Td>
                     <Td>
-                      <span style={{ fontWeight: 800, fontSize: 16, color: r.score >= 8 ? '#10b981' : r.score >= 5 ? '#f59e0b' : '#ef4444' }}>
+                      <span style={{ fontWeight: 800, fontSize: 16, color: r.score >= 8 ? '#22A06B' : r.score >= 5 ? '#F26B25' : '#D93025' }}>
                         {r.score}
                       </span>
                     </Td>
-                    <Td><span style={{ fontSize: 11, lineHeight: 1.4, display: 'block', maxWidth: 250 }}>{r.feedback?.substring(0, 100) || '—'}{r.feedback?.length > 100 ? '...' : ''}</span></Td>
-                    <Td><span style={{ fontSize: 11, color: '#94a3b8', display: 'block', maxWidth: 200 }}>{r.goals?.substring(0, 80) || '—'}{r.goals?.length > 80 ? '...' : ''}</span></Td>
+                    <Td><span style={{ fontSize: 11, lineHeight: 1.4, display: 'block', maxWidth: 250, color: '#3D3E40' }}>{r.feedback?.substring(0, 100) || '—'}{r.feedback?.length > 100 ? '...' : ''}</span></Td>
+                    <Td><span style={{ fontSize: 11, color: '#636466', display: 'block', maxWidth: 200 }}>{r.goals?.substring(0, 80) || '—'}{r.goals?.length > 80 ? '...' : ''}</span></Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button onClick={() => setEditingRev({ ...r })} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
-                        <button onClick={() => deleteReview(r.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
+                        <button onClick={() => setEditingRev({ ...r })} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
+                        <button onClick={() => deleteReview(r.id)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }} title="Excluir">🗑️</button>
                       </div>
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {reviews.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Nenhuma avaliação registrada</p>}
+            {reviews.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Nenhuma avaliação registrada</p>}
           </Card>
           {/* Modal edição desempenho */}
           {editingRev && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#0f172a', borderRadius: 20, width: 600, maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: 20, width: 600, maxHeight: '90vh', overflowY: 'auto', border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#eab308', margin: 0 }}>✏️ Editar Avaliação — {editingRev.employee_name}</h3>
-                  <button onClick={() => setEditingRev(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F26B25', margin: 0 }}>✏️ Editar Avaliação — {editingRev.employee_name}</h3>
+                  <button onClick={() => setEditingRev(null)} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Input label="Período" value={editingRev.period || ''} onChange={v => setEditingRev({ ...editingRev, period: v })} />
                   <Input label="Nota (0-10)" value={editingRev.score} onChange={v => setEditingRev({ ...editingRev, score: v })} type="number" />
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Feedback</label>
+                  <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Feedback</label>
                   <textarea value={editingRev.feedback || ''} onChange={e => setEditingRev({ ...editingRev, feedback: e.target.value })} rows={3}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <label style={{ fontSize: 10, color: '#64748b', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Metas</label>
+                  <label style={{ fontSize: 10, color: '#8E9093', fontWeight: 700, textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>Metas</label>
                   <textarea value={editingRev.goals || ''} onChange={e => setEditingRev({ ...editingRev, goals: e.target.value })} rows={3}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 10, fontSize: 12, background: '#FFFFFF', border: '1px solid #D4D5D6', color: '#2A2B2D', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
-                  <Btn onClick={() => setEditingRev(null)} color="#64748b">Cancelar</Btn>
+                  <Btn onClick={() => setEditingRev(null)} color="#8E9093">Cancelar</Btn>
                   <Btn onClick={saveEditReview}>💾 Salvar</Btn>
                 </div>
               </div>
@@ -1502,7 +1481,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                 <Input label="Buscar treinamento" value={trainingSearch} onChange={setTrainingSearch} placeholder="Nome ou provedor..." />
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', paddingBottom: 10 }}>
-                <Btn onClick={() => load('trainings', setTrainings)} color="#3b82f6" small>🔍 Atualizar</Btn>
+                <Btn onClick={() => load('trainings', setTrainings)} color="#1A73E8" small>🔍 Atualizar</Btn>
                 <Btn onClick={() => setShowTrainingForm(!showTrainingForm)} small>{showTrainingForm ? '✕' : '🎓 Novo Treinamento'}</Btn>
               </div>
             </div>
@@ -1525,31 +1504,31 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
               <thead><tr><Th>Treinamento</Th><Th>Provedor</Th><Th>Duração</Th><Th>Descrição</Th><Th>Status</Th><Th>Ações</Th></tr></thead>
               <tbody>
                 {trainings.filter(t => !trainingSearch || t.name?.toLowerCase().includes(trainingSearch.toLowerCase()) || t.provider?.toLowerCase().includes(trainingSearch.toLowerCase())).map(t => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{t.name}</span></Td>
+                  <tr key={t.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                    <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{t.name}</span></Td>
                     <Td>{t.provider || '—'}</Td>
-                    <Td><Badge text={t.duration || '—'} color="#3b82f6" /></Td>
-                    <Td><span style={{ fontSize: 11 }}>{t.description?.substring(0, 80) || '—'}</span></Td>
-                    <Td><Badge text={t.active ? 'Ativo' : 'Inativo'} color={t.active ? '#10b981' : '#ef4444'} /></Td>
+                    <Td><Badge text={t.duration || '—'} color="#1A73E8" /></Td>
+                    <Td><span style={{ fontSize: 11, color: '#3D3E40' }}>{t.description?.substring(0, 80) || '—'}</span></Td>
+                    <Td><Badge text={t.active ? 'Ativo' : 'Inativo'} color={t.active ? '#22A06B' : '#D93025'} /></Td>
                     <Td>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button onClick={() => setEditingTrn({ ...t })} style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
-                        <button onClick={() => deleteTraining(t.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }} title="Desativar">🗑️</button>
+                        <button onClick={() => setEditingTrn({ ...t })} style={{ background: 'none', border: 'none', color: '#F26B25', cursor: 'pointer', fontSize: 12 }} title="Editar">✏️</button>
+                        <button onClick={() => deleteTraining(t.id)} style={{ background: 'none', border: 'none', color: '#D93025', cursor: 'pointer', fontSize: 12 }} title="Desativar">🗑️</button>
                       </div>
                     </Td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {trainings.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Nenhum treinamento cadastrado</p>}
+            {trainings.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Nenhum treinamento cadastrado</p>}
           </Card>
           {/* Modal edição treinamento */}
           {editingTrn && (
-            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: '#0f172a', borderRadius: 20, width: 500, border: '1px solid rgba(255,255,255,0.08)', padding: 30 }}>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(42, 43, 45, 0.7)', backdropFilter: 'blur(4px)', zIndex: 5000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: '#FFFFFF', borderRadius: 20, width: 500, border: '1px solid #E5E7EB', padding: 30, boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#eab308', margin: 0 }}>✏️ Editar Treinamento</h3>
-                  <button onClick={() => setEditingTrn(null)} style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}>✕</button>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, color: '#F26B25', margin: 0 }}>✏️ Editar Treinamento</h3>
+                  <button onClick={() => setEditingTrn(null)} style={{ background: 'none', border: 'none', color: '#8E9093', fontSize: 18, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <Input label="Nome" value={editingTrn.name} onChange={v => setEditingTrn({ ...editingTrn, name: v })} />
@@ -1558,7 +1537,7 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
                   <Input label="Descrição" value={editingTrn.description || ''} onChange={v => setEditingTrn({ ...editingTrn, description: v })} />
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 16, justifyContent: 'flex-end' }}>
-                  <Btn onClick={() => setEditingTrn(null)} color="#64748b">Cancelar</Btn>
+                  <Btn onClick={() => setEditingTrn(null)} color="#8E9093">Cancelar</Btn>
                   <Btn onClick={saveEditTraining}>💾 Salvar</Btn>
                 </div>
               </div>
@@ -1577,16 +1556,16 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <thead><tr><Th>Vaga</Th><Th>Departamento</Th><Th>Faixa Salarial</Th><Th>Candidatos</Th><Th>Status</Th></tr></thead>
             <tbody>
               {jobs.map(j => (
-                <tr key={j.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                  <Td><span style={{ fontWeight: 600, color: '#f1f5f9' }}>{j.title}</span></Td>
+                <tr key={j.id} style={{ borderBottom: '1px solid #E5E7EB' }}>
+                  <Td><span style={{ fontWeight: 600, color: '#2A2B2D' }}>{j.title}</span></Td>
                   <Td>{j.department_name || '—'}</Td><Td>{j.salary_range || '—'}</Td>
-                  <Td><span style={{ fontWeight: 700, color: '#3b82f6' }}>{j.applications_count || 0}</span></Td>
-                  <Td><Badge text={j.status} color={j.status === 'Aberta' ? '#10b981' : '#94a3b8'} /></Td>
+                  <Td><span style={{ fontWeight: 700, color: '#1A73E8' }}>{j.applications_count || 0}</span></Td>
+                  <Td><Badge text={j.status} color={j.status === 'Aberta' ? '#22A06B' : '#8E9093'} /></Td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {jobs.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#475569', fontSize: 12 }}>Nenhuma vaga cadastrada</p>}
+          {jobs.length === 0 && <p style={{ textAlign: 'center', padding: 30, color: '#8E9093', fontSize: 12 }}>Nenhuma vaga cadastrada</p>}
         </Card>
       )}
 
@@ -1597,19 +1576,19 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
         <div>
           <Card style={{ marginBottom: 16 }}>
             <SectionTitle icon="🎉" text="Mural de Celebrações" />
-            {feed.length === 0 && <p style={{ fontSize: 12, color: '#475569' }}>Nenhum evento no momento</p>}
+            {feed.length === 0 && <p style={{ fontSize: 12, color: '#8E9093' }}>Nenhum evento no momento</p>}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
               {feed.map((f, i) => (
                 <div key={i} style={{
                   padding: '16px 18px', borderRadius: 14,
-                  background: f.type === 'birthday' ? 'rgba(234,179,8,0.08)' : f.type === 'new_hire' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${f.type === 'birthday' ? 'rgba(234,179,8,0.2)' : f.type === 'new_hire' ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                  background: f.type === 'birthday' ? 'rgba(242, 107, 37, 0.05)' : f.type === 'new_hire' ? 'rgba(34, 160, 107, 0.05)' : '#F9FAFB',
+                  border: `1px solid ${f.type === 'birthday' ? 'rgba(242, 107, 37, 0.2)' : f.type === 'new_hire' ? 'rgba(34, 160, 107, 0.2)' : '#E5E7EB'}`,
                   display: 'flex', alignItems: 'center', gap: 12,
                 }}>
                   <span style={{ fontSize: 28 }}>{f.icon}</span>
                   <div>
-                    <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 500 }}>{f.message}</div>
-                    <div style={{ fontSize: 10, color: '#64748b', marginTop: 2, textTransform: 'uppercase' }}>{f.type}</div>
+                    <div style={{ fontSize: 13, color: '#2A2B2D', fontWeight: 600 }}>{f.message}</div>
+                    <div style={{ fontSize: 10, color: '#8E9093', marginTop: 2, textTransform: 'uppercase' }}>{f.type}</div>
                   </div>
                 </div>
               ))}
@@ -1619,9 +1598,9 @@ export default function OmniRH({ styles, currentUser, showToast, logAction }) {
             <Card>
               <SectionTitle icon="🏆" text="Promoções Recentes" />
               {promotions.slice(0, 10).map((pr, i) => (
-                <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: 12, color: '#cbd5e1' }}>
-                  <strong>{pr.employee_name}</strong>: {pr.old_position_name || '—'} → <span style={{ color: '#10b981', fontWeight: 700 }}>{pr.new_position_name || '—'}</span>
-                  <span style={{ color: '#64748b', marginLeft: 8 }}>{formatDate(pr.promotion_date)}</span>
+                <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #E5E7EB', fontSize: 12, color: '#3D3E40' }}>
+                  <strong style={{ color: '#2A2B2D' }}>{pr.employee_name}</strong>: {pr.old_position_name || '—'} → <span style={{ color: '#22A06B', fontWeight: 700 }}>{pr.new_position_name || '—'}</span>
+                  <span style={{ color: '#8E9093', marginLeft: 8 }}>{formatDate(pr.promotion_date)}</span>
                 </div>
               ))}
             </Card>
