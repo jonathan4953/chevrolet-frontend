@@ -88,6 +88,8 @@ useEffect(() => {
   return () => scrollStyle.remove();
 }, []);
 
+const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
 // --- ESTADO DO DASHBOARD FINANCEIRO ---
 
 const [filtroMeses, setFiltroMeses] = useState(12);
@@ -1033,7 +1035,7 @@ const handleExcluirFornecedor = (id, nome) => {
       case "ABERTO":
       case "A RECEBER":
       case "SUGESTÃO":
-        return "#F26B25"; // Amarelo
+        return "#facc15"; // Amarelo
       default: 
         return "#94a3b8"; // Cinza padrão
     }
@@ -2455,7 +2457,7 @@ const clienteDadosExtras = clienteSelecionado ? {
         </div>
       )}
       
-   {/* SIDEBAR */}
+{/* SIDEBAR */}
 {isLoggedIn && (
   <Sidebar
     activeTab={activeTab}
@@ -2469,11 +2471,16 @@ const clienteDadosExtras = clienteSelecionado ? {
       setCurrentUser(null);
     }}
     LogoOmni={LogoOmni}
+    isOpen={isSidebarOpen}           
+    setIsOpen={setIsSidebarOpen}     
   />
 )}
-
-       {/* MAIN CONTENT */}
-      <div style={styles.mainContent}>
+{/* MAIN CONTENT */}
+      <div style={{
+        ...styles.mainContent,
+        marginLeft: isSidebarOpen ? "240px" : "80px",
+        transition: "margin-left 0.3s ease-in-out"
+      }}>
         <header style={styles.header}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
             <div>
@@ -2489,9 +2496,8 @@ const clienteDadosExtras = clienteSelecionado ? {
           </div>
         </header>
 
-        <main style={{ flex: 1, padding: "30px 40px", overflowY: "auto", overflowX: "auto", minWidth: 0 }}>
+<main style={{ flex: 1, padding: "30px 40px", overflowY: "auto", overflowX: "auto", minWidth: 0 }}>
           
-      
         {/* TAB: DASHBOARD */}
          {activeTab === "dashboard" && (
                     <div style={styles.dashboardWrapper}>       
@@ -4115,7 +4121,7 @@ function ToastContainer({ toasts }) {
     success: { bg: "rgba(16,185,129,0.15)", border: "#10b981", color: "#34d399" },
     error:   { bg: "rgba(239,68,68,0.15)", border: "#ef4444", color: "#f87171" },
     info:    { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", color: "#60a5fa" },
-    warning: { bg: "rgba(234,179,8,0.15)", border: "#F26B25", color: "#F26B25" },
+    warning: { bg: "rgba(234,179,8,0.15)", border: "#F26B25", color: "#facc15" },
   };
   if (!toasts.length) return null;
 

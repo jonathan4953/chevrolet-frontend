@@ -1,4 +1,9 @@
-import { useState } from "react";
+import React from "react";
+import { 
+  Search, Calendar, Filter, Download, Plus, 
+  AlertCircle, Edit2, Trash2, AlertTriangle, 
+  FileText, TrendingUp, CheckCircle2 
+} from "lucide-react";
 
 const C = {
   primary: "#F26B25",
@@ -6,16 +11,15 @@ const C = {
   green: "#22A06B",
   red: "#D93025",
   yellow: "#F59E0B",
-  text: "#2A2B2D",
-  muted: "#8E9093",
-  subtle: "#636466",
-  border: "#E5E7EB",
+  text: "#0f172a",       // PRETO (Contraste máximo)
+  textSecondary: "#334155", // GRAFITE (Para infos secundárias)
+  muted: "#64748b",      // CINZA (Apenas para labels pequenos)
+  border: "#e2e8f0",
   bg: "#FFFFFF",
-  bgAlt: "#F9FAFB"
+  bgAlt: "#f8fafc"
 };
 
 export default function FinanceiroPagar({
-  styles,
   contasPagar,
   loadContasPagar,
   handleExcluirObrigacao,
@@ -29,7 +33,7 @@ export default function FinanceiroPagar({
   setFinanceiroDataInicioPagar,
   financeiroDataFimPagar,    
   setFinanceiroDataFimPagar,
-  filtroStatusPagar,      
+  filtroStatusPagar,       
   setFiltroStatusPagar,
   handleImportOFXPagar,
   loading,
@@ -58,38 +62,62 @@ export default function FinanceiroPagar({
     filtroStatusPagar === "VENCIDOS" ? vencidos :
     contasPagar.filter(c => c.status === filtroStatusPagar);
 
-  const cardKpiStyle = (color) => ({
+const cardKpiStyle = (color) => ({
     background: "#FFFFFF",
+    backgroundColor: "#FFFFFF", // Reforço para garantir que o branco vença
     border: `1px solid ${C.border}`,
-    borderLeft: `4px solid ${color}`,
+    borderTop: `4px solid ${color}`, // DESIGN MINIMALISTA: Barra no topo
     borderRadius: 16,
     padding: "20px 22px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-    transition: "transform 0.2s",
-    cursor: "default"
+    boxShadow: "0 4px 12px rgba(0,0,0,0.05)", // Sombra mais leve
+    transition: "transform 0.2s ease-in-out",
+    cursor: "default",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center"
   });
 
   return (
-    <div style={{display:'flex', flexDirection:'column', gap:24, fontFamily: "system-ui, sans-serif"}}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-      {/* ── KPI CARDS ── */}
-      <div style={{display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16}}>
+ {/* ── KPI CARDS ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16 }}>
         {[
-          { label:"Total Provisionado", value:`R$ ${formatBRL(totalPagar)}`, icon:"📋", color: C.text },
-          { label:"Vencidos", value:`R$ ${formatBRL(totalVencido)}`, icon:"⚠️", color: totalVencido > 0 ? C.red : C.green },
-          { label:"Vence em 7 dias", value: proximosSete.length, icon:"📅", color: C.yellow },
-          { label:"Total de Registros", value: contasPagar.length, icon:"📄", color: C.blue },
-        ].map((k,i)=>(
-          <div key={i} style={cardKpiStyle(k.color)}
-            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-3px)"}
-            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}
+          { label: "Total Provisionado", value: `R$ ${formatBRL(totalPagar)}`, icon: TrendingUp, color: C.blue },
+          { label: "Vencidos", value: `R$ ${formatBRL(totalVencido)}`, icon: AlertCircle, color: totalVencido > 0 ? C.red : C.green },
+          { label: "Vence em 7 dias", value: proximosSete.length, icon: Calendar, color: C.yellow },
+          { label: "Total de Registros", value: contasPagar.length, icon: FileText, color: C.text },
+        ].map((k, i) => (
+          <div key={i} 
+            style={{
+              // ESTILO DIRETO PARA MATAR O CINZA:
+              background: "#FFFFFF", 
+              backgroundColor: "#FFFFFF", 
+              border: `1px solid ${C.border}`,
+              borderTop: `4px solid ${k.color}`, 
+              borderRadius: 16, 
+              padding: "20px 22px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              transition: "transform 0.2s ease-in-out",
+              cursor: "default"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "translateY(-3px)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
           >
-            <div style={{display:"flex", justifyContent:"space-between", alignItems:"flex-start"}}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <div style={{fontSize:10, color: C.muted, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8}}>{k.label}</div>
-                <div style={{fontSize:22, fontWeight:900, color: C.text, fontFamily:"monospace"}}>{k.value}</div>
+                {/* Cor fixa escura para o label */}
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8 }}>
+                  {k.label}
+                </div>
+                {/* Cor fixa preta para o valor (Contraste Máximo) */}
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#0f172a" }}>
+                  {k.value}
+                </div>
               </div>
-              <div style={{width:40, height:40, borderRadius:12, background: `${k.color}10`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18}}>{k.icon}</div>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: `${k.color}15`, display: "flex", alignItems: "center", justifyContent: "center", color: k.color }}>
+                <k.icon size={20} strokeWidth={2.5} />
+              </div>
             </div>
           </div>
         ))}
@@ -97,32 +125,37 @@ export default function FinanceiroPagar({
 
       {/* ── BARRA FILTROS + AÇÕES ── */}
       <div style={{
-        background:"#FFFFFF", border: `1px solid ${C.border}`,
-        borderRadius:16, padding:"24px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
+        background: "#FFFFFF", border: `1px solid ${C.border}`,
+        borderRadius: 16, padding: "24px", boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
       }}>
-        <div style={{display:"flex", gap:16, flexWrap:"wrap", alignItems:"flex-end"}}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
           
-          <div style={{flex:"1 1 250px"}}>
-            <label style={{fontSize:10, color: C.muted, fontWeight:800, textTransform:"uppercase", marginBottom:6, display:"block"}}>Pesquisar</label>
-            <input
-              style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: `1px solid #D4D5D6`, fontSize: 13 }}
-              placeholder="Fornecedor, NF, descrição..."
-              value={financeiroBuscaPagar}
-              onChange={e => setFinanceiroBuscaPagar(e.target.value)}
-            />
+          <div style={{ flex: "1 1 250px", position: "relative" }}>
+            <label style={{ fontSize: 10, color: C.subtle, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, display: "block" }}>Pesquisar</label>
+            <div style={{ position: "relative" }}>
+              <Search size={16} color={C.muted} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
+              <input
+                style={{ width: "100%", padding: "12px 14px 12px 38px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, background: C.bgAlt }}
+                placeholder="Fornecedor, NF, descrição..."
+                value={financeiroBuscaPagar}
+                onChange={e => setFinanceiroBuscaPagar(e.target.value)}
+              />
+            </div>
           </div>
+
           <div>
-            <label style={{fontSize:10, color: C.muted, fontWeight:800, textTransform:"uppercase", marginBottom:6, display:"block"}}>Início</label>
-            <input type="date" style={{ padding: "10px 12px", borderRadius: 10, border: `1px solid #D4D5D6`, fontSize: 13 }} value={financeiroDataInicioPagar} onChange={e=>setFinanceiroDataInicioPagar(e.target.value)}/>
+            <label style={{ fontSize: 10, color: C.subtle, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, display: "block" }}>Período</label>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input type="date" style={{ padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, background: C.bgAlt }} value={financeiroDataInicioPagar} onChange={e => setFinanceiroDataInicioPagar(e.target.value)} />
+              <span style={{ color: C.muted }}>a</span>
+              <input type="date" style={{ padding: "10px 12px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, background: C.bgAlt }} value={financeiroDataFimPagar} onChange={e => setFinanceiroDataFimPagar(e.target.value)} />
+            </div>
           </div>
+
           <div>
-            <label style={{fontSize:10, color: C.muted, fontWeight:800, textTransform:"uppercase", marginBottom:6, display:"block"}}>Fim</label>
-            <input type="date" style={{ padding: "10px 12px", borderRadius: 10, border: `1px solid #D4D5D6`, fontSize: 13 }} value={financeiroDataFimPagar} onChange={e=>setFinanceiroDataFimPagar(e.target.value)}/>
-          </div>
-          <div>
-            <label style={{fontSize:10, color: C.muted, fontWeight:800, textTransform:"uppercase", marginBottom:6, display:"block"}}>Status</label>
-            <select style={{ padding: "10px 12px", borderRadius: 10, border: `1px solid #D4D5D6`, fontSize: 13, width:140 }} value={filtroStatusPagar} onChange={e=>setFiltroStatusPagar(e.target.value)}>
-              <option value="TODOS">Todos</option>
+            <label style={{ fontSize: 10, color: C.subtle, fontWeight: 800, textTransform: "uppercase", marginBottom: 8, display: "block" }}>Status</label>
+            <select style={{ padding: "11px 12px", borderRadius: 10, border: `1px solid ${C.border}`, fontSize: 13, width: 140, background: C.bgAlt }} value={filtroStatusPagar} onChange={e => setFiltroStatusPagar(e.target.value)}>
+              <option value="TODOS">Todos Status</option>
               <option value="ABERTO">Em Aberto</option>
               <option value="VENCIDOS">Vencidos</option>
               <option value="PAGO">Pago</option>
@@ -130,28 +163,28 @@ export default function FinanceiroPagar({
             </select>
           </div>
           
-          <button onClick={loadContasPagar} style={{ background: C.primary, color: "#fff", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 800, fontSize: 12, cursor: "pointer", boxShadow: `0 4px 12px ${C.primary}33` }}>
-            🔍 BUSCAR
+          <button onClick={loadContasPagar} style={{ background: C.primary, color: "#fff", border: "none", borderRadius: 10, padding: "12px 24px", fontWeight: 800, fontSize: 12, cursor: "pointer", boxShadow: `0 4px 12px ${C.primary}33`, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Filter size={16} /> FILTRAR
           </button>
 
-          <div style={{position:"relative"}}>
-            <input type="file" id="ofxUploadPagar" accept=".ofx,.pdf" style={{display:"none"}} onChange={handleImportOFXPagar}/>
+          <div style={{ position: "relative" }}>
+            <input type="file" id="ofxUploadPagar" accept=".ofx,.pdf" style={{ display: "none" }} onChange={handleImportOFXPagar} />
             <label htmlFor="ofxUploadPagar" style={{
-              background: C.green, color:"#fff", border: "none",
-              display:"inline-flex", alignItems:"center", gap:8,
-              boxShadow:`0 4px 12px ${C.green}33`, cursor:"pointer",
-              borderRadius:10, padding:"12px 20px", fontWeight:800, fontSize:12
+              background: C.green, color: "#fff", border: "none",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              boxShadow: `0 4px 12px ${C.green}33`, cursor: "pointer",
+              borderRadius: 10, padding: "12px 20px", fontWeight: 800, fontSize: 12
             }}>
-              {loading ? "⌛ LENDO..." : "📥 CONCILIAR OFX"}
+              <Download size={16} /> {loading ? "LENDO..." : "CONCILIAR OFX"}
             </label>
           </div>
 
           {hasEditPermission && (
-            <button onClick={()=>setShowAddObrigacaoModal(true)} style={{
+            <button onClick={() => setShowAddObrigacaoModal(true)} style={{
               background: C.blue, color: "#fff", border: "none",
-              boxShadow:`0 4px 12px ${C.blue}33`, borderRadius:10, padding:"12px 20px", fontWeight:800, fontSize:12, cursor: "pointer"
+              boxShadow: `0 4px 12px ${C.blue}33`, borderRadius: 10, padding: "12px 20px", fontWeight: 800, fontSize: 12, cursor: "pointer", display: 'flex', alignItems: 'center', gap: 8
             }}>
-              ➕ NOVA OBRIGAÇÃO
+              <Plus size={16} /> NOVA OBRIGAÇÃO
             </button>
           )}
         </div>
@@ -160,118 +193,131 @@ export default function FinanceiroPagar({
       {/* ── ALERTA VENCIDOS ── */}
       {vencidos.length > 0 && (
         <div style={{
-          background: `${C.red}08`, border:`1px solid ${C.red}30`,
-          borderRadius:12, padding:"14px 20px",
-          display:"flex", alignItems:"center", gap:12,
+          background: `${C.red}08`, border: `1px solid ${C.red}20`,
+          borderRadius: 12, padding: "16px 20px",
+          display: "flex", alignItems: "center", gap: 14,
         }}>
-          <span style={{fontSize:20}}>🚨</span>
+          <AlertTriangle color={C.red} size={24} />
           <div>
-            <span style={{color: C.red, fontWeight:800, fontSize:13}}>
-              {vencidos.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencido)}
+            <span style={{ color: C.red, fontWeight: 800, fontSize: 14 }}>
+              Atenção: {vencidos.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencido)}
             </span>
-            <span style={{color: C.subtle, fontSize:12, marginLeft:8, fontWeight: 600}}>— ação imediata recomendada</span>
+            <div style={{ color: C.subtle, fontSize: 12, fontWeight: 600 }}>Ação imediata recomendada para evitar juros e multas.</div>
           </div>
         </div>
       )}
 
       {/* ── TABELA ── */}
       <div style={{ background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
-        <div style={{padding:"18px 24px", borderBottom: `1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", background: C.bgAlt}}>
-          <h2 style={{ fontSize: 16, fontWeight: 900, color: C.text, margin: 0 }}>Contas a Pagar & Provisões</h2>
-          <span style={{fontSize:11, color: C.muted, fontWeight: 700}}>{filtrados.length} registro(s)</span>
+        <div style={{ padding: "18px 24px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bgAlt }}>
+          <h2 style={{ fontSize: 15, fontWeight: 900, color: C.text, margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FileText size={18} color={C.primary} /> Contas a Pagar & Provisões
+          </h2>
+          <span style={{ fontSize: 11, color: C.subtle, fontWeight: 800, background: '#fff', padding: '4px 12px', borderRadius: 20, border: `1px solid ${C.border}` }}>
+            {filtrados.length} REGISTROS
+          </span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: C.bgAlt }}>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Vencimento</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Fatura / Título</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Descrição</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Fornecedor</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>NF</th>
-                <th style={{ padding: "14px 16px", textAlign: "center", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Parc.</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Valor</th>
-                <th style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.08em", borderBottom: `1px solid ${C.border}` }}>Status</th>
-                {hasEditPermission && <th style={{ padding: "14px 16px", textAlign: "center", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", borderBottom: `1px solid ${C.border}` }}>Ações</th>}
+                {["Vencimento", "Fatura / Título", "Descrição", "Fornecedor", "NF", "Parc.", "Valor", "Status", "Ações"].map((h, i) => (
+                  <th key={i} style={{ padding: "16px", textAlign: h === "Ações" || h === "Parc." ? "center" : "left", fontSize: 10, fontWeight: 800, color: C.muted, textTransform: "uppercase", letterSpacing: "0.1em", borderBottom: `1px solid ${C.border}` }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {filtrados.length > 0 ? filtrados.map((c, idx) => {
-                const atrasado = c.vencimento && !["PAGO","CONCILIADO"].includes(c.status) && new Date(c.vencimento+"T12:00:00Z") < hoje;
+                const atrasado = c.vencimento && !["PAGO", "CONCILIADO"].includes(c.status) && new Date(c.vencimento + "T12:00:00Z") < hoje;
+                const statusColor = getStatusColor(atrasado ? "ATRASADO" : c.status);
+                
                 return (
                   <tr key={idx} style={{ 
                     borderBottom: `1px solid ${C.border}`,
                     background: atrasado ? `${C.red}05` : "transparent",
-                    transition: "background 0.2s"
+                    transition: "background 0.2s ease"
                   }}
                     onMouseEnter={e => e.currentTarget.style.background = atrasado ? `${C.red}08` : C.bgAlt}
                     onMouseLeave={e => e.currentTarget.style.background = atrasado ? `${C.red}05` : "transparent"}
                   >
-                    <td style={{ padding: "14px 16px", fontSize: 13 }}>
-                      <strong style={{color: atrasado ? C.red : C.text, fontWeight: 800}}>
-                        {c.vencimento ? new Date(c.vencimento+"T12:00:00Z").toLocaleDateString("pt-BR") : "-"}
+                    <td style={{ padding: "16px", fontSize: 13 }}>
+                      <strong style={{ color: atrasado ? C.red : C.text, fontWeight: 800 }}>
+                        {c.vencimento ? new Date(c.vencimento + "T12:00:00Z").toLocaleDateString("pt-BR") : "-"}
                       </strong>
-                      {atrasado && <span style={{display:"block",fontSize:9,color: C.red, fontWeight:900, marginTop: 2}}>VENCIDO</span>}
+                      {atrasado && <span style={{ display: "block", fontSize: 9, color: C.red, fontWeight: 900, marginTop: 4 }}>⚠️ VENCIDO</span>}
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13 }}>
-                      <span style={{color: C.blue, fontSize:11, fontWeight:800, display:"block"}}>{c.fatura||"FAT-000"}</span>
-                      <span style={{color: C.muted, fontSize:10, fontWeight: 600}}>{c.titulo||"TIT-000"}</span>
+                    <td style={{ padding: "16px" }}>
+                      <span style={{ color: C.blue, fontSize: 11, fontWeight: 900, display: "block" }}>{c.fatura || "FAT-000"}</span>
+                      <span style={{ color: C.subtle, fontSize: 10, fontWeight: 700 }}>{c.titulo || "TIT-000"}</span>
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13, maxWidth:180 }}>
-                      <div style={{whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:700, color: C.text}}>{c.descricao}</div>
+                    <td style={{ padding: "16px", maxWidth: 180 }}>
+                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: 700, color: C.text, fontSize: 13 }}>{c.descricao}</div>
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 12, color: C.subtle, fontWeight: 600 }}>{c.fornecedor||"-"}</td>
-                    <td style={{ padding: "14px 16px", fontSize: 11, color: C.muted, fontWeight: 600 }}>{c.numero_nf||"S/N"}</td>
-                    <td style={{ padding: "14px 16px", textAlign:"center" }}>
-                      <span style={{background: C.bgAlt, border: `1px solid ${C.border}`, padding:"4px 8px", borderRadius:6, fontSize:11, fontWeight:800, color: C.subtle}}>
+                    <td style={{ padding: "16px", fontSize: 12, color: C.subtle, fontWeight: 600 }}>{c.fornecedor || "-"}</td>
+                    <td style={{ padding: "16px", fontSize: 11, color: C.muted, fontWeight: 700 }}>{c.numero_nf || "S/N"}</td>
+                    <td style={{ padding: "16px", textAlign: "center" }}>
+                      <span style={{ background: C.bgAlt, border: `1px solid ${C.border}`, padding: "4px 8px", borderRadius: 6, fontSize: 11, fontWeight: 800, color: C.subtle }}>
                         {c.parcela_atual}/{c.qtd_parcelas}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px", fontSize: 13 }}>
-                      <span style={{color: C.red, fontWeight:900, fontFamily:"monospace"}}>
+                    <td style={{ padding: "16px" }}>
+                      <span style={{ color: atrasado ? C.red : C.text, fontWeight: 900, fontSize: 14 }}>
                         R$ {formatBRL(c.valor)}
                       </span>
                     </td>
-                    <td style={{ padding: "14px 16px" }}>
+                    <td style={{ padding: "16px" }}>
                       <span style={{
-                        background: `${getStatusColor(atrasado?"ATRASADO":c.status)}15`,
-                        color: getStatusColor(atrasado?"ATRASADO":c.status),
-                        border:`1px solid ${getStatusColor(atrasado?"ATRASADO":c.status)}40`,
-                        padding:"4px 10px", borderRadius:20, fontSize:10, fontWeight:800,
-                        textTransform:"uppercase", letterSpacing:"0.06em", whiteSpace:"nowrap",
+                        background: `${statusColor}12`,
+                        color: statusColor,
+                        border: `1px solid ${statusColor}30`,
+                        padding: "6px 12px", borderRadius: 20, fontSize: 10, fontWeight: 800,
+                        textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap",
+                        display: 'inline-flex', alignItems: 'center', gap: 4
                       }}>
+                        {atrasado || c.status === "ATRASADO" ? <AlertCircle size={10} /> : <CheckCircle2 size={10} />}
                         {atrasado ? "ATRASADO" : c.status}
                       </span>
                     </td>
                     {hasEditPermission && (
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{display:"flex", gap:8, justifyContent:"center"}}>
+                      <td style={{ padding: "16px" }}>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
                           <button
-                            onClick={()=>{ setContaToEdit(c); setShowEditContaModal(true); }}
-                            style={{background: "#F9FAFB", color: C.blue, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 10px", cursor:"pointer", fontSize:14, transition:"all 0.2s"}}
-                            onMouseEnter={e=>{ e.currentTarget.style.background = `${C.blue}10`; e.currentTarget.style.borderColor = C.blue; }}
-                            onMouseLeave={e=>{ e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = C.border; }}
-                          >✏️</button>
+                            onClick={() => { setContaToEdit(c); setShowEditContaModal(true); }}
+                            title="Editar Parcela"
+                            style={{ background: "#fff", color: C.blue, border: `1px solid ${C.border}`, borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: "pointer", transition: "all 0.2s" }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.blue; e.currentTarget.style.background = `${C.blue}05`; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#fff"; }}
+                          ><Edit2 size={14} /></button>
+                          
                           <button
-                            onClick={()=>handleExcluirParcela(c.id)}
-                            style={{background: "#F9FAFB", color: C.red, border:`1px solid ${C.border}`, borderRadius:8, padding:"6px 10px", cursor:"pointer", fontSize:14, transition:"all 0.2s"}}
-                            onMouseEnter={e=>{ e.currentTarget.style.background = `${C.red}10`; e.currentTarget.style.borderColor = C.red; }}
-                            onMouseLeave={e=>{ e.currentTarget.style.background = "#F9FAFB"; e.currentTarget.style.borderColor = C.border; }}
-                          >🗑️</button>
+                            onClick={() => handleExcluirParcela(c.id)}
+                            title="Excluir Parcela"
+                            style={{ background: "#fff", color: C.red, border: `1px solid ${C.border}`, borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: "pointer", transition: "all 0.2s" }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = C.red; e.currentTarget.style.background = `${C.red}05`; }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = "#fff"; }}
+                          ><Trash2 size={14} /></button>
+
                           <button
-                            onClick={()=>handleExcluirObrigacao(c.id_obrigacao, c.descricao)}
-                            style={{background: `${C.red}10`, color: C.red, border:`1px solid ${C.red}30`, borderRadius:8, padding:"6px 10px", cursor:"pointer", fontSize:14, transition:"all 0.2s"}}
+                            onClick={() => handleExcluirObrigacao(c.id_obrigacao, c.descricao)}
                             title="Excluir OBRIGAÇÃO INTEIRA"
-                          >🚨</button>
+                            style={{ background: `${C.red}10`, color: C.red, border: `1px solid ${C.red}20`, borderRadius: 8, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: "pointer", transition: "all 0.2s" }}
+                            onMouseEnter={e => { e.currentTarget.style.background = C.red; e.currentTarget.style.color = "#fff"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = `${C.red}10`; e.currentTarget.style.color = C.red; }}
+                          ><AlertTriangle size={14} /></button>
                         </div>
                       </td>
                     )}
                   </tr>
                 );
               }) : (
-                <tr><td colSpan={hasEditPermission?9:8} style={{padding: 60, textAlign:"center", color: C.muted, fontSize: 14, fontWeight: 700}}>
-                  Nenhuma conta a pagar encontrada.
-                </td></tr>
+                <tr>
+                  <td colSpan={hasEditPermission ? 9 : 8} style={{ padding: 80, textAlign: "center" }}>
+                    <div style={{ color: C.muted, fontSize: 14, fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                      <Search size={40} strokeWidth={1} />
+                      Nenhum registro encontrado para este período.
+                    </div>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

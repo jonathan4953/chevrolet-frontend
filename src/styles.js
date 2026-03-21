@@ -156,9 +156,7 @@ export const styles = {
     position: "fixed",
     top: 0,
     left: 0,
-    width: "240px",
-    minWidth: "240px",
-    height: "100vh",
+     height: "100vh",
     backgroundColor: "#FFFFFF", // Sidebar branca
     borderRight: "1px solid #E5E7EB",
     flexShrink: 0,
@@ -203,7 +201,6 @@ export const styles = {
   },
   mainContent: {
     flex: 1,
-    marginLeft: "240px",
     display: "flex",
     flexDirection: "column",
     minWidth: 0,

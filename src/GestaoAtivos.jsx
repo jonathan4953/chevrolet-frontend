@@ -8,17 +8,17 @@ import { api } from "./api";
 // ============================================================
 
 const STATUS_COLORS = {
-  DISPONIVEL: { bg: "rgba(16,185,129,0.15)", border: "#10b981", text: "#34d399", label: "Disponível" },
-  LOCADO:     { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#60a5fa", label: "Locado" },
-  RESERVADO:  { bg: "rgba(234,179,8,0.15)",  border: "#eab308", text: "#facc15", label: "Reservado" },
-  MANUTENCAO: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#fb923c", label: "Manutenção" },
-  INATIVO:    { bg: "rgba(100,116,139,0.15)", border: "#64748b", text: "#94a3b8", label: "Inativo" },
+  DISPONIVEL: { bg: "rgba(16,185,129,0.15)", border: "#10b981", text: "#10b981", label: "Disponível" },
+  LOCADO:     { bg: "rgba(59,130,246,0.15)", border: "#3b82f6", text: "#3b82f6", label: "Locado" },
+  RESERVADO:  { bg: "rgba(242,107,37,0.15)",  border: "#F26B25", text: "#F26B25", label: "Reservado" },
+  MANUTENCAO: { bg: "rgba(249,115,22,0.15)", border: "#f97316", text: "#f97316", label: "Manutenção" },
+  INATIVO:    { bg: "rgba(100,116,139,0.15)", border: "#64748b", text: "#64748b", label: "Inativo" },
 };
 
 const LOCACAO_STATUS_COLORS = {
-  ATIVA:      { bg: "rgba(16,185,129,0.15)", text: "#34d399", label: "Ativa" },
-  FINALIZADA: { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: "Finalizada" },
-  ATRASADA:   { bg: "rgba(248,113,113,0.15)", text: "#f87171", label: "Atrasada" },
+  ATIVA:      { bg: "rgba(16,185,129,0.15)", text: "#10b981", label: "Ativa" },
+  FINALIZADA: { bg: "rgba(100,116,139,0.15)", text: "#64748b", label: "Finalizada" },
+  ATRASADA:   { bg: "rgba(248,113,113,0.15)", text: "#ef4444", label: "Atrasada" },
 };
 
 const formatCurrency = (v) => {
@@ -38,40 +38,45 @@ function InfoTip({ text }) {
   const [show, setShow] = useState(false);
   return (
     <span
-      style={{ position: "relative", display: "inline-block", marginLeft: 5, cursor: "help" }}
+      style={{ position: "relative", display: "inline-flex", marginLeft: 5, cursor: "help" }}
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
       <span style={{
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         width: 15, height: 15, borderRadius: "50%", fontSize: 9, fontWeight: 800,
-        background: "rgba(59,130,246,0.2)", color: "#60a5fa", lineHeight: 1,
-      }}>ℹ</span>
+        background: "rgba(59,130,246,0.15)", color: "#3b82f6", lineHeight: 1,
+        fontFamily: "sans-serif"
+      }}>i</span>
       {show && (
         <div style={{
-          position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
-          background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.15)",
-          borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#cbd5e1",
-          whiteSpace: "nowrap", zIndex: 100, boxShadow: "0 8px 25px rgba(0,0,0,0.5)",
-          pointerEvents: "none", maxWidth: 280,
+          position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+          background: "#1e293b", border: "none",
+          borderRadius: 8, padding: "8px 12px", fontSize: 11, color: "#f8fafc",
+          whiteSpace: "normal", // <-- Permite o texto quebrar de linha
+          width: "max-content",
+          maxWidth: 220, // <-- Evita que o balão fique gigante
+          textAlign: "center",
+          zIndex: 99999, // <-- Força a ficar acima de TUDO
+          boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
+          pointerEvents: "none",
         }}>
           {text}
           <div style={{
             position: "absolute", top: "100%", left: "50%", transform: "translateX(-50%)",
             width: 0, height: 0, borderLeft: "5px solid transparent",
-            borderRight: "5px solid transparent", borderTop: "5px solid rgba(255,255,255,0.15)",
+            borderRight: "5px solid transparent", borderTop: "5px solid #1e293b",
           }} />
         </div>
       )}
     </span>
   );
 }
-
 // ============================================================
 // COMPONENTE: StatusBadge
 // ============================================================
 function StatusBadge({ status, map = STATUS_COLORS }) {
-  const sc = map[status] || { bg: "rgba(100,116,139,0.15)", text: "#94a3b8", label: status };
+  const sc = map[status] || { bg: "#f1f5f9", text: "#64748b", label: status };
   return (
     <span style={{
       padding: "3px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
@@ -107,31 +112,31 @@ function AcoesDropdown({ ativo, onEditar, onBaixa, onVerDetalhe }) {
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         style={{
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+          background: "#ffffff", border: "1px solid #cbd5e1",
           borderRadius: 8, padding: "5px 10px", fontSize: 14, cursor: "pointer",
-          color: "#94a3b8", lineHeight: 1,
+          color: "#475569", lineHeight: 1,
         }}
       >⋮</button>
       {open && (
         <div style={{
           position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50,
-          background: "rgba(15,23,42,0.98)", border: "1px solid rgba(255,255,255,0.12)",
+          background: "#ffffff", border: "1px solid #e2e8f0",
           borderRadius: 10, padding: "4px 0", minWidth: 175,
-          boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+          boxShadow: "0 8px 30px rgba(0,0,0,0.1)",
         }}>
           {items.map((item, i) =>
             item.sep ? (
-              <div key={i} style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
+              <div key={i} style={{ height: 1, background: "#e2e8f0", margin: "4px 0" }} />
             ) : (
               <div
                 key={i}
                 onClick={(e) => { e.stopPropagation(); item.onClick(); }}
                 style={{
                   padding: "8px 14px", fontSize: 12, cursor: "pointer",
-                  color: item.danger ? "#f87171" : "#cbd5e1",
+                  color: item.danger ? "#ef4444" : "#334155",
                   transition: "background 0.15s",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.05)"}
+                onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
                 {item.label}
@@ -443,66 +448,72 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   };
 
   // ============================================================
-  // ESTILOS INTERNOS
+  // ESTILOS INTERNOS (TEMA CLARO OMNI26)
   // ============================================================
   const s = {
     card: {
-      background: "rgba(15, 23, 42, 0.6)", borderRadius: 16,
-      border: "1px solid rgba(255,255,255,0.06)", padding: 24,
+      background: "#ffffff", borderRadius: 16,
+      border: "1px solid #e2e8f0", padding: 24,
+      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
     },
     sectionBtn: (active) => ({
       padding: "8px 18px", borderRadius: 10, fontSize: 12, fontWeight: 700,
       cursor: "pointer", border: "1px solid",
-      background: active ? "rgba(234,179,8,0.9)" : "rgba(255,255,255,0.04)",
-      color: active ? "#000" : "#94a3b8",
-      borderColor: active ? "#eab308" : "rgba(255,255,255,0.08)",
+      background: active ? "#F26B25" : "#ffffff",
+      color: active ? "#ffffff" : "#64748b",
+      borderColor: active ? "#F26B25" : "#e2e8f0",
       transition: "all 0.2s",
+      boxShadow: active ? "0 4px 10px rgba(242, 107, 37, 0.2)" : "none",
     }),
     input: {
       width: "100%", padding: "10px 14px", borderRadius: 10, fontSize: 13,
-      background: "rgba(15, 23, 42, 0.9)", color: "#f1f5f9",
-      border: "1px solid rgba(255,255,255,0.1)", outline: "none",
+      background: "#f8fafc", color: "#0f172a",
+      border: "1px solid #cbd5e1", outline: "none",
     },
-    label: { fontSize: 11, color: "#94a3b8", fontWeight: 600, marginBottom: 4, display: "block" },
+    label: { fontSize: 11, color: "#64748b", fontWeight: 700, marginBottom: 4, display: "block" },
     primaryBtn: {
       padding: "10px 22px", borderRadius: 10, fontSize: 12, fontWeight: 700,
       cursor: "pointer", border: "none",
-      background: "linear-gradient(135deg, #eab308, #d97706)",
-      color: "#000", transition: "all 0.2s",
+      background: "#F26B25",
+      color: "#ffffff", transition: "all 0.2s",
+      boxShadow: "0 4px 10px rgba(242, 107, 37, 0.2)"
     },
     dangerBtn: {
       padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-      cursor: "pointer", border: "1px solid rgba(248,113,113,0.3)",
-      background: "rgba(248,113,113,0.1)", color: "#f87171",
+      cursor: "pointer", border: "1px solid #fca5a5",
+      background: "#fef2f2", color: "#ef4444",
     },
     successBtn: {
       padding: "6px 14px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-      cursor: "pointer", border: "1px solid rgba(16,185,129,0.3)",
-      background: "rgba(16,185,129,0.1)", color: "#34d399",
+      cursor: "pointer", border: "1px solid #6ee7b7",
+      background: "#ecfdf5", color: "#10b981",
     },
     th: {
-      padding: "10px 14px", textAlign: "left", fontSize: 10, fontWeight: 700,
-      color: "#64748b", textTransform: "uppercase", letterSpacing: 0.8,
-      borderBottom: "1px solid rgba(255,255,255,0.06)",
+      padding: "12px 14px", textAlign: "left", fontSize: 10, fontWeight: 700,
+      color: "#475569", textTransform: "uppercase", letterSpacing: 0.8,
+      borderBottom: "1px solid #e2e8f0", background: "#f8fafc",
     },
     td: {
-      padding: "12px 14px", fontSize: 12, color: "#cbd5e1",
-      borderBottom: "1px solid rgba(255,255,255,0.04)",
+      padding: "12px 14px", fontSize: 12, color: "#334155",
+      borderBottom: "1px solid #e2e8f0",
     },
     modalOverlay: {
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      background: "rgba(0,0,0,0.7)", zIndex: 9999,
+      background: "rgba(15, 23, 42, 0.5)", zIndex: 9999,
       display: "flex", alignItems: "center", justifyContent: "center",
+      backdropFilter: "blur(2px)",
     },
     modalContent: {
-      background: "rgba(15, 23, 42, 0.98)", border: "1px solid rgba(255,255,255,0.1)",
+      background: "#ffffff", border: "none",
       borderRadius: 20, padding: 30, maxWidth: 600, width: "90%",
       maxHeight: "85vh", overflowY: "auto",
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
     },
-    statCard: (color) => ({
-      background: "rgba(15, 23, 42, 0.6)", borderRadius: 16,
-      border: `1px solid ${color}22`, padding: "20px 24px",
-      position: "relative", overflow: "hidden",
+  statCard: (color) => ({
+      background: "#ffffff", borderRadius: 16,
+      border: `1px solid ${color}33`, padding: "20px 24px",
+      position: "relative", /* Retirei o overflow: hidden daqui */
+      boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
     }),
   };
 
@@ -517,10 +528,9 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   // RENDER: DASHBOARD
   // ============================================================
   const renderDashboard = () => {
-    if (!dashboard) return <p style={{ color: "#94a3b8", textAlign: "center", padding: 40 }}>Carregando dashboard...</p>;
+    if (!dashboard) return <p style={{ color: "#64748b", textAlign: "center", padding: 40 }}>Carregando dashboard...</p>;
     const { visao_geral: vg, financeiro: fin, operacional: op, manutencao: man, kpis, graficos } = dashboard;
 
-    // Cálculo de valor monetário por status
     const valorDisponiveis = fin.valor_ocioso || 0;
     const valorLocados = fin.valor_em_uso || 0;
     const valorTotal = fin.valor_total_patrimonio || 0;
@@ -530,11 +540,11 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
 
         {/* ALERTAS COM DISMISS INDIVIDUAL */}
         {alertasVisiveis.length > 0 && (
-          <div style={{ ...s.card, borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.05)" }}>
+          <div style={{ ...s.card, borderColor: "#fca5a5", background: "#fef2f2" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 20 }}>🔔</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: "#f87171" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#ef4444" }}>
                   {alertasVisiveis.length} Alerta{alertasVisiveis.length > 1 ? "s" : ""}
                 </span>
               </div>
@@ -543,8 +553,8 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             {alertasVisiveis.slice(0, 8).map((a, i) => (
               <div key={i} style={{
                 display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "8px 0", fontSize: 12, color: "#fca5a5",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                padding: "8px 0", fontSize: 12, color: "#b91c1c",
+                borderBottom: "1px solid #fecaca",
               }}>
                 <span>
                   {a.tipo === "LOCACAO_ATRASADA" && "⏰ "}
@@ -555,7 +565,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
                 <button
                   onClick={() => handleDismissAlerta(a)}
                   style={{
-                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.1)",
                     color: "#64748b", fontSize: 12, cursor: "pointer", borderRadius: 6,
                     width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center",
                     lineHeight: 1, padding: 0, flexShrink: 0, marginLeft: 10,
@@ -567,7 +577,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           </div>
         )}
 
-        {/* KPI CARDS — agora com valor R$ e tooltips ℹ */}
+        {/* KPI CARDS */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 16 }}>
           {[
             {
@@ -581,7 +591,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               tip: "Ativos livres para locação. O valor representa o patrimônio parado",
             },
             {
-              label: "Locados", value: vg.locados, icon: "📋", color: "#eab308",
+              label: "Locados", value: vg.locados, icon: "📋", color: "#F26B25",
               monetary: formatCurrency(valorLocados),
               tip: "Ativos em contrato ativo de locação. O valor representa patrimônio gerando receita",
             },
@@ -594,28 +604,37 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               tip: "Fórmula: (ativos locados ÷ ativos operacionais) × 100",
             },
             {
-              label: "Atrasados", value: op.total_atrasados, icon: "⏰", color: "#f87171",
+              label: "Atrasados", value: op.total_atrasados, icon: "⏰", color: "#ef4444",
               tip: "Locações com data prevista de devolução ultrapassada e ainda não finalizadas",
             },
           ].map((c, i) => (
             <div key={i} style={s.statCard(c.color)}>
-              <div style={{
-                position: "absolute", top: -20, right: -20, width: 80, height: 80,
-                borderRadius: "50%", background: `${c.color}08`,
-              }} />
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
-                <InfoTip text={c.tip} />
+              
+              {/* ISOLAMENTO DO CÍRCULO: Fica preso aqui e não corta o Tooltip */}
+              <div style={{ position: "absolute", inset: 0, overflow: "hidden", borderRadius: 16, pointerEvents: "none" }}>
+                <div style={{
+                  position: "absolute", top: -20, right: -20, width: 80, height: 80,
+                  borderRadius: "50%", background: `${c.color}15`,
+                }} />
               </div>
-              <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {c.label}
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: c.color, marginTop: 4 }}>{c.value}</div>
-              {c.monetary && (
-                <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, fontWeight: 600 }}>
-                  {c.monetary}
+              
+              {/* CONTEÚDO PRINCIPAL: Fica numa camada acima (zIndex: 10) */}
+              <div style={{ position: "relative", zIndex: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 24, marginBottom: 8 }}>{c.icon}</div>
+                  <InfoTip text={c.tip} />
                 </div>
-              )}
+                <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  {c.label}
+                </div>
+                <div style={{ fontSize: 26, fontWeight: 800, color: c.color, marginTop: 4 }}>{c.value}</div>
+                {c.monetary && (
+                  <div style={{ fontSize: 12, color: "#0f172a", marginTop: 4, fontWeight: 800 }}>
+                    {c.monetary}
+                  </div>
+                )}
+              </div>
+              
             </div>
           ))}
         </div>
@@ -625,18 +644,18 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #3b82f6)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Financeiro</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Financeiro</span>
             </div>
             {[
               { label: "Patrimônio Total", value: formatCurrency(fin.valor_total_patrimonio), color: "#3b82f6", tip: "Soma do valor de aquisição de todos os ativos" },
               { label: "Valor em Uso", value: formatCurrency(fin.valor_em_uso), color: "#10b981", tip: "Valor de aquisição dos ativos atualmente locados" },
               { label: "Valor Ocioso", value: formatCurrency(fin.valor_ocioso), color: "#f97316", tip: "Valor de aquisição dos ativos parados (disponíveis)" },
-              { label: "Receita do Mês", value: formatCurrency(fin.receita_mes), color: "#eab308", tip: "Soma dos contratos de locação iniciados no mês atual" },
-              { label: "Custo Manutenção (Mês)", value: formatCurrency(fin.custo_manutencao_mes), color: "#f87171", tip: "Soma dos custos de manutenção registrados no mês atual" },
-              { label: "Lucro Operacional (Mês)", value: formatCurrency(fin.lucro_operacional_mes), color: fin.lucro_operacional_mes >= 0 ? "#10b981" : "#f87171", tip: "Fórmula: receita do mês − custo de manutenção do mês" },
+              { label: "Receita do Mês", value: formatCurrency(fin.receita_mes), color: "#F26B25", tip: "Soma dos contratos de locação iniciados no mês atual" },
+              { label: "Custo Manutenção", value: formatCurrency(fin.custo_manutencao_mes), color: "#ef4444", tip: "Soma dos custos de manutenção registrados no mês atual" },
+              { label: "Lucro Operacional", value: formatCurrency(fin.lucro_operacional_mes), color: fin.lucro_operacional_mes >= 0 ? "#10b981" : "#ef4444", tip: "Fórmula: receita do mês − custo de manutenção do mês" },
             ].map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <span style={{ fontSize: 12, color: "#94a3b8", display: "flex", alignItems: "center" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <span style={{ fontSize: 12, color: "#64748b", display: "flex", alignItems: "center" }}>
                   {item.label}<InfoTip text={item.tip} />
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: item.color }}>{item.value}</span>
@@ -647,18 +666,18 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           {/* PREVISÃO DE RETORNO */}
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Previsão de Retorno</span>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #F26B25, #f97316)" }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Previsão de Retorno</span>
               <InfoTip text="Locações ativas ordenadas pela data prevista de devolução" />
             </div>
             {op.previsao_retorno?.length > 0 ? op.previsao_retorno.map((p, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid #e2e8f0" }}>
                 <div>
-                  <div style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 600 }}>{p.ativo}</div>
+                  <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 700 }}>{p.ativo}</div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>{p.cliente}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 11, color: p.dias_restantes <= 3 ? "#f87171" : "#eab308", fontWeight: 700 }}>
+                  <div style={{ fontSize: 11, color: p.dias_restantes <= 3 ? "#ef4444" : "#F26B25", fontWeight: 700 }}>
                     {p.dias_restantes}d restantes
                   </div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>{formatDate(p.data_prevista_fim)}</div>
@@ -675,17 +694,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #3b82f6)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Top ROI por Ativo</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Top ROI por Ativo</span>
               <InfoTip text="ROI = (receita total do ativo ÷ valor de aquisição) × 100. Quanto maior, mais o ativo se pagou." />
             </div>
             {kpis.top_roi?.length > 0 ? kpis.top_roi.map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #e2e8f0" }}>
                 <div>
-                  <div style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 600 }}>
-                    <span style={{ color: "#eab308", marginRight: 6 }}>#{i + 1}</span>{item.ativo}
+                  <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 700 }}>
+                    <span style={{ color: "#F26B25", marginRight: 6 }}>#{i + 1}</span>{item.ativo}
                   </div>
                   <div style={{ fontSize: 10, color: "#64748b" }}>
-                    Receita: {formatCurrency(item.receita)} | Manutenção: {formatCurrency(item.custo_manutencao)}
+                    Receita: {formatCurrency(item.receita)} | Manut: {formatCurrency(item.custo_manutencao)}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -698,16 +717,16 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
 
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #f97316, #f87171)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Ranking Manutenção</span>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #f97316, #ef4444)" }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Ranking Manutenção</span>
               <InfoTip text="Ativos que mais demandaram manutenção. Avalie se vale manter ou dar baixa." />
             </div>
             {man.ranking?.length > 0 ? man.ranking.map((item, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                <div style={{ fontSize: 12, color: "#f1f5f9" }}>{item.ativo}</div>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #e2e8f0" }}>
+                <div style={{ fontSize: 12, color: "#0f172a", fontWeight: 600 }}>{item.ativo}</div>
                 <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: "#f97316", fontWeight: 700 }}>{item.quantidade}x</span>
-                  <span style={{ fontSize: 11, color: "#f87171", fontWeight: 600 }}>{formatCurrency(item.custo_total)}</span>
+                  <span style={{ fontSize: 11, color: "#ef4444", fontWeight: 600 }}>{formatCurrency(item.custo_total)}</span>
                 </div>
               </div>
             )) : <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", padding: 20 }}>Sem dados</p>}
@@ -718,8 +737,8 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
         {graficos?.receita_mensal?.length > 0 && (
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
-              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #eab308)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Receita Mensal (Últimos 6 meses)</span>
+              <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #10b981, #F26B25)" }} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Receita Mensal (Últimos 6 meses)</span>
               <InfoTip text="Soma dos valores de contrato por mês de início da locação" />
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 160, padding: "0 10px" }}>
@@ -747,11 +766,11 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           <div style={s.card}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 24, borderRadius: 2, background: "linear-gradient(to bottom, #8b5cf6, #ec4899)" }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9" }}>Ativos por Categoria</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>Ativos por Categoria</span>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {graficos.por_categoria.map((c, i) => {
-                const colors = ["#3b82f6", "#10b981", "#eab308", "#f97316", "#8b5cf6", "#ec4899", "#f87171"];
+                const colors = ["#3b82f6", "#10b981", "#F26B25", "#f97316", "#8b5cf6", "#ec4899", "#ef4444"];
                 const color = colors[i % colors.length];
                 return (
                   <div key={i} style={{
@@ -760,7 +779,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
                     display: "flex", alignItems: "center", gap: 8,
                   }}>
                     <span style={{ fontSize: 12, color, fontWeight: 700 }}>{c.quantidade}</span>
-                    <span style={{ fontSize: 11, color: "#cbd5e1" }}>{c.categoria}</span>
+                    <span style={{ fontSize: 11, color: "#475569", fontWeight: 600 }}>{c.categoria}</span>
                   </div>
                 );
               })}
@@ -800,7 +819,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+              <tr>
                 {["", "Nome", "Categoria", "Valor Aquisição", "Valor Diária", "Status", "Código", "Ações"].map(h => (
                   <th key={h} style={{ ...s.th, ...(h === "" ? { width: 40 } : {}) }}>{h}</th>
                 ))}
@@ -810,21 +829,27 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               {ativos.length === 0 ? (
                 <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhum ativo encontrado</td></tr>
               ) : ativos.map(a => (
-                <tr key={a.id} style={{ cursor: "pointer" }} onClick={() => verDetalheAtivo(a.id)}>
+                <tr 
+                  key={a.id} 
+                  style={{ cursor: "pointer", transition: "background 0.2s" }} 
+                  onClick={() => verDetalheAtivo(a.id)}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
                   {/* THUMBNAIL */}
                   <td style={{ ...s.td, padding: "6px 10px" }}>
                     {a.imagem_url ? (
-                      <img src={a.imagem_url} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover" }} />
+                      <img src={a.imagem_url} alt="" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "1px solid #e2e8f0" }} />
                     ) : (
-                      <div style={{ width: 32, height: 32, borderRadius: 6, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗️</div>
+                      <div style={{ width: 32, height: 32, borderRadius: 6, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>🏗️</div>
                     )}
                   </td>
-                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{a.nome}</td>
+                  <td style={{ ...s.td, fontWeight: 700, color: "#0f172a" }}>{a.nome}</td>
                   <td style={s.td}>{a.categoria}</td>
                   <td style={s.td}>{formatCurrency(a.valor_aquisicao)}</td>
                   <td style={s.td}>{formatCurrency(a.valor_locacao_dia)}</td>
                   <td style={s.td}><StatusBadge status={a.status} /></td>
-                  <td style={{ ...s.td, fontFamily: "monospace", fontSize: 11 }}>{a.codigo_rastreio || "—"}</td>
+                  <td style={{ ...s.td, fontFamily: "monospace", fontSize: 11, color: "#64748b" }}>{a.codigo_rastreio || "—"}</td>
                   <td style={s.td} onClick={e => e.stopPropagation()}>
                     <AcoesDropdown
                       ativo={a}
@@ -847,13 +872,13 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
               <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                 {ativoDetalhe.imagem_url ? (
-                  <img src={ativoDetalhe.imagem_url} alt="" style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                  <img src={ativoDetalhe.imagem_url} alt="" style={{ width: 64, height: 64, borderRadius: 12, objectFit: "cover", border: "1px solid #e2e8f0" }} />
                 ) : (
-                  <div style={{ width: 64, height: 64, borderRadius: 12, background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🏗️</div>
+                  <div style={{ width: 64, height: 64, borderRadius: 12, background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🏗️</div>
                 )}
                 <div>
-                  <h3 style={{ color: "#f1f5f9", margin: 0, fontSize: 18 }}>{ativoDetalhe.nome}</h3>
-                  <span style={{ fontSize: 11, color: "#64748b" }}>{ativoDetalhe.categoria} • {ativoDetalhe.codigo_rastreio || "Sem código"}</span>
+                  <h3 style={{ color: "#0f172a", margin: 0, fontSize: 18, fontWeight: 800 }}>{ativoDetalhe.nome}</h3>
+                  <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>{ativoDetalhe.categoria} • {ativoDetalhe.codigo_rastreio || "Sem código"}</span>
                 </div>
               </div>
               <StatusBadge status={ativoDetalhe.status} />
@@ -865,48 +890,48 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
                 { label: "Diária", value: formatCurrency(ativoDetalhe.valor_locacao_dia) },
                 { label: "Vida Útil", value: `${ativoDetalhe.vida_util_meses} meses` },
               ].map((item, i) => (
-                <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 600 }}>{item.label}</div>
-                  <div style={{ fontSize: 14, color: "#f1f5f9", fontWeight: 700, marginTop: 2 }}>{item.value}</div>
+                <div key={i} style={{ background: "#f8fafc", borderRadius: 10, padding: "12px 14px", border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>{item.label}</div>
+                  <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 800, marginTop: 4 }}>{item.value}</div>
                 </div>
               ))}
             </div>
 
             {ativoDetalhe.observacoes && (
-              <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16, padding: "10px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 10 }}>
+              <div style={{ fontSize: 12, color: "#475569", marginBottom: 16, padding: "12px 14px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0" }}>
                 {ativoDetalhe.observacoes}
               </div>
             )}
 
-            <div style={{ marginBottom: 16 }}>
-              <h4 style={{ color: "#eab308", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>📋 Últimas Locações</h4>
+            <div style={{ marginBottom: 24 }}>
+              <h4 style={{ color: "#F26B25", fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>📋 Últimas Locações</h4>
               {ativoDetalhe.locacoes?.length > 0 ? ativoDetalhe.locacoes.slice(0, 5).map((l, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <span style={{ color: "#cbd5e1" }}>{l.cliente_nome} — {formatDate(l.data_inicio)}</span>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: 12, borderBottom: "1px solid #e2e8f0" }}>
+                  <span style={{ color: "#475569", fontWeight: 600 }}>{l.cliente_nome} <span style={{ color: "#94a3b8", fontWeight: "normal" }}>— {formatDate(l.data_inicio)}</span></span>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <span style={{ color: "#10b981" }}>{formatCurrency(l.valor_contrato)}</span>
+                    <span style={{ color: "#10b981", fontWeight: 700 }}>{formatCurrency(l.valor_contrato)}</span>
                     <StatusBadge status={l.status} map={LOCACAO_STATUS_COLORS} />
                   </div>
                 </div>
-              )) : <p style={{ fontSize: 11, color: "#64748b" }}>Nenhuma locação registrada</p>}
+              )) : <p style={{ fontSize: 12, color: "#64748b" }}>Nenhuma locação registrada</p>}
             </div>
 
             <div>
-              <h4 style={{ color: "#f97316", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>🔧 Últimas Manutenções</h4>
+              <h4 style={{ color: "#f97316", fontSize: 12, fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>🔧 Últimas Manutenções</h4>
               {ativoDetalhe.manutencoes?.length > 0 ? ativoDetalhe.manutencoes.slice(0, 5).map((m, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 11, borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                  <span style={{ color: "#cbd5e1" }}>{m.tipo} — {m.descricao || "Sem descrição"}</span>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", fontSize: 12, borderBottom: "1px solid #e2e8f0" }}>
+                  <span style={{ color: "#475569", fontWeight: 600 }}>{m.tipo} <span style={{ color: "#94a3b8", fontWeight: "normal" }}>— {m.descricao || "Sem descrição"}</span></span>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <span style={{ color: "#f87171" }}>{formatCurrency(m.custo)}</span>
-                    <span style={{ fontSize: 10, color: m.data_fim ? "#10b981" : "#f97316" }}>
+                    <span style={{ color: "#ef4444", fontWeight: 700 }}>{formatCurrency(m.custo)}</span>
+                    <span style={{ fontSize: 10, color: m.data_fim ? "#10b981" : "#f97316", fontWeight: 700 }}>
                       {m.data_fim ? "Finalizada" : "Em andamento"}
                     </span>
                   </div>
                 </div>
-              )) : <p style={{ fontSize: 11, color: "#64748b" }}>Nenhuma manutenção registrada</p>}
+              )) : <p style={{ fontSize: 12, color: "#64748b" }}>Nenhuma manutenção registrada</p>}
             </div>
 
-            <button onClick={() => setAtivoDetalhe(null)} style={{ ...s.dangerBtn, marginTop: 20, width: "100%" }}>Fechar</button>
+            <button onClick={() => setAtivoDetalhe(null)} style={{ ...s.dangerBtn, marginTop: 24, width: "100%", padding: "12px" }}>Fechar Detalhes</button>
           </div>
         </div>
       )}
@@ -932,7 +957,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+              <tr>
                 {["Ativo", "Cliente", "Início", "Prev. Fim", "Fim Real", "Valor Contrato", "Diária", "Status", "Ações"].map(h => (
                   <th key={h} style={s.th}>{h}</th>
                 ))}
@@ -942,8 +967,12 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               {locacoes.length === 0 ? (
                 <tr><td colSpan={9} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhuma locação encontrada</td></tr>
               ) : locacoes.map(l => (
-                <tr key={l.id}>
-                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{l.ativo_nome}</td>
+                <tr key={l.id} 
+                    style={{ transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <td style={{ ...s.td, fontWeight: 700, color: "#0f172a" }}>{l.ativo_nome}</td>
                   <td style={s.td}>{l.cliente_nome}</td>
                   <td style={s.td}>{formatDate(l.data_inicio)}</td>
                   <td style={s.td}>{formatDate(l.data_prevista_fim)}</td>
@@ -978,7 +1007,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+              <tr>
                 {["Ativo", "Tipo", "Início", "Fim", "Custo", "Descrição", "Responsável", "Ações"].map(h => (
                   <th key={h} style={s.th}>{h}</th>
                 ))}
@@ -988,13 +1017,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
               {manutencoes.length === 0 ? (
                 <tr><td colSpan={8} style={{ ...s.td, textAlign: "center", color: "#64748b", padding: 40 }}>Nenhuma manutenção registrada</td></tr>
               ) : manutencoes.map(m => (
-                <tr key={m.id}>
-                  <td style={{ ...s.td, fontWeight: 600, color: "#f1f5f9" }}>{m.ativo_nome}</td>
+                <tr key={m.id}
+                    style={{ transition: "background 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >
+                  <td style={{ ...s.td, fontWeight: 700, color: "#0f172a" }}>{m.ativo_nome}</td>
                   <td style={s.td}>
                     <span style={{
-                      padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-                      background: m.tipo === "PREVENTIVA" ? "rgba(59,130,246,0.15)" : "rgba(249,115,22,0.15)",
-                      color: m.tipo === "PREVENTIVA" ? "#60a5fa" : "#fb923c",
+                      padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 800, textTransform: "uppercase",
+                      background: m.tipo === "PREVENTIVA" ? "rgba(59,130,246,0.15)" : "rgba(242,107,37,0.15)",
+                      color: m.tipo === "PREVENTIVA" ? "#3b82f6" : "#F26B25",
                     }}>
                       {m.tipo}
                     </span>
@@ -1024,17 +1057,17 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   const renderFormAtivo = () => showFormAtivo && (
     <div style={s.modalOverlay} onClick={() => { setShowFormAtivo(false); setImagemPreview(null); }}>
       <div style={{ ...s.modalContent, maxWidth: 650 }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>
+        <h3 style={{ color: "#0f172a", fontSize: 18, fontWeight: 800, marginBottom: 24 }}>
           {editingAtivo ? "✏️ Editar Ativo" : "🏗️ Novo Ativo"}
         </h3>
 
         {/* UPLOAD DE FOTO */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
           <div style={{
             width: 80, height: 80, borderRadius: 12, overflow: "hidden",
-            border: "2px dashed rgba(255,255,255,0.15)", flexShrink: 0,
+            border: "2px dashed #cbd5e1", flexShrink: 0,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(255,255,255,0.03)",
+            background: "#f8fafc",
           }}>
             {imagemPreview ? (
               <img src={imagemPreview} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -1057,11 +1090,11 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
                 style={{ display: "none" }}
               />
             </label>
-            <div style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>JPG, PNG ou WEBP • Máx 5MB</div>
+            <div style={{ fontSize: 10, color: "#64748b", marginTop: 6, fontWeight: 600 }}>JPG, PNG ou WEBP • Máx 5MB</div>
             {imagemPreview && (
               <button
                 onClick={() => { setImagemPreview(null); setFormAtivo(prev => ({ ...prev, imagem_url: "" })); }}
-                style={{ fontSize: 10, color: "#f87171", background: "none", border: "none", cursor: "pointer", marginTop: 4, padding: 0 }}
+                style={{ fontSize: 10, color: "#ef4444", background: "none", border: "none", cursor: "pointer", marginTop: 4, padding: 0, fontWeight: 700 }}
               >
                 Remover foto
               </button>
@@ -1069,7 +1102,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>Nome *</label>
             <input style={s.input} value={formAtivo.nome} onChange={e => setFormAtivo({ ...formAtivo, nome: e.target.value })} />
@@ -1120,10 +1153,10 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <textarea style={{ ...s.input, minHeight: 50, resize: "vertical" }} value={formAtivo.observacoes} onChange={e => setFormAtivo({ ...formAtivo, observacoes: e.target.value })} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
           <button onClick={() => { setShowFormAtivo(false); setEditingAtivo(null); setImagemPreview(null); }} style={s.dangerBtn}>Cancelar</button>
           <button onClick={salvarAtivo} disabled={loading || !formAtivo.nome} style={{ ...s.primaryBtn, opacity: loading || !formAtivo.nome ? 0.5 : 1 }}>
-            {loading ? "Salvando..." : editingAtivo ? "Atualizar" : "Criar Ativo"}
+            {loading ? "Salvando..." : editingAtivo ? "Atualizar Ativo" : "Criar Ativo"}
           </button>
         </div>
       </div>
@@ -1138,8 +1171,8 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   const renderFormLocacao = () => showFormLocacao && (
     <div style={s.modalOverlay} onClick={() => setShowFormLocacao(false)}>
       <div style={s.modalContent} onClick={e => e.stopPropagation()}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>📋 Nova Locação</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <h3 style={{ color: "#0f172a", fontSize: 18, fontWeight: 800, marginBottom: 24 }}>📋 Nova Locação</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>Ativo *</label>
             <select style={s.input} value={formLocacao.ativo_id} onChange={e => {
@@ -1185,7 +1218,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <textarea style={{ ...s.input, minHeight: 50, resize: "vertical" }} value={formLocacao.observacoes} onChange={e => setFormLocacao({ ...formLocacao, observacoes: e.target.value })} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
           <button onClick={() => setShowFormLocacao(false)} style={s.dangerBtn}>Cancelar</button>
           <button onClick={criarLocacao} disabled={loading || !formLocacao.ativo_id || !formLocacao.data_prevista_fim} style={{ ...s.primaryBtn, opacity: loading || !formLocacao.ativo_id ? 0.5 : 1 }}>
             {loading ? "Criando..." : "Criar Locação"}
@@ -1201,8 +1234,8 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   const renderFormManutencao = () => showFormManutencao && (
     <div style={s.modalOverlay} onClick={() => setShowFormManutencao(false)}>
       <div style={s.modalContent} onClick={e => e.stopPropagation()}>
-        <h3 style={{ color: "#f1f5f9", fontSize: 16, marginBottom: 20 }}>🔧 Registrar Manutenção</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <h3 style={{ color: "#0f172a", fontSize: 18, fontWeight: 800, marginBottom: 24 }}>🔧 Registrar Manutenção</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           <div style={{ gridColumn: "1 / -1" }}>
             <label style={s.label}>Ativo *</label>
             <select style={s.input} value={formManutencao.ativo_id} onChange={e => setFormManutencao({ ...formManutencao, ativo_id: parseInt(e.target.value) || "" })}>
@@ -1235,7 +1268,7 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
             <textarea style={{ ...s.input, minHeight: 60, resize: "vertical" }} value={formManutencao.descricao} onChange={e => setFormManutencao({ ...formManutencao, descricao: e.target.value })} />
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 20, justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
           <button onClick={() => setShowFormManutencao(false)} style={s.dangerBtn}>Cancelar</button>
           <button onClick={criarManutencao} disabled={loading || !formManutencao.ativo_id} style={{ ...s.primaryBtn, opacity: loading || !formManutencao.ativo_id ? 0.5 : 1 }}>
             {loading ? "Registrando..." : "Registrar Manutenção"}
@@ -1251,14 +1284,14 @@ export default function GestaoAtivos({ styles, currentUser, showToast, logAction
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #eab308, #f97316)" }} />
-        <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20, fontWeight: 800 }}>Gestão de Ativos de Locação</h2>
+        <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #F26B25, #ea580c)" }} />
+        <h2 style={{ color: "#0f172a", margin: 0, fontSize: 22, fontWeight: 900 }}>Gestão de Ativos de Locação</h2>
       </div>
-      <p style={{ color: "#64748b", fontSize: 12, marginBottom: 20, marginLeft: 16 }}>
+      <p style={{ color: "#64748b", fontSize: 13, marginBottom: 24, marginLeft: 16 }}>
         Controle de ativos, locações, manutenções e KPIs de performance
       </p>
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
         {sections.map(sec => (
           <button key={sec.key} onClick={() => setSection(sec.key)} style={s.sectionBtn(section === sec.key)}>
             <span style={{ marginRight: 6 }}>{sec.icon}</span>
