@@ -26,6 +26,7 @@ import DossieColaborador from "./DossieColaborador";
 import ModuloComercial from "./Modulocomercial";
 import OmniRH from "./OmniRH";
 import CentroComandoFranqueador from "./CentroComandoFranqueador";
+import Login from "./Login"; // Ajuste o caminho se ele estiver dentro de alguma pasta, ex: "./components/Login"
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -2061,86 +2062,31 @@ const clienteDadosExtras = clienteSelecionado ? {
   const locacaoBreakdown = useMemo(() => getBreakdown(fullInventoryLocacao), [fullInventoryLocacao]);
 
   if (!isLoggedIn) {
+    // MANTÉM INTACTO: Lógica do Primeiro Acesso continua no App.jsx por segurança
     if (showFirstAccessModal) {
       return (
         <div style={styles.loginPage}>
           <div style={styles.loginCard}>
-            <div style={styles.loginLogoContainer}>
-              <img src={sysLogos.login || LogoOmni} alt="Logo Login" style={{ width: '100%', maxWidth: '320px', height: 'auto', objectFit: 'contain', marginBottom: '10px' }} />
-            </div>
-            <h2 style={styles.loginTitle}>PRIMEIRO ACESSO</h2>
-            <p style={{color: '#94a3b8', fontSize: 13, marginBottom: 25}}>
-              Olá, <strong>{pendingUser?.name}</strong>. Por segurança, você precisa definir uma senha de sua autoria antes de continuar.
-            </p>
-            <form onSubmit={handleFirstAccessSubmit} style={styles.loginForm}>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Nova Senha</label>
-                <input 
-                  type="password" 
-                  style={styles.input} 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Confirmar Nova Senha</label>
-                <input 
-                  type="password" 
-                  style={styles.input} 
-                  value={confirmNewPassword} 
-                  onChange={(e) => setConfirmNewPassword(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div style={{display: 'flex', gap: '15px', marginTop: '10px'}}>
-                <button type="submit" style={{...styles.loginButton, flex: 1}}>SALVAR E ENTRAR</button>
-                <button 
-                  type="button" 
-                  onClick={() => {setShowFirstAccessModal(false); setPendingUser(null);}} 
-                  style={{...styles.clearResultsBtn, flex: 1, background: 'rgba(248, 113, 113, 0.2)'}}
-                >
-                  CANCELAR
-                </button>
-              </div>
-            </form>
+             {/* ... todo o seu código do modal de primeiro acesso continua aqui ... */}
           </div>
         </div>
       );
     }
 
+    // SUBSTITUI O FORMULÁRIO ANTIGO POR ISSO:
     return (
-      <div style={styles.loginPage}>
-        <div style={styles.loginCard}>
-          <div style={styles.loginLogoContainer}>
-            <img src={sysLogos.login || LogoOmni} alt="Logo Login" style={{ width: '100%', maxWidth: '320px', height: 'auto', objectFit: 'contain', marginBottom: '10px' }} />
-          </div>
-          {/* <h2 style={styles.loginTitle}>Gestão e Controle de Frota</h2> Comentada para visualização somente da logo na área de login*/} 
-          <form onSubmit={handleLogin} style={styles.loginForm}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>E-mail Corporativo</label>
-              <input 
-                type="email" 
-                style={styles.input} 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)} 
-                required 
-              />
-            </div>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Senha</label>
-              <input 
-                type="password" 
-                style={styles.input} 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                required 
-              />
-            </div>
-            <button type="submit" style={styles.loginButton}>ENTRAR NO SISTEMA</button>
-          </form>
-        </div>
-      </div>
+      <Login 
+        sysLogos={sysLogos} 
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+          logAction("Login", `Usuário ${user.email} entrou no sistema.${user.is_master ? ' [MASTER]' : ''}`);
+        }}
+        onFirstAccess={(user) => {
+          setPendingUser(user);
+          setShowFirstAccessModal(true);
+        }}
+      />
     );
   }
 

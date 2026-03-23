@@ -1,151 +1,194 @@
 import React, { useState } from "react";
-import { DottedSurface } from "./components/ui/dotted-surface";
-import { Lock, User, ArrowRight, ShieldCheck, KeyRound } from "lucide-react";
+import { api } from "./api";
+import { LogoOmni } from "./constants";
+import DottedSurface from "./DottedSurface"; // Importando o background 3D
 
-export default function Login({ 
-  onLogin, 
-  loading, 
-  isFirstAccess, 
-  pendingUser, 
-  onFirstAccessSubmit, 
-  onCancelFirstAccess,
-  newPassword,
-  setNewPassword,
-  confirmNewPassword,
-  setConfirmNewPassword
-}) {
+export default function Login({ sysLogos, onLoginSuccess, onFirstAccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onLogin(email, password);
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post('/rbac/login', { email, password });
+      const user = res.data;
+      
+      if (user.precisa_trocar_senha) {
+        onFirstAccess(user); 
+      } else {
+        onLoginSuccess(user); 
+      }
+    } catch (err) {
+      setError("E-mail ou senha incorretos. Verifique suas credenciais.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const styles = {
+    container: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "100vh",
+      width: "100vw",
+      position: "fixed",
+      top: 0,
+      left: 0,
+      backgroundColor: "#E8EAED", 
+      fontFamily: "'Inter', sans-serif",
+      zIndex: 9999,
+      boxSizing: "border-box",
+      overflow: "hidden", // Evita scroll indesejado do canvas
+    },
+    card: {
+      position: "relative", // Necessário para ficar por cima do background
+      zIndex: 10,           // Fica acima das ondas
+      backgroundColor: "#FFFFFF",
+      padding: "50px 40px",
+      borderRadius: "24px",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
+      width: "100%",
+      maxWidth: "420px",
+      textAlign: "center",
+    },
+    logoContainer: {
+      marginBottom: "30px",
+      display: "flex",
+      justifyContent: "center",
+    },
+    logo: {
+      width: "100%",
+      maxWidth: "280px",
+      height: "auto",
+      objectFit: "contain",
+    },
+    errorBox: {
+      backgroundColor: "rgba(217, 48, 37, 0.1)",
+      color: "#D93025",
+      padding: "12px",
+      borderRadius: "8px",
+      fontSize: "13px",
+      marginBottom: "20px",
+      border: "1px solid rgba(217, 48, 37, 0.3)",
+      fontWeight: "500",
+    },
+    form: {
+      display: "flex",
+      flexDirection: "column",
+      gap: "20px",
+    },
+    inputGroup: {
+      textAlign: "left",
+    },
+    label: {
+      display: "block",
+      fontSize: "13px",
+      color: "#8E9093",
+      marginBottom: "8px",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: "0.5px",
+    },
+    input: {
+      width: "100%",
+      padding: "14px 16px",
+      fontSize: "15px",
+      color: "#2A2B2D",
+      backgroundColor: "#F8F9FA",
+      border: "1px solid #D1D5DB",
+      borderRadius: "12px",
+      outline: "none",
+      transition: "all 0.2s ease",
+      boxSizing: "border-box",
+    },
+    button: {
+      marginTop: "10px",
+      padding: "16px",
+      backgroundColor: "#F26B25",
+      color: "#FFFFFF",
+      fontSize: "15px",
+      fontWeight: "bold",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      transition: "background-color 0.2s ease, transform 0.1s",
+      boxShadow: "0 4px 15px rgba(242, 107, 37, 0.3)",
+    },
+    footerText: {
+      marginTop: "30px",
+      fontSize: "12px",
+      color: "#8E9093",
+    }
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-[#f8fafc] overflow-hidden">
-      {/* Background dinâmico */}
-      <DottedSurface className="opacity-40" />
-
-      {/* Efeito de iluminação central */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(242,107,37,0.05),transparent_70%)] blur-[60px]" />
-
-      <div className="relative z-10 w-full max-w-[400px] p-10 mx-4 bg-white/90 backdrop-blur-md border border-slate-200 rounded-[24px] shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-2 mb-2">
-            <div className="w-10 h-10 bg-[#F26B25] rounded-lg flex items-center justify-center shadow-orange-200 shadow-lg">
-                <ShieldCheck className="text-white size-6" />
-            </div>
-            <span className="text-2xl font-black text-[#2A2B2D] tracking-tighter">
-              omni<span className="text-[#F26B25]">26</span>
-            </span>
-          </div>
-          <p className="text-slate-500 text-sm font-semibold tracking-tight">
-            {isFirstAccess ? "CONFIGURAÇÃO DE ACESSO" : "ERP SYSTEM v3.0"}
-          </p>
+    <div style={styles.container}>
+      {/* O Background Animado renderizado aqui, por trás de tudo */}
+      <DottedSurface /> 
+      
+      <div style={styles.card}>
+        <div style={styles.logoContainer}>
+          <img 
+            src={sysLogos?.login || LogoOmni} 
+            alt="Omni26 Logo" 
+            style={styles.logo} 
+          />
         </div>
 
-        {isFirstAccess ? (
-          /* FORMULÁRIO DE PRIMEIRO ACESSO (PRESERVADO) */
-          <form onSubmit={onFirstAccessSubmit} className="flex flex-col gap-4">
-            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 mb-2">
-              <p className="text-[#F26B25] text-[11px] font-bold leading-tight">
-                Olá, {pendingUser?.name}. Por segurança, você precisa definir uma senha de sua autoria antes de continuar.
-              </p>
-            </div>
+        {error && <div style={styles.errorBox}>{error}</div>}
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Nova Senha</label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-3.5 size-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#F26B25] outline-none text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Confirmar Nova Senha</label>
-              <div className="relative">
-                <KeyRound className="absolute left-3 top-3.5 size-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#F26B25] outline-none text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-2">
-              <button
-                type="submit"
-                className="flex-1 py-4 bg-[#F26B25] hover:bg-[#ea580c] text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-orange-500/20"
-              >
-                SALVAR E ENTRAR
-              </button>
-              <button
-                type="button"
-                onClick={onCancelFirstAccess}
-                className="px-4 py-4 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
-              >
-                CANCELAR
-              </button>
-            </div>
-          </form>
-        ) : (
-          /* FORMULÁRIO DE LOGIN NORMAL */
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">E-mail Corporativo</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3.5 size-4 text-slate-400" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#F26B25] focus:ring-1 focus:ring-[#F26B25] outline-none transition-all text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase ml-1 tracking-widest">Senha de Segurança</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 size-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#F26B25] focus:ring-1 focus:ring-[#F26B25] outline-none transition-all text-sm"
-                  required
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
+        <form onSubmit={handleSubmit} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>E-mail Corporativo</label>
+            <input
+              type="email"
+              style={styles.input}
+              placeholder="seu.nome@empresa.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
               disabled={loading}
-              className="mt-2 w-full py-4 bg-[#F26B25] hover:bg-[#ea580c] text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {loading ? "AUTENTICANDO..." : "ENTRAR NO SISTEMA"} 
-              {!loading && <ArrowRight className="size-4" />}
-            </button>
-          </form>
-        )}
+              onFocus={(e) => e.target.style.borderColor = "#F26B25"}
+              onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
+            />
+          </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                &copy; 2026 4A PULSE • Tecnologia e Inteligência
-            </span>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Senha</label>
+            <input
+              type="password"
+              style={styles.input}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              onFocus={(e) => e.target.style.borderColor = "#F26B25"}
+              onBlur={(e) => e.target.style.borderColor = "#D1D5DB"}
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            style={{
+              ...styles.button, 
+              opacity: loading ? 0.7 : 1,
+              backgroundColor: loading ? "#CC4E0E" : "#F26B25"
+            }} 
+            disabled={loading}
+          >
+            {loading ? "AUTENTICANDO..." : "ENTRAR NO SISTEMA"}
+          </button>
+        </form>
+
+        <div style={styles.footerText}>
+          &copy; 2026 Omni26 ERP. Todos os direitos reservados.
         </div>
       </div>
     </div>
