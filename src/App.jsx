@@ -23,7 +23,9 @@ import GestaoUsuarios from "./GestaoUsuarios";
 import DashboardFinanceiro from "./DashboardFinanceiro";
 import AdminRBAC from "./AdminRBAC";
 import DossieColaborador from "./DossieColaborador";
+import ModuloComercial from "./Modulocomercial";
 import OmniRH from "./OmniRH";
+import CentroComandoFranqueador from "./CentroComandoFranqueador";
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {
@@ -3970,8 +3972,26 @@ const clienteDadosExtras = clienteSelecionado ? {
   />
 )}
 
+{/* INSIRA ISSO NO LUGAR: */}
+{activeTab === "comercial" && (
+  <ModuloComercial 
+     currentUser={currentUser} 
+     showToast={showToast} 
+     /* passe outras props se necessário, como styles={styles} */
+  />
+)}
+
 {activeTab === "gestao_ativos" && (
   <GestaoAtivos
+    styles={styles}
+    currentUser={currentUser}
+    showToast={showToast}
+    logAction={logAction}
+  />
+)}
+
+{activeTab === "centro_comando" && (
+  <CentroComandoFranqueador
     styles={styles}
     currentUser={currentUser}
     showToast={showToast}
