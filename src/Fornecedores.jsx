@@ -1,11 +1,11 @@
 // Fornecedores.jsx — Tela completa de Cadastro de Fornecedores
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "./api";
 
 const S = {
   bg: "#FFFFFF",
   border: "#E5E7EB",
-  primary: "#F26B25", // Laranja oficial Omni26
+  primary: "#F26B25",
   primaryLight: "rgba(242, 107, 37, 0.1)",
   blue: "#1A73E8",
   green: "#22A06B",
@@ -39,6 +39,86 @@ const Input = ({ label, value, onChange, type = "text", placeholder, required, o
     )}
   </div>
 );
+
+/* ── Dropdown de Ações ── */
+function ActionsDropdown({ onEdit, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const itemBase = {
+    display: "flex", alignItems: "center", gap: 8,
+    width: "100%", padding: "9px 14px",
+    background: "none", border: "none",
+    fontSize: 12, fontWeight: 600, cursor: "pointer",
+    textAlign: "left", transition: "background 0.15s",
+    borderRadius: 6,
+  };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: open ? "#F3F4F6" : "transparent",
+          border: `1px solid ${open ? "#D4D5D6" : "transparent"}`,
+          borderRadius: 8, width: 32, height: 32,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", transition: "all 0.15s", color: S.subtle,
+        }}
+        onMouseEnter={e => { if (!open) { e.currentTarget.style.background = "#F3F4F6"; e.currentTarget.style.borderColor = "#D4D5D6"; }}}
+        onMouseLeave={e => { if (!open) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}}
+        title="Ações"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="3" r="1.3" fill="currentColor"/>
+          <circle cx="8" cy="8" r="1.3" fill="currentColor"/>
+          <circle cx="8" cy="13" r="1.3" fill="currentColor"/>
+        </svg>
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 50,
+          background: "#FFFFFF", border: `1px solid ${S.border}`,
+          borderRadius: 12, padding: 4, minWidth: 160,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.04)",
+          animation: "dropIn 0.12s ease-out",
+        }}>
+          <button
+            onClick={() => { setOpen(false); onEdit(); }}
+            style={{ ...itemBase, color: S.text }}
+            onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            Editar
+          </button>
+
+          <div style={{ height: 1, background: S.border, margin: "2px 6px" }} />
+
+          <button
+            onClick={() => { setOpen(false); onDelete(); }}
+            style={{ ...itemBase, color: S.red }}
+            onMouseEnter={e => e.currentTarget.style.background = "rgba(217, 48, 37, 0.06)"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+            Excluir
+          </button>
+        </div>
+      )}
+
+      <style>{`@keyframes dropIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+    </div>
+  );
+}
 
 const EMPTY = { nome_razao: "", documento: "", email: "", telefone: "", tipo_fornecedor: "Geral", tipo_pessoa: "PJ", cep: "", logradouro: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
 const TIPOS = ["Geral", "Veículos/Peças", "Seguros", "Combustível", "Manutenção", "Serviços", "Financeiro", "Outros"];
@@ -86,7 +166,6 @@ function ModalFornecedor({ fornecedor, onSave, onClose }) {
         </div>
 
         <form onSubmit={handleSave}>
-          {/* Seção: Dados Gerais */}
           <div style={{ fontSize: 11, color: S.primary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.primaryLight}`, paddingBottom: 8 }}>Dados Gerais</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 24 }}>
             <Input label="Tipo de Pessoa" value={form.tipo_pessoa} onChange={set("tipo_pessoa")} options={[{v:"PJ",l:"Pessoa Jurídica (CNPJ)"},{v:"PF",l:"Pessoa Física (CPF)"}]} />
@@ -97,7 +176,6 @@ function ModalFornecedor({ fornecedor, onSave, onClose }) {
             <Input label="E-mail" value={form.email} onChange={set("email")} type="email" placeholder="contato@empresa.com.br" span={2} />
           </div>
 
-          {/* Seção: Endereço */}
           <div style={{ fontSize: 11, color: S.primary, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14, borderBottom: `1px solid ${S.primaryLight}`, paddingBottom: 8 }}>Endereço</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 28 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -209,8 +287,8 @@ export default function Fornecedores() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr>
-                {["Razão Social / Nome", "Documento", "Categoria", "Telefone", "E-mail", "Cidade/UF", "Ações"].map(h => (
-                  <th key={h} style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#F9FAFB", borderBottom: `1px solid ${S.border}`, whiteSpace: "nowrap" }}>{h}</th>
+                {["Razão Social / Nome", "Documento", "Categoria", "Telefone", "E-mail", "Cidade/UF", ""].map((h, i) => (
+                  <th key={i} style={{ padding: "14px 16px", textAlign: "left", fontSize: 10, color: S.muted, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", background: "#F9FAFB", borderBottom: `1px solid ${S.border}`, whiteSpace: "nowrap", ...(h === "" ? { width: 48 } : {}) }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -235,11 +313,11 @@ export default function Fornecedores() {
                   <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.telefone || "—"}</td>
                   <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.email || "—"}</td>
                   <td style={{ padding: "14px 16px", color: S.subtle, fontSize: 12, fontWeight: 600 }}>{f.cidade ? `${f.cidade}/${f.uf}` : "—"}</td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      <button onClick={() => { setEditando(f); setShowModal(true); }} style={{ background: S.primaryLight, border: `1px solid rgba(242, 107, 37, 0.3)`, color: S.primary, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 800, fontSize: 11 }}>✏️ Editar</button>
-                      <button onClick={() => handleExcluir(f.id, f.nome_razao)} style={{ background: `rgba(217, 48, 37, 0.1)`, border: `1px solid rgba(217, 48, 37, 0.3)`, color: S.red, borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontWeight: 800, fontSize: 11 }}>🗑️</button>
-                    </div>
+                  <td style={{ padding: "14px 16px", textAlign: "center" }}>
+                    <ActionsDropdown
+                      onEdit={() => { setEditando(f); setShowModal(true); }}
+                      onDelete={() => handleExcluir(f.id, f.nome_razao)}
+                    />
                   </td>
                 </tr>
               ))}
