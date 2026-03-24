@@ -1,12 +1,11 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { 
-  ChevronLeft, ChevronRight, LogOut,
+  ChevronLeft, ChevronRight, LogOut, Search,
   LayoutDashboard, Calculator, Tags, Key, 
   PieChart, Receipt, HandCoins, Landmark, BookOpen, Building2,
   Briefcase, Contact, CarFront, Users, FileSignature, UserCog,
-  Layers, ListChecks, FileText, RefreshCw, Sliders, Shield, Headphones, ShieldCheck,
-  Target, MapPin, BellRing, Package, BarChart3,
-  Crown
+  Layers, FileText, RefreshCw, Sliders, Headphones, ShieldCheck,
+  Package, BarChart3, Crown, FileCog
 } from "lucide-react";
 
 const C = {
@@ -38,11 +37,10 @@ function GroupTitle({ children, isOpen }) {
   );
 }
 
-function NavItem({ active, onClick, label, icon: Icon, styles, href, isOpen }) {
+function NavItem({ active, onClick, label, icon: Icon, href, isOpen }) {
   const baseStyle = {
-    ...styles?.navItem,
     backgroundColor: active ? C.primaryLight : "transparent",
-    border: active ? `1px solid rgba(242, 107, 37, 0.2)` : "1px solid transparent",
+    border: active ? "1px solid rgba(242, 107, 37, 0.2)" : "1px solid transparent",
     color: active ? C.primary : C.subtle,
     padding: isOpen ? "10px 16px" : "10px 0",
     margin: isOpen ? "4px 16px" : "4px 12px",
@@ -55,236 +53,204 @@ function NavItem({ active, onClick, label, icon: Icon, styles, href, isOpen }) {
     alignItems: "center",
     justifyContent: isOpen ? "flex-start" : "center",
     transition: "all 0.2s ease-in-out",
+    overflow: "hidden",
   };
   const handleMouseEnter = (e) => { if (!active) { e.currentTarget.style.backgroundColor = "rgba(242, 107, 37, 0.05)"; e.currentTarget.style.color = C.primary; } };
   const handleMouseLeave = (e) => { if (!active) { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = C.subtle; } };
   const content = (
     <>
-      <Icon strokeWidth={1.3} style={{ marginRight: isOpen ? 12 : 0, width: 18, height: 18, transition: "margin 0.2s ease-in-out" }} />
-      <span style={{ display: isOpen ? "block" : "none", whiteSpace: "nowrap", opacity: isOpen ? 1 : 0, transition: "opacity 0.2s" }}>{label}</span>
+      <Icon strokeWidth={1.3} style={{ marginRight: isOpen ? 10 : 0, minWidth: 18, width: 18, height: 18, flexShrink: 0, transition: "margin 0.2s ease-in-out" }} />
+      <span style={{ 
+        display: isOpen ? "block" : "none", 
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        opacity: isOpen ? 1 : 0, 
+        transition: "opacity 0.2s",
+        minWidth: 0,
+      }}>{label}</span>
     </>
   );
-  if (href) return (<a href={href} target="_blank" rel="noopener noreferrer" style={baseStyle} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>{content}</a>);
-  return (<div onClick={onClick} style={baseStyle} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>{content}</div>);
+  if (href) return (<a href={href} target="_blank" rel="noopener noreferrer" style={baseStyle} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} title={label}>{content}</a>);
+  return (<div onClick={onClick} style={baseStyle} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} title={label}>{content}</div>);
 }
 
+const ALL_NAV_ITEMS = [
+  { group: "Geral", key: "dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "all" },
+  { group: "Geral", key: "calculadora", label: "Calculadora", icon: Calculator, permission: "all" },
+  { group: "Geral", key: "estoque_vendas", label: "Estoque de Vendas", icon: Tags, permission: "all" },
+  { group: "Geral", key: "estoque_locacao", label: "Estoque de Locação", icon: Key, permission: "all" },
+  { group: "Financeiro", key: "financeiro_dashboard", label: "Dashboard Financeiro", icon: PieChart, permission: "all", extra: "loadDashFin" },
+  { group: "Financeiro", key: "financeiro_pagar", label: "Contas a Pagar", icon: Receipt, permission: "all" },
+  { group: "Financeiro", key: "financeiro_receber", label: "Contas a Receber", icon: HandCoins, permission: "all" },
+  { group: "Financeiro", key: "contas_bancarias", label: "Contas Bancárias", icon: Landmark, permission: "all" },
+  { group: "Financeiro", key: "config_contabil", label: "Plano de Contas", icon: BookOpen, permission: "all" },
+  { group: "Financeiro", key: "fornecedores", label: "Fornecedores", icon: Building2, permission: "all" },
+  { group: "Recursos Humanos", key: "rh", label: "OmniRH", icon: Briefcase, permission: "gestao" },
+  { group: "Recursos Humanos", key: "dossier", label: "Dossiê do Colaborador", icon: Contact, permission: "gestao" },
+  { group: "Gestão", key: "comercial", label: "Gestão Comercial", icon: BarChart3, permission: "gestao" },
+  { group: "Gestão", key: "frota", label: "Gestão de Frota", icon: CarFront, permission: "gestao" },
+  { group: "Gestão", key: "gestao_clientes", label: "Gestão de Clientes", icon: Users, permission: "gestao" },
+  { group: "Gestão", key: "gestao_contratos", label: "Gestão de Contratos", icon: FileSignature, permission: "gestao" },
+  { group: "Gestão", key: "gestao_usuarios", label: "Gestão de Usuários", icon: UserCog, permission: "gestao" },
+  { group: "Gestão", key: "gestao_ativos", label: "Gestão de Ativos", icon: Layers, permission: "gestao" },
+  { group: "Gestão", key: "gestao_estoque", label: "Gestão de Estoque", icon: Package, permission: "gestao" },
+  { group: "Gestão", key: "relatorios", label: "Relatórios", icon: FileText, permission: "gestao" },
+  { group: "Gestão", key: "gestao_relatorios", label: "Gerenciador de Relatórios", icon: FileCog, permission: "gestao" },
+  { group: "Gestão", key: "centro_comando", label: "Centro de Comando", icon: Crown, permission: "franqueador" },
+  { group: "Sistema", key: "fipe", label: "Atualizar FIPE", icon: RefreshCw, permission: "admin" },
+  { group: "Sistema", key: "config_sistema", label: "Personalização", icon: Sliders, permission: "admin" },
+  { group: "Sistema", key: "admin_rbac", label: "Administração do Sistema", icon: ShieldCheck, permission: "admin" },
+];
+
 export default function Sidebar({ activeTab, setActiveTab, currentUser, loadDashFin, loadClientes, styles, onLogout, LogoOmni, isOpen, setIsOpen }) {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const hasPermission = (item) => {
+    if (item.permission === "all") return true;
+    if (item.permission === "gestao") return currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor";
+    if (item.permission === "admin") return currentUser?.is_master || currentUser?.role === "admin";
+    if (item.permission === "franqueador") return currentUser?.is_master || currentUser?.is_franqueador;
+    return false;
+  };
+
+  const filteredItems = useMemo(() => {
+    const permitted = ALL_NAV_ITEMS.filter(hasPermission);
+    if (!searchTerm.trim()) return permitted;
+    const s = searchTerm.toLowerCase();
+    return permitted.filter(item => item.label.toLowerCase().includes(s) || item.group.toLowerCase().includes(s));
+  }, [searchTerm, currentUser]);
+
+  const groups = useMemo(() => {
+    const map = new Map();
+    filteredItems.forEach(item => {
+      if (!map.has(item.group)) map.set(item.group, []);
+      map.get(item.group).push(item);
+    });
+    return map;
+  }, [filteredItems]);
+
+  const handleNavClick = (item) => {
+    setActiveTab(item.key);
+    if (item.extra === "loadDashFin" && loadDashFin) loadDashFin();
+    setSearchTerm("");
+  };
+
+  const isSearching = searchTerm.trim().length > 0;
+
   return (
-    <aside style={{ ...styles?.sidebar, position: "fixed", top: 0, left: 0, height: "100vh", backgroundColor: C.bg, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "visible", zIndex: 1000, width: isOpen ? "240px" : "80px", boxShadow: "4px 0 24px rgba(0,0,0,0.02)", transition: "width 0.3s ease-in-out" }}>
+    <aside style={{ ...styles?.sidebar, position: "fixed", top: 0, left: 0, height: "100vh", backgroundColor: C.bg, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "visible", zIndex: 1000, width: isOpen ? "260px" : "80px", boxShadow: "4px 0 24px rgba(0,0,0,0.02)", transition: "width 0.3s ease-in-out" }}>
       <button onClick={() => setIsOpen(!isOpen)} style={{ position: "absolute", right: "-14px", top: "32px", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", backgroundColor: "#ffffff", border: `2px solid ${C.primary}`, borderRadius: "50%", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", color: C.primary, cursor: "pointer", transition: "all 0.2s ease-in-out" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = "#ffffff"; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.color = C.primary; }}>
         {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
 
       <div style={{ display: "flex", flexDirection: "column", height: "100%", overflowX: "hidden" }}>
+        {/* Logo */}
         <div style={{ padding: isOpen ? "24px 28px" : "24px 0", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "center", alignItems: "center", backgroundColor: C.bg, flexShrink: 0, minHeight: "81px", transition: "padding 0.3s ease-in-out" }}>
           <img src={LogoOmni} alt="Logo Sidebar" style={{ height: "auto", objectFit: "contain", width: isOpen ? "150px" : "32px", transition: "width 0.3s ease-in-out" }} />
         </div>
 
-        <nav style={{ ...styles?.nav, flex: 1, overflowY: "auto", overflowX: "hidden", padding: "15px 0 20px 0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-
-          <GroupTitle isOpen={isOpen}>Geral</GroupTitle>
-          <NavItem isOpen={isOpen} active={activeTab === "dashboard"} onClick={() => setActiveTab("dashboard")} label="Dashboard" icon={LayoutDashboard} />
-          <NavItem isOpen={isOpen} active={activeTab === "calculadora"} onClick={() => setActiveTab("calculadora")} label="Calculadora" icon={Calculator} />
-          <NavItem isOpen={isOpen} active={activeTab === "estoque_vendas"} onClick={() => setActiveTab("estoque_vendas")} label="Estoque de Vendas" icon={Tags} />
-          <NavItem isOpen={isOpen} active={activeTab === "estoque_locacao"} onClick={() => setActiveTab("estoque_locacao")} label="Estoque de Locação" icon={Key} />
-
-          <GroupTitle isOpen={isOpen}>Financeiro</GroupTitle>
-          <NavItem isOpen={isOpen} active={activeTab === "financeiro_dashboard"} onClick={() => { setActiveTab("financeiro_dashboard"); loadDashFin && loadDashFin(); }} label="Dashboard Financeiro" icon={PieChart} />
-          <NavItem isOpen={isOpen} active={activeTab === "financeiro_pagar"} onClick={() => setActiveTab("financeiro_pagar")} label="Contas a Pagar" icon={Receipt} />
-          <NavItem isOpen={isOpen} active={activeTab === "financeiro_receber"} onClick={() => setActiveTab("financeiro_receber")} label="Contas a Receber" icon={HandCoins} />
-          <NavItem isOpen={isOpen} active={activeTab === "contas_bancarias"} onClick={() => setActiveTab("contas_bancarias")} label="Contas Bancárias" icon={Landmark} />
-          <NavItem isOpen={isOpen} active={activeTab === "config_contabil"} onClick={() => setActiveTab("config_contabil")} label="Plano de Contas" icon={BookOpen} />
-          <NavItem isOpen={isOpen} active={activeTab === "fornecedores"} onClick={() => setActiveTab("fornecedores")} label="Fornecedores" icon={Building2} />
-
-          {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
-            <>
-              <GroupTitle isOpen={isOpen}>Recursos Humanos</GroupTitle>
-              <NavItem isOpen={isOpen} active={activeTab === "rh"} onClick={() => setActiveTab("rh")} label="OmniRH" icon={Briefcase} />
-              <NavItem isOpen={isOpen} active={activeTab === "dossier"} onClick={() => setActiveTab("dossier")} label="Dossiê do Colaborador" icon={Contact} />
-            </>
-          )}
-
-          {(currentUser?.is_master || currentUser?.role === "admin" || currentUser?.role === "gestor") && (
-            <>
-              <GroupTitle isOpen={isOpen}>Gestão</GroupTitle>
-              <NavItem isOpen={isOpen} active={activeTab === "comercial"} onClick={() => setActiveTab("comercial")} label="Gestão Comercial" icon={BarChart3} />
-              <NavItem isOpen={isOpen} active={activeTab === "frota"} onClick={() => setActiveTab("frota")} label="Gestão de Frota" icon={CarFront} />
-              <NavItem isOpen={isOpen} active={activeTab === "gestao_clientes"} onClick={() => setActiveTab("gestao_clientes")} label="Gestão de Clientes" icon={Users} />
-              <NavItem isOpen={isOpen} active={activeTab === "gestao_contratos"} onClick={() => setActiveTab("gestao_contratos")} label="Gestão de Contratos" icon={FileSignature} />
-              <NavItem isOpen={isOpen} active={activeTab === "gestao_usuarios"} onClick={() => setActiveTab("gestao_usuarios")} label="Gestão de Usuários" icon={UserCog} />
-              <NavItem isOpen={isOpen} active={activeTab === "gestao_ativos"} onClick={() => setActiveTab("gestao_ativos")} label="Gestão de Ativos" icon={Layers} />
-              <NavItem isOpen={isOpen} active={activeTab === "logs"} onClick={() => setActiveTab("logs")} label="Auditoria" icon={ListChecks} />
-              <NavItem isOpen={isOpen} active={activeTab === "relatorios"} onClick={() => setActiveTab("relatorios")} label="Relatórios" icon={FileText} />
-
-              {/* ── CENTRO DE COMANDO (entrada única — abas internas) ── */}
-              {(currentUser?.is_master || currentUser?.is_franqueador) && (
-                <>
-                  <div style={{ height: 1, background: C.border, margin: "12px 20px 4px 20px", display: isOpen ? "block" : "none" }} />
-                  <NavItem isOpen={isOpen} active={activeTab === "centro_comando"} onClick={() => setActiveTab("centro_comando")} label="Centro de Comando" icon={Crown} />
-                </>
+        {/* Search */}
+        <div style={{ padding: isOpen ? "12px 16px" : "12px 10px", borderBottom: `1px solid ${C.border}`, flexShrink: 0, transition: "padding 0.3s ease-in-out" }}>
+          {isOpen ? (
+            <div style={{ position: "relative" }}>
+              <Search size={14} color={C.muted} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+              <input
+                type="text"
+                placeholder="Buscar"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%", padding: "8px 28px 8px 32px", borderRadius: "8px",
+                  border: `1px solid ${searchTerm ? C.primary + "40" : C.border}`,
+                  fontSize: "12px", fontWeight: 500, color: C.text, background: C.bgAlt,
+                  outline: "none", boxSizing: "border-box", transition: "border-color 0.2s",
+                }}
+                onFocus={e => e.target.style.borderColor = C.primary + "60"}
+                onBlur={e => { if (!searchTerm) e.target.style.borderColor = C.border; }}
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm("")} style={{
+                  position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", color: C.muted, padding: 2,
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, lineHeight: 1,
+                }}>×</button>
               )}
-            </>
+            </div>
+          ) : (
+            <div onClick={() => setIsOpen(true)} style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: "100%", padding: "8px 0", cursor: "pointer", borderRadius: "8px", transition: "background 0.2s",
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = C.primaryLight}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+            >
+              <Search size={18} color={C.muted} strokeWidth={1.3} />
+            </div>
+          )}
+        </div>
+
+        {/* Nav */}
+        <nav style={{ ...styles?.nav, flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 0 20px 0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          
+          {isSearching && filteredItems.length === 0 && isOpen && (
+            <div style={{ padding: "30px 20px", textAlign: "center" }}>
+              <Search size={24} color={C.border} style={{ marginBottom: 8 }} />
+              <div style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>Nenhuma função encontrada</div>
+            </div>
           )}
 
-          {(currentUser?.is_master || currentUser?.role === "admin") && (
+          {Array.from(groups.entries()).map(([groupName, items]) => (
+            <React.Fragment key={groupName}>
+              {isSearching ? (
+                isOpen && <div style={{ padding: "8px 20px 4px 20px", fontSize: 9, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>{groupName}</div>
+              ) : (
+                <GroupTitle isOpen={isOpen}>{groupName}</GroupTitle>
+              )}
+              {items.map(item => {
+                const showSep = item.key === "centro_comando" && !isSearching;
+                return (
+                  <React.Fragment key={item.key}>
+                    {showSep && <div style={{ height: 1, background: C.border, margin: "12px 20px 4px 20px", display: isOpen ? "block" : "none" }} />}
+                    <NavItem isOpen={isOpen} active={activeTab === item.key} onClick={() => handleNavClick(item)} label={item.label} icon={item.icon} />
+                  </React.Fragment>
+                );
+              })}
+            </React.Fragment>
+          ))}
+
+          {!isSearching && (
             <>
-              <GroupTitle isOpen={isOpen}>Sistema</GroupTitle>
-              <NavItem isOpen={isOpen} active={activeTab === "fipe"} onClick={() => setActiveTab("fipe")} label="Atualizar FIPE" icon={RefreshCw} />
-              <NavItem isOpen={isOpen} active={activeTab === "config_sistema"} onClick={() => setActiveTab("config_sistema")} label="Personalização" icon={Sliders} />
-              <NavItem isOpen={isOpen} active={activeTab === "admin_rbac"} onClick={() => setActiveTab("admin_rbac")} label="Administração do Sistema" icon={ShieldCheck} />
+              <GroupTitle isOpen={isOpen}>Suporte</GroupTitle>
+              <NavItem isOpen={isOpen} href="https://suporte.omni26.com" label="Abrir Chamado" icon={Headphones} />
             </>
           )}
-
-          <GroupTitle isOpen={isOpen}>Suporte</GroupTitle>
-          <NavItem isOpen={isOpen} href="https://suporte.omni26.com" label="Abrir Chamado" icon={Headphones} />
         </nav>
 
-        {/* ═══════ USER AVATAR SECTION ═══════ */}
-        <div style={{ 
-          padding: isOpen ? "16px 20px" : "12px 0", 
-          borderTop: `1px solid ${C.border}`, 
-          backgroundColor: C.bgAlt, 
-          flexShrink: 0, 
-          transition: "padding 0.3s ease-in-out" 
-        }}>
-          <div style={{ 
-            display: "flex", 
-            alignItems: isOpen ? "center" : "center", 
-            flexDirection: isOpen ? "row" : "column",
-            gap: isOpen ? 12 : 6,
-            padding: isOpen ? "0" : "4px 0",
-          }}>
-            {/* Avatar Circle */}
-            <div style={{ 
-              position: "relative", 
-              flexShrink: 0,
-              display: "flex",
-              justifyContent: "center",
-            }}>
+        {/* User */}
+        <div style={{ padding: isOpen ? "16px 20px" : "12px 0", borderTop: `1px solid ${C.border}`, backgroundColor: C.bgAlt, flexShrink: 0, transition: "padding 0.3s ease-in-out" }}>
+          <div style={{ display: "flex", alignItems: "center", flexDirection: isOpen ? "row" : "column", gap: isOpen ? 12 : 6, padding: isOpen ? "0" : "4px 0" }}>
+            <div style={{ position: "relative", flexShrink: 0, display: "flex", justifyContent: "center" }}>
               {currentUser?.foto_url || currentUser?.avatar_url ? (
-                <img 
-                  src={currentUser.foto_url || currentUser.avatar_url} 
-                  alt={currentUser?.name || "Usuário"}
-                  style={{ 
-                    width: isOpen ? 40 : 36, 
-                    height: isOpen ? 40 : 36, 
-                    borderRadius: "50%", 
-                    objectFit: "cover",
-                    border: `2px solid ${C.border}`,
-                    transition: "all 0.2s ease-in-out",
-                  }} 
-                />
+                <img src={currentUser.foto_url || currentUser.avatar_url} alt={currentUser?.name || "Usuário"} style={{ width: isOpen ? 40 : 36, height: isOpen ? 40 : 36, borderRadius: "50%", objectFit: "cover", border: `2px solid ${C.border}`, transition: "all 0.2s ease-in-out" }} />
               ) : (
-                <div style={{ 
-                  width: isOpen ? 40 : 36, 
-                  height: isOpen ? 40 : 36, 
-                  borderRadius: "50%", 
-                  background: `linear-gradient(135deg, ${C.primary}, ${C.primary}cc)`,
-                  display: "flex", 
-                  alignItems: "center", 
-                  justifyContent: "center",
-                  color: "#fff",
-                  fontSize: isOpen ? 15 : 14,
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                  textTransform: "uppercase",
-                  border: "2px solid #fff",
-                  boxShadow: `0 2px 8px ${C.primary}30`,
-                  transition: "all 0.2s ease-in-out",
-                }}>
-                  {(() => {
-                    const name = currentUser?.name || "U";
-                    const parts = name.trim().split(" ");
-                    if (parts.length >= 2) return parts[0][0] + parts[parts.length - 1][0];
-                    return parts[0][0];
-                  })()}
+                <div style={{ width: isOpen ? 40 : 36, height: isOpen ? 40 : 36, borderRadius: "50%", background: `linear-gradient(135deg, ${C.primary}, ${C.primary}cc)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: isOpen ? 15 : 14, fontWeight: 800, textTransform: "uppercase", border: "2px solid #fff", boxShadow: `0 2px 8px ${C.primary}30`, transition: "all 0.2s ease-in-out" }}>
+                  {(() => { const name = currentUser?.name || "U"; const parts = name.trim().split(" "); if (parts.length >= 2) return parts[0][0] + parts[parts.length - 1][0]; return parts[0][0]; })()}
                 </div>
               )}
-              {/* Online indicator dot */}
-              <div style={{
-                position: "absolute",
-                bottom: isOpen ? 0 : -1,
-                right: isOpen ? 0 : "auto",
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                background: "#22A06B",
-                border: "2px solid #fff",
-              }} />
+              <div style={{ position: "absolute", bottom: isOpen ? 0 : -1, right: isOpen ? 0 : "auto", width: 10, height: 10, borderRadius: "50%", background: "#22A06B", border: "2px solid #fff" }} />
             </div>
-
-            {/* User Info (only when open) */}
             {isOpen && (
               <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
-                <div style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 6, 
-                  marginBottom: 2 
-                }}>
-                  <span style={{ 
-                    fontSize: 13, 
-                    fontWeight: 700, 
-                    color: C.text, 
-                    whiteSpace: "nowrap", 
-                    overflow: "hidden", 
-                    textOverflow: "ellipsis",
-                    maxWidth: 110,
-                  }}>
-                    {currentUser?.name || "Usuário"}
-                  </span>
-                  {currentUser?.is_master && (
-                    <span style={{ 
-                      backgroundColor: `${C.primary}15`, 
-                      border: `1px solid ${C.primary}30`, 
-                      color: C.primary, 
-                      padding: "1px 6px", 
-                      borderRadius: 12, 
-                      fontSize: 8, 
-                      fontWeight: 800,
-                      whiteSpace: "nowrap",
-                    }}>👑 MASTER</span>
-                  )}
-                  {currentUser?.is_franqueador && !currentUser?.is_master && (
-                    <span style={{ 
-                      backgroundColor: "#1e293b12", 
-                      border: "1px solid #1e293b25", 
-                      color: "#1e293b", 
-                      padding: "1px 6px", 
-                      borderRadius: 12, 
-                      fontSize: 8, 
-                      fontWeight: 800,
-                      whiteSpace: "nowrap",
-                    }}>🏢 FRANQ.</span>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: C.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 110 }}>{currentUser?.name || "Usuário"}</span>
+                  {currentUser?.is_master && <span style={{ backgroundColor: `${C.primary}15`, border: `1px solid ${C.primary}30`, color: C.primary, padding: "1px 6px", borderRadius: 12, fontSize: 8, fontWeight: 800, whiteSpace: "nowrap" }}>MASTER</span>}
+                  {currentUser?.is_franqueador && !currentUser?.is_master && <span style={{ backgroundColor: "#1e293b12", border: "1px solid #1e293b25", color: "#1e293b", padding: "1px 6px", borderRadius: 12, fontSize: 8, fontWeight: 800, whiteSpace: "nowrap" }}>FRANQ.</span>}
                 </div>
-                <div style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 4, 
-                  fontSize: 10, 
-                  color: C.muted, 
-                  fontWeight: 600 
-                }}>
-                  {currentUser?.empresa_nome && (
-                    <span style={{ 
-                      whiteSpace: "nowrap", 
-                      overflow: "hidden", 
-                      textOverflow: "ellipsis", 
-                      maxWidth: 90 
-                    }}>
-                      {currentUser.empresa_nome}
-                    </span>
-                  )}
+                <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: C.muted, fontWeight: 600 }}>
+                  {currentUser?.empresa_nome && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 90 }}>{currentUser.empresa_nome}</span>}
                   {currentUser?.empresa_nome && <span>•</span>}
-                  <span style={{ 
-                    textTransform: "uppercase", 
-                    fontWeight: 800, 
-                    fontSize: 9, 
-                    color: C.muted 
-                  }}>
-                    {currentUser?.role}
-                  </span>
+                  <span style={{ textTransform: "uppercase", fontWeight: 800, fontSize: 9, color: C.muted }}>{currentUser?.role}</span>
                 </div>
               </div>
             )}

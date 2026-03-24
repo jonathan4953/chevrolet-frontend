@@ -13,7 +13,8 @@ const C = {
   subtle: "#636466",
   border: "#E5E7EB",
   bg: "#FFFFFF",
-  bgAlt: "#F9FAFB"
+  bgAlt: "#F9FAFB",
+  hover: "#F3F4F6"
 };
 
 export default function Relatorios({ styles, currentUser, showToast }) {
@@ -21,7 +22,12 @@ export default function Relatorios({ styles, currentUser, showToast }) {
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState("lista");
   const [selectedRelatorio, setSelectedRelatorio] = useState(null);
-  const [buscaRelatorio, setBuscaRelatorio] = useState("");
+  
+  // Filtros da barra lateral
+  const [filtroCodigo, setFiltroCodigo] = useState("");
+  const [filtroTitulo, setFiltroTitulo] = useState("");
+  const [somenteMeuPerfil, setSomenteMeuPerfil] = useState(true);
+
   const isAdmin = currentUser?.role === "admin" || currentUser?.role === "gestor";
 
   const loadRelatorios = async () => {
@@ -29,24 +35,43 @@ export default function Relatorios({ styles, currentUser, showToast }) {
     try {
       const res = await api.get("/relatorios");
       const todos = Array.isArray(res.data) ? res.data : [];
+      
+      // REGRA DE SEGURANÇA: Filtra pelo perfil de acesso
       const permitidos = isAdmin ? todos : todos.filter(r => {
         if (!r.perfis_permitidos || r.perfis_permitidos.length === 0) return true;
         return r.perfis_permitidos.includes(currentUser?.role);
       });
+      
       setRelatorios(permitidos);
-    } catch (e) { console.error("Erro ao carregar relatórios:", e); }
-    finally { setLoading(false); }
+    } catch (e) { 
+      console.error("Erro ao carregar relatórios:", e); 
+      showToast("Erro ao carregar relatórios", "error");
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   useEffect(() => { loadRelatorios(); }, []);
 
-  const filtrados = buscaRelatorio.trim()
-    ? relatorios.filter(r =>
-        (r.nome || "").toLowerCase().includes(buscaRelatorio.toLowerCase()) ||
-        (r.codigo_ref || "").toLowerCase().includes(buscaRelatorio.toLowerCase()) ||
-        (r.descricao || "").toLowerCase().includes(buscaRelatorio.toLowerCase())
-      )
-    : relatorios;
+  // Aplicação dos filtros visuais da barra lateral
+  const filtrados = relatorios.filter(r => {
+    const matchCodigo = filtroCodigo ? (r.codigo_ref || String(r.id)).toLowerCase().includes(filtroCodigo.toLowerCase()) : true;
+    const matchTitulo = filtroTitulo ? (r.nome || "").toLowerCase().includes(filtroTitulo.toLowerCase()) : true;
+    
+    // Simulação do checkbox "Relatórios do perfil ativo" (já é o padrão de segurança, mas útil para admin ver a diferença)
+    const matchPerfil = somenteMeuPerfil && isAdmin ? 
+      (!r.perfis_permitidos?.length || r.perfis_permitidos.includes(currentUser?.role)) : true;
+
+    return matchCodigo && matchTitulo && matchPerfil;
+  });
+
+  // Agrupamento simulando pastas/categorias (Como no Tasy)
+  const relatoriosAgrupados = filtrados.reduce((acc, r) => {
+    const categoria = r.categoria || "Gerais / Sem Categoria"; // Ideal adicionar 'categoria' no Construtor depois
+    if (!acc[categoria]) acc[categoria] = [];
+    acc[categoria].push(r);
+    return acc;
+  }, {});
 
   if (viewMode === "admin" && isAdmin) {
     return <AdminRelatorios styles={styles} currentUser={currentUser} showToast={showToast} onBack={() => { setViewMode("lista"); loadRelatorios(); }} />;
@@ -55,126 +80,119 @@ export default function Relatorios({ styles, currentUser, showToast }) {
     return <ExecutarRelatorio styles={styles} relatorio={selectedRelatorio} showToast={showToast} onBack={() => { setViewMode("lista"); setSelectedRelatorio(null); }} />;
   }
 
+  const inputStyle = {
+    width: "100%", padding: "8px 12px", borderRadius: "6px", fontSize: "12px",
+    border: `1px solid ${C.border}`, outline: "none", boxSizing: "border-box", marginBottom: "12px"
+  };
+
+  const labelStyle = {
+    fontSize: "11px", color: C.subtle, fontWeight: "700", marginBottom: "4px", display: "block"
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24, fontFamily: "system-ui, sans-serif" }}>
-      {/* HEADER DA PÁGINA */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 16, fontFamily: "system-ui, sans-serif" }}>
+ {/* HEADER DA PÁGINA */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bg, padding: "16px 24px", borderRadius: 12, border: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <div style={{ width: 5, height: 38, borderRadius: 3, background: `linear-gradient(to bottom, ${C.primary}, #FF9B6A)` }} />
+          <div style={{ width: 4, height: 32, borderRadius: 2, background: C.primary }} />
           <div>
-            <h2 style={{ margin: 0, fontSize: "24px", color: C.text, fontWeight: 900 }}>Relatórios</h2>
-            <p style={{ color: C.muted, fontSize: "13px", margin: "2px 0 0", fontWeight: 600 }}>{filtrados.length} de {relatorios.length} relatório(s) disponíveis</p>
+            <h2 style={{ margin: 0, fontSize: "20px", color: C.text, fontWeight: 900 }}>Impressão de Relatórios</h2>
+            <p style={{ color: C.muted, fontSize: "12px", margin: "2px 0 0", fontWeight: 600 }}>Usuário ativo: {currentUser?.nome || "Usuário"}</p>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ position: 'relative' }}>
-            <input 
-              style={{ 
-                padding: "10px 16px 10px 36px", 
-                borderRadius: 12, 
-                border: `1px solid ${C.border}`, 
-                fontSize: "13px", 
-                width: 280, 
-                color: C.text,
-                outline: 'none'
-              }} 
-              placeholder="Buscar por nome ou código..." 
-              value={buscaRelatorio} 
-              onChange={e => setBuscaRelatorio(e.target.value)} 
-            />
-            <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>🔍</span>
-          </div>
-          
-          <button 
-            onClick={loadRelatorios} 
-            style={{ background: "#F9FAFB", border: `1px solid ${C.border}`, color: C.subtle, borderRadius: 10, padding: "10px 18px", cursor: "pointer", fontSize: "12px", fontWeight: 800 }}
-          >
-            🔄 Atualizar
-          </button>
-          
-          {isAdmin && (
-            <button 
-              onClick={() => setViewMode("admin")} 
-              style={{ background: C.text, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", cursor: "pointer", fontSize: "12px", fontWeight: 800, boxShadow: "0 4px 10px rgba(0,0,0,0.1)" }}
-            >
-              ⚙️ Administrar
-            </button>
-          )}
         </div>
       </div>
 
-      {loading ? (
-        <div style={{ textAlign: "center", padding: 80, color: C.muted, fontWeight: 600 }}>⌛ Carregando relatórios...</div>
-      ) : filtrados.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: C.subtle, background: "#F9FAFB", border: `2px dashed ${C.border}`, borderRadius: 20 }}>
-          <span style={{ fontSize: 48, display: "block", marginBottom: 16 }}>📋</span>
-          <p style={{ fontSize: 16, fontWeight: 800, color: C.text, margin: 0 }}>{buscaRelatorio ? "Nenhum relatório encontrado para sua busca." : "Nenhum relatório disponível para seu perfil."}</p>
-          <p style={{ fontSize: 13, color: C.muted, marginTop: 8 }}>Tente outro termo ou entre em contato com o administrador.</p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
-          {filtrados.map(r => (
-            <div key={r.id} 
-              style={{ 
-                background: "#FFFFFF", 
-                border: `1px solid ${C.border}`, 
-                borderRadius: 20, 
-                padding: "24px", 
-                cursor: "pointer", 
-                transition: "all 0.3s ease",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between"
-              }}
-              onClick={() => { setSelectedRelatorio(r); setViewMode("executar"); }}
-              onMouseEnter={e => { 
-                e.currentTarget.style.borderColor = C.primary; 
-                e.currentTarget.style.transform = "translateY(-4px)";
-                e.currentTarget.style.boxShadow = `0 10px 20px ${C.primary}10`;
-              }}
-              onMouseLeave={e => { 
-                e.currentTarget.style.borderColor = C.border; 
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.02)";
-              }}>
-              
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: 12, background: `${C.primary}10`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>📊</div>
-                    <span style={{ fontFamily: "monospace", fontSize: "11px", color: C.primary, fontWeight: 800, background: `${C.primary}10`, padding: "4px 10px", borderRadius: 8 }}>
-                      {r.codigo_ref || `REL-${String(r.id).padStart(4, "0")}`}
-                    </span>
-                  </div>
-                  <span style={{ 
-                    background: r.tipo_saida === "grafico" ? `${C.green}15` : `${C.blue}15`, 
-                    color: r.tipo_saida === "grafico" ? C.green : C.blue, 
-                    padding: "4px 12px", 
-                    borderRadius: 20, 
-                    fontSize: "10px", 
-                    fontWeight: 800, 
-                    textTransform: "uppercase",
-                    border: `1px solid ${r.tipo_saida === "grafico" ? C.green : C.blue}30`
-                  }}>
-                    {r.tipo_saida || "tabela"}
-                  </span>
-                </div>
-                
-                <h3 style={{ color: C.text, fontSize: "16px", fontWeight: 900, margin: "0 0 8px" }}>{r.nome}</h3>
-                <p style={{ color: C.subtle, fontSize: "12px", lineHeight: 1.6, margin: 0, minHeight: 40, fontWeight: 600 }}>{r.descricao || "Relatório sem descrição detalhada cadastrada."}</p>
-              </div>
+      {/* PAINEL DUPLO: FILTROS E LISTA */}
+      <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+        
+        {/* PAINEL ESQUERDO: BUSCA/FILTRO (Similar ao Tasy) */}
+        <div style={{ width: "260px", background: C.bgAlt, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px", flexShrink: 0 }}>
+          <h3 style={{ fontSize: "12px", color: C.text, fontWeight: 800, textTransform: "uppercase", marginBottom: "16px", borderBottom: `1px solid ${C.border}`, paddingBottom: "8px" }}>
+            🔍 Filtro de Relatórios
+          </h3>
+          
+          <label style={labelStyle}>Código do Relatório</label>
+          <input style={inputStyle} value={filtroCodigo} onChange={e => setFiltroCodigo(e.target.value)} placeholder="Ex: REL-001" />
 
-              <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${C.bgAlt}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "11px", color: C.muted, fontWeight: 700 }}>{r.parametros?.length || 0} parâmetro(s)</span>
-                <span style={{ fontSize: "12px", color: C.primary, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 }}>
-                  Abrir Relatório <span>→</span>
-                </span>
-              </div>
-            </div>
-          ))}
+          <label style={labelStyle}>Título ou Palavra-chave</label>
+          <input style={inputStyle} value={filtroTitulo} onChange={e => setFiltroTitulo(e.target.value)} placeholder="Ex: Faturamento" />
+
+          <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "12px", color: C.text, cursor: "pointer", fontWeight: 600 }}>
+              <input type="checkbox" checked={somenteMeuPerfil} onChange={e => setSomenteMeuPerfil(e.target.checked)} style={{ accentColor: C.primary }} />
+              Relatórios do perfil ativo
+            </label>
+          </div>
+
+          <button onClick={loadRelatorios} style={{ width: "100%", marginTop: "24px", background: C.green, color: "#fff", border: "none", borderRadius: 8, padding: "10px", cursor: "pointer", fontSize: "12px", fontWeight: 800 }}>
+            🔄 Recarregar Dados
+          </button>
         </div>
-      )}
+
+        {/* PAINEL CENTRAL: ÁRVORE DE RELATÓRIOS (Similar ao Tasy) */}
+        <div style={{ flex: 1, background: C.bg, border: `1px solid ${C.border}`, borderRadius: 12, minHeight: "500px", display: "flex", flexDirection: "column" }}>
+          
+          <div style={{ padding: "12px 16px", background: C.bgAlt, borderBottom: `1px solid ${C.border}`, borderTopLeftRadius: 12, borderTopRightRadius: 12 }}>
+            <span style={{ fontSize: "12px", color: C.subtle, fontWeight: 700 }}>
+              {filtrados.length} relatório(s) liberado(s) para seu acesso
+            </span>
+          </div>
+
+          <div style={{ padding: "16px", overflowY: "auto", flex: 1 }}>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: 40, color: C.muted, fontWeight: 600 }}>⌛ Carregando relatórios...</div>
+            ) : filtrados.length === 0 ? (
+              <div style={{ textAlign: "center", padding: 40, color: C.subtle }}>Nenhum relatório encontrado com estes filtros.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {Object.entries(relatoriosAgrupados).map(([categoria, lista]) => (
+                  <div key={categoria} style={{ border: `1px solid ${C.border}`, borderRadius: 8, overflow: "hidden" }}>
+                    
+                    {/* Cabeçalho da Categoria (Pasta) */}
+                    <div style={{ background: "#F1F5F9", padding: "10px 16px", fontSize: "13px", fontWeight: 800, color: C.blue, display: "flex", alignItems: "center", gap: 8, borderBottom: `1px solid ${C.border}` }}>
+                      📁 {categoria.toUpperCase()}
+                    </div>
+                    
+                    {/* Itens da Categoria */}
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      {lista.map((r, i) => (
+                        <div key={r.id} 
+                          onClick={() => { setSelectedRelatorio(r); setViewMode("executar"); }}
+                          style={{ 
+                            padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center",
+                            borderBottom: i === lista.length - 1 ? "none" : `1px solid ${C.border}`,
+                            cursor: "pointer", transition: "background 0.2s"
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.background = C.hover}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{ color: C.muted, fontSize: "16px" }}>📄</span>
+                            <div>
+                              <div style={{ color: C.text, fontSize: "13px", fontWeight: 700 }}>{r.nome}</div>
+                              <div style={{ color: C.muted, fontSize: "11px", marginTop: "2px" }}>{r.descricao || "Sem descrição"}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                            <span style={{ fontSize: "10px", fontFamily: "monospace", color: C.subtle, background: C.bgAlt, padding: "4px 8px", borderRadius: 4 }}>
+                              {r.codigo_ref || `ID: ${r.id}`}
+                            </span>
+                            <button style={{ background: `${C.primary}15`, color: C.primary, border: "none", borderRadius: 6, padding: "6px 12px", fontSize: "11px", fontWeight: 800, cursor: "pointer" }}>
+                              ABRIR →
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

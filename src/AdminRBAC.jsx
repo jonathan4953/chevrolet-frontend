@@ -618,8 +618,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                 <button type="submit" style={{...s.btn(), width: "100%", marginTop: 8}} disabled={loading}>CRIAR PERFIL</button>
               </form>
             </div>
-
-            <div style={s.card}>
+<div style={s.card}>
               <h3 style={s.sectionTitle}>🎭 Perfis ({roles.length})</h3>
               {roles.map(r => (
                 <div
@@ -637,14 +636,15 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                     <div style={{ fontSize: 13, fontWeight: 800, color: selectedRole === r.id ? C.primary : C.text }}>{r.nome}</div>
                     {r.descricao && <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, marginTop: 2 }}>{r.descricao}</div>}
                   </div>
-                  {!['admin', 'gestor', 'consultor'].includes(r.nome.toLowerCase()) && (
-                    <button onClick={(e) => { e.stopPropagation(); handleExcluirRole(r.id); }}
-                      style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>✕</button>
-                  )}
+                  
+                  {/* Botão de excluir agora visível para TODOS os perfis */}
+                  <button onClick={(e) => { e.stopPropagation(); handleExcluirRole(r.id); }}
+                    style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>✕</button>
+                    
                 </div>
               ))}
             </div>
-          </div>
+            </div>
 
           {/* Coluna direita: Permissões da Role selecionada */}
           <div style={s.card}>

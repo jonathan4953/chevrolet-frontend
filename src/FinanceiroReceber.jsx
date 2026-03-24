@@ -3,7 +3,8 @@ import {
   Search, Calendar, Filter, Download, Plus,
   AlertCircle, Edit2, Trash2, AlertTriangle,
   FileText, TrendingUp, CheckCircle2, MoreVertical,
-  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+  DollarSign
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════
@@ -34,7 +35,7 @@ const T = {
 };
 
 /* ═══════════════════════════════════════════════════════════
-   KPI CARD — Padrão CentroDeComando
+   KPI CARD
    ═══════════════════════════════════════════════════════════ */
 function KpiCard({ icon: Ic, label, value, color = T.primary }) {
   const [h, sH] = useState(false);
@@ -89,7 +90,7 @@ function KpiCard({ icon: Ic, label, value, color = T.primary }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   BADGE — Padrão CentroDeComando
+   BADGE
    ═══════════════════════════════════════════════════════════ */
 function Badge({ children, color = T.muted }) {
   return (
@@ -105,7 +106,7 @@ function Badge({ children, color = T.muted }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   DROPDOWN — Padrão CentroDeComando
+   DROPDOWN + ACTION DROPDOWN
    ═══════════════════════════════════════════════════════════ */
 function Dropdown({ trigger, items, align = "left" }) {
   const [o, sO] = useState(false);
@@ -138,7 +139,7 @@ function Dropdown({ trigger, items, align = "left" }) {
                 style={{
                   display: "flex", alignItems: "center", gap: 10,
                   padding: "9px 16px", cursor: "pointer", fontSize: 12,
-                  fontWeight: 500, color: it.danger ? T.danger : T.sub,
+                  fontWeight: 500, color: it.danger ? T.danger : it.success ? T.success : T.sub,
                   background: "transparent"
                 }}
                 onMouseEnter={e => e.currentTarget.style.background = T.bg}
@@ -175,7 +176,7 @@ function ActionDropdown({ items }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TH — Table Header padrão
+   TH + SECTION TITLE
    ═══════════════════════════════════════════════════════════ */
 function TH({ children, style = {} }) {
   return (
@@ -190,9 +191,6 @@ function TH({ children, style = {} }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════
-   SECTION TITLE
-   ═══════════════════════════════════════════════════════════ */
 function SectionTitle({ title, icon: Ic, right }) {
   return (
     <div style={{
@@ -212,25 +210,26 @@ function SectionTitle({ title, icon: Ic, right }) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MAIN — FinanceiroPagar
+   MAIN — FinanceiroReceber
    ═══════════════════════════════════════════════════════════ */
-export default function FinanceiroPagar({
-  contasPagar,
-  loadContasPagar,
-  handleExcluirObrigacao,
-  handleExcluirParcela,
-  setShowAddObrigacaoModal,
-  setContaToEdit,
-  setShowEditContaModal,
-  financeiroBuscaPagar,
-  setFinanceiroBuscaPagar,
-  financeiroDataInicioPagar,
-  setFinanceiroDataInicioPagar,
-  financeiroDataFimPagar,
-  setFinanceiroDataFimPagar,
-  filtroStatusPagar,
-  setFiltroStatusPagar,
-  handleImportOFXPagar,
+export default function FinanceiroReceber({
+  contasReceber,
+  loadContasReceber,
+  handleEditReceber,
+  handleExcluirReceber,
+  handleBaixaReceber,
+  setShowAddReceberModal,
+  loadClientes,
+  loadEstruturaContabil,
+  financeiroBuscaReceber,
+  setFinanceiroBuscaReceber,
+  financeiroDataInicioReceber,
+  setFinanceiroDataInicioReceber,
+  financeiroDataFimReceber,
+  setFinanceiroDataFimReceber,
+  filtroStatusReceber,
+  setFiltroStatusReceber,
+  handleImportOFXReceber,
   loading,
   formatBRL,
   hasEditPermission,
@@ -241,44 +240,35 @@ export default function FinanceiroPagar({
 
   const hoje = new Date();
 
-  const totalPagar = contasPagar.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const totalReceber = contasReceber.reduce((s, c) => s + (Number(c.valor) || 0), 0);
 
-  const vencidos = contasPagar.filter(c => {
-    if (!c.vencimento || ["PAGO", "CONCILIADO"].includes(c.status)) return false;
+  const vencidosR = contasReceber.filter(c => {
+    if (!c.vencimento || ["RECEBIDO", "CONCILIADO"].includes(c.status)) return false;
     return new Date(c.vencimento + "T12:00:00Z") < hoje;
   });
 
-  const totalVencido = vencidos.reduce((s, c) => s + (Number(c.valor) || 0), 0);
+  const totalVencidoR = vencidosR.reduce((s, c) => s + (Number(c.valor) || 0), 0);
 
-  const proximosSete = contasPagar.filter(c => {
-    if (!c.vencimento || ["PAGO", "CONCILIADO"].includes(c.status)) return false;
-    const d = new Date(c.vencimento + "T12:00:00Z");
-    const diff = (d - hoje) / 86400000;
-    return diff >= 0 && diff <= 7;
-  });
-
-  const filtrados = filtroStatusPagar === "TODOS" ? contasPagar :
-    filtroStatusPagar === "VENCIDOS" ? vencidos :
-    contasPagar.filter(c => c.status === filtroStatusPagar);
+  const filtradosR = filtroStatusReceber === "TODOS" ? contasReceber :
+    filtroStatusReceber === "VENCIDOS" ? vencidosR :
+    contasReceber.filter(c => c.status === filtroStatusReceber);
 
   /* ── Paginação ── */
-  const totalItems = filtrados.length;
+  const totalItems = filtradosR.length;
   const totalPages = pageSize === 0 ? 1 : Math.ceil(totalItems / pageSize) || 1;
   const safePage = Math.min(currentPage, totalPages);
 
   const paginados = useMemo(() => {
-    if (pageSize === 0) return filtrados; // "Todos"
+    if (pageSize === 0) return filtradosR;
     const start = (safePage - 1) * pageSize;
-    return filtrados.slice(start, start + pageSize);
-  }, [filtrados, safePage, pageSize]);
+    return filtradosR.slice(start, start + pageSize);
+  }, [filtradosR, safePage, pageSize]);
 
   const rangeStart = totalItems === 0 ? 0 : (safePage - 1) * (pageSize || totalItems) + 1;
   const rangeEnd = pageSize === 0 ? totalItems : Math.min(safePage * pageSize, totalItems);
 
-  // Reset page ao mudar filtro ou pageSize
-  useEffect(() => { setCurrentPage(1); }, [filtroStatusPagar, pageSize, contasPagar]);
+  useEffect(() => { setCurrentPage(1); }, [filtroStatusReceber, pageSize, contasReceber]);
 
-  /* ── Select base style ── */
   const selectStyle = {
     padding: "8px 12px", borderRadius: T.rS,
     border: `1px solid ${T.border}`, fontSize: 12,
@@ -315,27 +305,27 @@ export default function FinanceiroPagar({
       }}>
         <KpiCard
           icon={TrendingUp}
-          label="Total Provisionado"
-          value={`R$ ${formatBRL(totalPagar)}`}
-          color={T.info}
+          label="Total a Receber"
+          value={`R$ ${formatBRL(totalReceber)}`}
+          color={T.success}
         />
         <KpiCard
           icon={AlertCircle}
           label="Vencidos"
-          value={`R$ ${formatBRL(totalVencido)}`}
-          color={totalVencido > 0 ? T.danger : T.success}
+          value={`R$ ${formatBRL(totalVencidoR)}`}
+          color={totalVencidoR > 0 ? T.danger : T.success}
         />
         <KpiCard
           icon={Calendar}
-          label="Vence em 7 dias"
-          value={proximosSete.length}
+          label="Em Aberto"
+          value={contasReceber.filter(c => c.status === "A RECEBER").length}
           color={T.warning}
         />
         <KpiCard
-          icon={FileText}
-          label="Total de Registros"
-          value={contasPagar.length}
-          color={T.text}
+          icon={CheckCircle2}
+          label="Recebidos"
+          value={contasReceber.filter(c => c.status === "RECEBIDO").length}
+          color={T.info}
         />
       </div>
 
@@ -346,7 +336,6 @@ export default function FinanceiroPagar({
       }}>
         <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
 
-          {/* Pesquisar */}
           <div style={{ flex: "1 1 220px" }}>
             <label style={{
               fontSize: 10, color: T.muted, fontWeight: 700,
@@ -357,18 +346,14 @@ export default function FinanceiroPagar({
                 position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)"
               }} />
               <input
-                style={{
-                  ...inputStyle, width: "100%",
-                  paddingLeft: 32, background: T.bg
-                }}
-                placeholder="Fornecedor, NF, descrição..."
-                value={financeiroBuscaPagar}
-                onChange={e => setFinanceiroBuscaPagar(e.target.value)}
+                style={{ ...inputStyle, width: "100%", paddingLeft: 32, background: T.bg }}
+                placeholder="Cliente, NF..."
+                value={financeiroBuscaReceber}
+                onChange={e => setFinanceiroBuscaReceber(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Período */}
           <div>
             <label style={{
               fontSize: 10, color: T.muted, fontWeight: 700,
@@ -377,19 +362,18 @@ export default function FinanceiroPagar({
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <input
                 type="date" style={{ ...inputStyle, background: T.bg }}
-                value={financeiroDataInicioPagar}
-                onChange={e => setFinanceiroDataInicioPagar(e.target.value)}
+                value={financeiroDataInicioReceber}
+                onChange={e => setFinanceiroDataInicioReceber(e.target.value)}
               />
               <span style={{ color: T.muted, fontSize: 11 }}>a</span>
               <input
                 type="date" style={{ ...inputStyle, background: T.bg }}
-                value={financeiroDataFimPagar}
-                onChange={e => setFinanceiroDataFimPagar(e.target.value)}
+                value={financeiroDataFimReceber}
+                onChange={e => setFinanceiroDataFimReceber(e.target.value)}
               />
             </div>
           </div>
 
-          {/* Status */}
           <div>
             <label style={{
               fontSize: 10, color: T.muted, fontWeight: 700,
@@ -397,53 +381,52 @@ export default function FinanceiroPagar({
             }}>Status</label>
             <select
               style={{ ...selectStyle, width: 130, background: T.bg }}
-              value={filtroStatusPagar}
-              onChange={e => setFiltroStatusPagar(e.target.value)}
+              value={filtroStatusReceber}
+              onChange={e => setFiltroStatusReceber(e.target.value)}
             >
               <option value="TODOS">Todos Status</option>
-              <option value="ABERTO">Em Aberto</option>
+              <option value="A RECEBER">A Receber</option>
               <option value="VENCIDOS">Vencidos</option>
-              <option value="PAGO">Pago</option>
+              <option value="RECEBIDO">Recebido</option>
               <option value="CONCILIADO">Conciliado</option>
             </select>
           </div>
 
-          {/* Filtrar */}
-          <button onClick={loadContasPagar} style={btnPrimary}>
+          <button onClick={loadContasReceber} style={btnPrimary}>
             <Filter size={14} /> Filtrar
           </button>
 
-          {/* Importar OFX */}
           <div style={{ position: "relative" }}>
             <input
-              type="file" id="ofxUploadPagar" accept=".ofx,.pdf"
-              style={{ display: "none" }} onChange={handleImportOFXPagar}
+              type="file" id="ofxUploadReceber" accept=".ofx,.pdf"
+              style={{ display: "none" }} onChange={handleImportOFXReceber}
             />
-            <label htmlFor="ofxUploadPagar" style={{
+            <label htmlFor="ofxUploadReceber" style={{
               ...btnPrimary, background: T.success,
               boxShadow: `0 2px 8px ${T.success}30`, cursor: "pointer"
             }}>
-              <Download size={14} /> {loading ? "Lendo..." : "Conciliar OFX"}
+              <Download size={14} /> {loading ? "Importando..." : "Importar OFX"}
             </label>
           </div>
 
-          {/* Nova Obrigação */}
-          {hasEditPermission && (
-            <button
-              onClick={() => setShowAddObrigacaoModal(true)}
-              style={{
-                ...btnPrimary, background: T.info,
-                boxShadow: `0 2px 8px ${T.info}30`
-              }}
-            >
-              <Plus size={14} /> Nova Obrigação
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (typeof loadClientes === "function") loadClientes();
+              if (typeof loadEstruturaContabil === "function") loadEstruturaContabil();
+              setShowAddReceberModal(true);
+            }}
+            style={{
+              ...btnPrimary, background: T.success,
+              boxShadow: `0 2px 8px ${T.success}30`
+            }}
+          >
+            <Plus size={14} /> Novo Direito
+          </button>
         </div>
       </div>
 
       {/* ═══ ALERTA VENCIDOS ═══ */}
-      {vencidos.length > 0 && (
+      {vencidosR.length > 0 && (
         <div style={{
           background: `${T.danger}08`, border: `1px solid ${T.danger}20`,
           borderRadius: T.rS, padding: "14px 18px", borderLeft: `4px solid ${T.danger}`,
@@ -458,10 +441,10 @@ export default function FinanceiroPagar({
           </div>
           <div>
             <div style={{ color: T.danger, fontWeight: 700, fontSize: 13 }}>
-              Atenção: {vencidos.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencido)}
+              Atenção: {vencidosR.length} parcela(s) vencida(s) totalizando R$ {formatBRL(totalVencidoR)}
             </div>
             <div style={{ color: T.sub, fontSize: 11, fontWeight: 500, marginTop: 2 }}>
-              Ação imediata recomendada para evitar juros e multas.
+              Ação imediata recomendada para evitar perdas.
             </div>
           </div>
         </div>
@@ -473,12 +456,10 @@ export default function FinanceiroPagar({
         borderRadius: T.r, overflow: "hidden", boxShadow: T.sh
       }}>
         <SectionTitle
-          title="Contas a Pagar & Provisões"
+          title="Contas a Receber & Faturas"
           icon={FileText}
           right={
-            <span style={{
-              fontSize: 11, color: T.muted, fontWeight: 600
-            }}>
+            <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>
               {totalItems} registros
             </span>
           }
@@ -491,7 +472,7 @@ export default function FinanceiroPagar({
                 <TH>Vencimento</TH>
                 <TH>Fatura / Título</TH>
                 <TH>Descrição</TH>
-                <TH>Fornecedor</TH>
+                <TH>Cliente</TH>
                 <TH>NF</TH>
                 <TH style={{ textAlign: "center" }}>Parc.</TH>
                 <TH>Valor</TH>
@@ -501,48 +482,69 @@ export default function FinanceiroPagar({
             </thead>
             <tbody>
               {paginados.length > 0 ? paginados.map((c, idx) => {
-                const atrasado = c.vencimento &&
-                  !["PAGO", "CONCILIADO"].includes(c.status) &&
+                const atrasadoR = c.vencimento &&
+                  !["RECEBIDO", "CONCILIADO"].includes(c.status) &&
                   new Date(c.vencimento + "T12:00:00Z") < hoje;
-                const statusColor = getStatusColor(atrasado ? "ATRASADO" : c.status);
+                const statusColor = getStatusColor(atrasadoR ? "ATRASADO" : c.status);
+
+                // Build dropdown items dynamically
+                const dropdownItems = [
+                  {
+                    label: "Editar",
+                    icon: Edit2,
+                    onClick: () => handleEditReceber(c)
+                  }
+                ];
+
+                // Add "Baixar/Receber" only if not already received
+                if (c.status !== "RECEBIDO" && c.status !== "Recebido" && c.status !== "CONCILIADO") {
+                  dropdownItems.push({
+                    label: "Baixar / Receber",
+                    icon: DollarSign,
+                    success: true,
+                    onClick: () => handleBaixaReceber(c)
+                  });
+                }
+
+                dropdownItems.push({ divider: true });
+                dropdownItems.push({
+                  label: "Excluir",
+                  icon: Trash2,
+                  danger: true,
+                  onClick: () => handleExcluirReceber(c.id_receber, c.descricao)
+                });
 
                 return (
                   <tr
                     key={idx}
                     style={{
                       borderBottom: `1px solid ${T.borderL}`,
-                      background: atrasado ? `${T.danger}04` : "transparent",
+                      background: atrasadoR ? `${T.danger}04` : "transparent",
                       transition: "background .15s"
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = atrasado ? `${T.danger}08` : T.primaryLight}
-                    onMouseLeave={e => e.currentTarget.style.background = atrasado ? `${T.danger}04` : "transparent"}
+                    onMouseEnter={e => e.currentTarget.style.background = atrasadoR ? `${T.danger}08` : T.primaryLight}
+                    onMouseLeave={e => e.currentTarget.style.background = atrasadoR ? `${T.danger}04` : "transparent"}
                   >
-                    {/* Vencimento */}
                     <td style={{ padding: "12px 14px" }}>
-                      <strong style={{ color: atrasado ? T.danger : T.text, fontWeight: 700, fontSize: 12 }}>
+                      <strong style={{ color: atrasadoR ? T.danger : T.text, fontWeight: 700, fontSize: 12 }}>
                         {c.vencimento ? new Date(c.vencimento + "T12:00:00Z").toLocaleDateString("pt-BR") : "—"}
                       </strong>
-                      {atrasado && (
-                        <span style={{
-                          display: "block", fontSize: 9, color: T.danger,
-                          fontWeight: 700, marginTop: 2
-                        }}>
+                      {atrasadoR && (
+                        <span style={{ display: "block", fontSize: 9, color: T.danger, fontWeight: 700, marginTop: 2 }}>
                           VENCIDO
                         </span>
                       )}
                     </td>
 
-                    {/* Fatura / Título */}
                     <td style={{ padding: "12px 14px" }}>
-                      <span style={{ color: T.info, fontSize: 11, fontWeight: 700, display: "block" }}>
-                        {c.fatura || "FAT-000"}
+                      <span style={{ color: T.success, fontSize: 11, fontWeight: 700, display: "block" }}>
+                        {c.fatura || "REC-000"}
                       </span>
                       <span style={{ color: T.muted, fontSize: 10, fontWeight: 600 }}>
                         {c.titulo || "TIT-000"}
                       </span>
                     </td>
 
-                    {/* Descrição */}
                     <td style={{ padding: "12px 14px", maxWidth: 180 }}>
                       <div style={{
                         whiteSpace: "nowrap", overflow: "hidden",
@@ -553,17 +555,14 @@ export default function FinanceiroPagar({
                       </div>
                     </td>
 
-                    {/* Fornecedor */}
                     <td style={{ padding: "12px 14px", fontSize: 12, color: T.sub, fontWeight: 500 }}>
-                      {c.fornecedor || "—"}
+                      {c.cliente || "—"}
                     </td>
 
-                    {/* NF */}
                     <td style={{ padding: "12px 14px", fontSize: 11, color: T.muted, fontWeight: 600 }}>
                       {c.numero_nf || "S/N"}
                     </td>
 
-                    {/* Parcela */}
                     <td style={{ padding: "12px 14px", textAlign: "center" }}>
                       <span style={{
                         background: T.bg, border: `1px solid ${T.border}`,
@@ -574,49 +573,27 @@ export default function FinanceiroPagar({
                       </span>
                     </td>
 
-                    {/* Valor */}
                     <td style={{ padding: "12px 14px" }}>
                       <span style={{
-                        color: atrasado ? T.danger : T.text,
+                        color: atrasadoR ? T.danger : T.success,
                         fontWeight: 800, fontSize: 13
                       }}>
                         R$ {formatBRL(c.valor)}
                       </span>
                     </td>
 
-                    {/* Status */}
                     <td style={{ padding: "12px 14px" }}>
                       <Badge color={statusColor}>
-                        {atrasado || c.status === "ATRASADO"
+                        {atrasadoR || c.status === "ATRASADO"
                           ? <><AlertCircle size={9} /> ATRASADO</>
                           : <><CheckCircle2 size={9} /> {c.status}</>
                         }
                       </Badge>
                     </td>
 
-                    {/* Ações — ActionDropdown unificado */}
                     {hasEditPermission && (
                       <td style={{ padding: "12px 14px", textAlign: "center" }}>
-                        <ActionDropdown items={[
-                          {
-                            label: "Editar Parcela",
-                            icon: Edit2,
-                            onClick: () => { setContaToEdit(c); setShowEditContaModal(true); }
-                          },
-                          { divider: true },
-                          {
-                            label: "Excluir Parcela",
-                            icon: Trash2,
-                            danger: true,
-                            onClick: () => handleExcluirParcela(c.id)
-                          },
-                          {
-                            label: "Excluir Obrigação Inteira",
-                            icon: AlertTriangle,
-                            danger: true,
-                            onClick: () => handleExcluirObrigacao(c.id_obrigacao, c.descricao)
-                          }
-                        ]} />
+                        <ActionDropdown items={dropdownItems} />
                       </td>
                     )}
                   </tr>
@@ -633,7 +610,7 @@ export default function FinanceiroPagar({
                       alignItems: "center", gap: 10
                     }}>
                       <Search size={32} strokeWidth={1} color={T.muted} />
-                      Nenhum registro encontrado para este período.
+                      Nenhuma conta a receber encontrada.
                     </div>
                   </td>
                 </tr>
@@ -648,16 +625,12 @@ export default function FinanceiroPagar({
           display: "flex", justifyContent: "space-between", alignItems: "center",
           background: T.card, flexWrap: "wrap", gap: 12
         }}>
-          {/* Linhas por página */}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>Exibir</span>
             <select
               value={pageSize}
               onChange={e => setPageSize(Number(e.target.value))}
-              style={{
-                ...selectStyle, padding: "5px 8px", fontSize: 11,
-                minWidth: 60
-              }}
+              style={{ ...selectStyle, padding: "5px 8px", fontSize: 11, minWidth: 60 }}
             >
               <option value={10}>10</option>
               <option value={30}>30</option>
@@ -667,14 +640,11 @@ export default function FinanceiroPagar({
             <span style={{ fontSize: 11, color: T.muted, fontWeight: 600 }}>por página</span>
           </div>
 
-          {/* Info + Navegação */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            {/* Descritivo quantitativo */}
             <span style={{ fontSize: 11, color: T.sub, fontWeight: 600 }}>
               {totalItems === 0 ? "0 — 0" : `${rangeStart} – ${rangeEnd}`} de {totalItems}
             </span>
 
-            {/* Botões de página */}
             {pageSize !== 0 && totalPages > 1 && (
               <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 {[

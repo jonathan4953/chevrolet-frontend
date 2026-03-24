@@ -96,21 +96,21 @@ function KpiCard({icon:Ic,label,value,trend,tv,color=T.primary,sub:subtitle,info
   const tc=trend==="up"?T.success:trend==="down"?T.danger:T.muted;
   const TI=trend==="up"?ArrowUpRight:trend==="down"?ArrowDownRight:Minus;
   const valStr = String(value || "");
-  const fSize = valStr.length > 16 ? 13 : valStr.length > 13 ? 16 : valStr.length > 10 ? 18 : 22;
+  const fSize = valStr.length > 20 ? 11 : valStr.length > 16 ? 12 : valStr.length > 13 ? 14 : valStr.length > 10 ? 16 : 20;
 
   return(
-    <div onMouseEnter={()=>sH(true)} onMouseLeave={()=>sH(false)} style={{background:T.card,borderRadius:T.r,padding:"18px 20px",border:`1px solid ${h?T.primaryBorder:T.border}`,boxShadow:h?T.shM:T.sh,transition:"all .25s",position:"relative",overflow:"hidden",minWidth:0}}>
+    <div onMouseEnter={()=>sH(true)} onMouseLeave={()=>sH(false)} style={{background:T.card,borderRadius:T.r,padding:"16px 18px",border:`1px solid ${h?T.primaryBorder:T.border}`,boxShadow:h?T.shM:T.sh,transition:"all .25s",position:"relative",overflow:"visible",minWidth:0}}>
       <div style={{position:"absolute",top:0,right:0,width:70,height:70,background:`radial-gradient(circle at top right,${color}08,transparent 70%)`}}/>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
-        <div style={{width:34,height:34,borderRadius:T.rS,background:`${color}12`,display:"flex",alignItems:"center",justifyContent:"center"}}><Ic size={16} color={color} strokeWidth={1.8}/></div>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
+        <div style={{width:32,height:32,borderRadius:T.rS,background:`${color}12`,display:"flex",alignItems:"center",justifyContent:"center"}}><Ic size={15} color={color} strokeWidth={1.8}/></div>
         <div style={{display:"flex",alignItems:"center",gap:4}}>
           {info&&<InfoTip text={info} size={12}/>}
           {tv&&<div style={{display:"flex",alignItems:"center",gap:3,background:`${tc}14`,padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:700,color:tc}}><TI size={11}/>{tv}</div>}
         </div>
       </div>
-      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:".05em",marginBottom:3, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}} title={label}>{label}</div>
-      <div style={{fontSize:fSize,fontWeight:800,color:T.text,letterSpacing:"-.02em",lineHeight:1.2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}} title={valStr}>{value}</div>
-      {subtitle&&<div style={{fontSize:10,color:T.muted,marginTop:4,fontWeight:500, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis"}} title={subtitle}>{subtitle}</div>}
+      <div style={{fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase",letterSpacing:".05em",marginBottom:3}}>{label}</div>
+      <div style={{fontSize:fSize,fontWeight:800,color:T.text,letterSpacing:"-.02em",lineHeight:1.3,wordBreak:"break-word"}}>{value}</div>
+      {subtitle&&<div style={{fontSize:10,color:T.muted,marginTop:4,fontWeight:500}}>{subtitle}</div>}
     </div>
   );
 }
@@ -206,7 +206,7 @@ function DashboardFranqueador({redeId,onSelectFranquia}){
           <div style={{minWidth:0, flex:1}}>
             <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase"}}>{x.l}<InfoTip text={x.tip} size={10}/></div>
             <div style={{fontSize:17,fontWeight:800,color:T.text}}>{x.v}</div>
-            {x.val!==undefined&&<div style={{fontSize:10,color:T.sub,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{fmtSmart(x.val)}</div>}
+            {x.val!==undefined&&<div style={{fontSize:10,color:T.sub,fontWeight:600}}>{fmtSmart(x.val)}</div>}
           </div>
         </div>))}
       <div style={{background:`linear-gradient(135deg,${T.primary}10,${T.primary}04)`,borderRadius:T.r,padding:"14px 18px",border:`1px solid ${T.primaryBorder}`,display:"flex",alignItems:"center",gap:12}}>
@@ -403,6 +403,434 @@ function MapaRede({redeId,onSelectFranquia}){
 }
 
 /* ═══════════════════════════════════════════════════════════
+   PERFORMANCE — Sub-abas: Visão Geral | Unidades | Geográfico | Ranking
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Filtro bar com datas personalizadas ── */
+function PerfFilters({periodo,setPeriodo,comparacao,setComparacao,per,comp,customDates,setCustomDates}){
+  const [showCustom,setShowCustom]=useState(periodo==="custom");
+  return(<div style={{background:T.card,borderRadius:T.r,padding:"12px 20px",border:`1px solid ${T.border}`,boxShadow:T.sh,marginBottom:18}}>
+    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:4}}>
+        <span style={{fontSize:10,color:T.muted,fontWeight:700}}>Período:</span>
+        {[["mes_atual","Mês"],["trimestre","Tri"],["semestre","Sem"],["ano","Ano"],["custom","Personalizado"]].map(([v,l])=>(
+          <button key={v} onClick={()=>{setPeriodo(v);setShowCustom(v==="custom");}} style={{padding:"4px 10px",borderRadius:T.rXs,border:`1px solid ${periodo===v?T.primary:T.border}`,background:periodo===v?T.primaryLight:T.card,color:periodo===v?T.primary:T.sub,fontSize:10,fontWeight:periodo===v?700:500,cursor:"pointer"}}>{l}</button>
+        ))}
+      </div>
+      <div style={{width:1,height:24,background:T.border}}/>
+      <div style={{display:"flex",alignItems:"center",gap:4}}>
+        <span style={{fontSize:10,color:T.muted,fontWeight:700}}>vs:</span>
+        {[["mes_anterior","Anterior"],["ano_anterior","Ano Ant."],["custom_comp","Personalizado"]].map(([v,l])=>(
+          <button key={v} onClick={()=>{setComparacao(v);if(v==="custom_comp")setShowCustom(true);}} style={{padding:"4px 10px",borderRadius:T.rXs,border:`1px solid ${comparacao===v?T.primary:T.border}`,background:comparacao===v?T.primaryLight:T.card,color:comparacao===v?T.primary:T.sub,fontSize:10,fontWeight:comparacao===v?700:500,cursor:"pointer"}}>{l}</button>
+        ))}
+      </div>
+      {per&&<div style={{marginLeft:"auto",fontSize:9,color:T.muted,fontWeight:600}}>{per.inicio} → {per.fim} vs {comp?.inicio} → {comp?.fim}</div>}
+    </div>
+    {/* Custom date inputs */}
+    {showCustom&&(<div style={{display:"flex",alignItems:"center",gap:10,marginTop:12,paddingTop:12,borderTop:`1px solid ${T.borderL}`,flexWrap:"wrap"}}>
+      <div style={{display:"flex",alignItems:"center",gap:6}}>
+        <span style={{fontSize:10,color:T.muted,fontWeight:600}}>De:</span>
+        <input type="date" value={customDates?.p1_ini||""} onChange={e=>setCustomDates({...customDates,p1_ini:e.target.value})} style={{padding:"4px 8px",borderRadius:T.rXs,border:`1px solid ${T.border}`,fontSize:11,color:T.text,background:T.card}}/>
+        <span style={{fontSize:10,color:T.muted,fontWeight:600}}>Até:</span>
+        <input type="date" value={customDates?.p1_fim||""} onChange={e=>setCustomDates({...customDates,p1_fim:e.target.value})} style={{padding:"4px 8px",borderRadius:T.rXs,border:`1px solid ${T.border}`,fontSize:11,color:T.text,background:T.card}}/>
+      </div>
+      {(comparacao==="custom_comp")&&(<div style={{display:"flex",alignItems:"center",gap:6}}>
+        <span style={{fontSize:10,color:T.muted,fontWeight:600}}>Comp. de:</span>
+        <input type="date" value={customDates?.p2_ini||""} onChange={e=>setCustomDates({...customDates,p2_ini:e.target.value})} style={{padding:"4px 8px",borderRadius:T.rXs,border:`1px solid ${T.border}`,fontSize:11,color:T.text,background:T.card}}/>
+        <span style={{fontSize:10,color:T.muted,fontWeight:600}}>Até:</span>
+        <input type="date" value={customDates?.p2_fim||""} onChange={e=>setCustomDates({...customDates,p2_fim:e.target.value})} style={{padding:"4px 8px",borderRadius:T.rXs,border:`1px solid ${T.border}`,fontSize:11,color:T.text,background:T.card}}/>
+      </div>)}
+      <button onClick={()=>{if(customDates?.p1_ini&&customDates?.p1_fim){setPeriodo("custom");if(comparacao!=="custom_comp")setComparacao("mes_anterior");}}} style={{padding:"5px 14px",borderRadius:T.rXs,border:"none",background:T.primary,color:"#fff",fontSize:10,fontWeight:700,cursor:"pointer"}}>Aplicar</button>
+    </div>)}
+  </div>);
+}
+
+/* ── Sub-aba: Visão Geral (KPIs + Gráfico + Insights) ── */
+function PerfVisaoGeral({d,periodo,setPeriodo,comparacao,setComparacao,metrica,setMetrica,redeId,customDates,setCustomDates}){
+  const kpis=d.kpis||[];const evolucao=d.evolucao||[];const insights=d.insights||[];const metas=d.metas||[];
+  const evoData=evolucao.map(e=>({mes:e.mes?.slice(5)||"",val:metrica==="receita"?e.receita:metrica==="clientes"?e.clientes:e.locacoes}));
+  const half=Math.ceil(evoData.length/2);
+  const insightIcons={TrendingDown,TrendingUp,AlertTriangle,Users,BarChart3};
+  const insightColors={danger:T.danger,warning:T.warning,success:T.success,info:T.info};
+
+  return(<div>
+    <PerfFilters periodo={periodo} setPeriodo={setPeriodo} comparacao={comparacao} setComparacao={setComparacao} per={d.periodo} comp={d.comparacao} customDates={customDates} setCustomDates={setCustomDates}/>
+
+    {/* KPIs comparativos */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(185px,1fr))",gap:12,marginBottom:18}}>
+      {kpis.map(k=>{
+        const valFmt=k.is_currency?fmt(k.atual):k.is_pct?pct(k.atual):String(k.atual);
+        const antFmt=k.is_currency?fmt(k.anterior):k.is_pct?pct(k.anterior):String(k.anterior);
+        return(<div key={k.key} style={{background:T.card,borderRadius:T.r,padding:"16px 18px",border:`1px solid ${T.border}`,boxShadow:T.sh,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",top:0,right:0,width:50,height:50,background:`radial-gradient(circle at top right,${k.positivo?T.success:T.danger}06,transparent 70%)`}}/>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,fontSize:10,color:T.muted,fontWeight:700,textTransform:"uppercase"}}>{k.label}<InfoTip text={k.info} size={10}/></div>
+            <div style={{display:"flex",alignItems:"center",gap:3,padding:"2px 7px",borderRadius:20,fontSize:10,fontWeight:700,background:`${k.positivo?T.success:T.danger}14`,color:k.positivo?T.success:T.danger}}>
+              {k.trend==="up"?<ArrowUpRight size={10}/>:k.trend==="down"?<ArrowDownRight size={10}/>:<Minus size={10}/>}{k.variacao>0?"+":""}{k.variacao}%
+            </div>
+          </div>
+          <div style={{fontSize:17,fontWeight:800,color:T.text,lineHeight:1.3,wordBreak:"break-word"}}>{valFmt}</div>
+          <div style={{fontSize:10,color:T.muted,marginTop:3}}>Anterior: {antFmt}</div>
+        </div>);
+      })}
+    </div>
+
+    {/* Gráfico + Insights side by side */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 360px",gap:14,marginBottom:18}}>
+      <ExpandableChart title="Evolução" sub="Barras escuras = período atual, claras = anterior" drillDown={<DrillDownReceita redeId={redeId}/>}>
+        <div style={{marginBottom:10,display:"flex",gap:3}}>
+          {[["receita","Receita"],["clientes","Clientes"],["locacoes","Locações"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setMetrica(v)} style={{padding:"3px 9px",borderRadius:T.rXs,border:`1px solid ${metrica===v?T.primary:T.border}`,background:metrica===v?T.primaryLight:T.card,color:metrica===v?T.primary:T.sub,fontSize:9,fontWeight:metrica===v?700:500,cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
+        <ChartCanvas type="bar" data={{labels:evoData.map(e=>e.mes),datasets:[{label:metrica==="receita"?"Receita":metrica==="clientes"?"Clientes":"Locações",data:evoData.map(e=>e.val),backgroundColor:evoData.map((_,i)=>i>=half?T.primary+"cc":`${T.muted}35`),borderRadius:4}]}} options={{_tc:{label:c=>metrica==="receita"?fmt(c.raw):String(c.raw)},_yt:{callback:v=>metrica==="receita"?fmtK(v):String(v)},plugins:{legend:{display:false}}}} height={200}/>
+      </ExpandableChart>
+
+      <div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"12px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:5}}>
+          <Zap size={13} color={T.warning}/><span style={{fontSize:13,fontWeight:700,color:T.text}}>Insights</span><InfoTip text="Interpretações automáticas geradas com base na comparação entre os períodos selecionados."/>
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {!insights.length&&<div style={{padding:28,textAlign:"center",color:T.muted,fontSize:11}}>Nenhum insight para o período</div>}
+          {insights.map((ins,i)=>{const Ic=insightIcons[ins.icone]||AlertTriangle;const co=insightColors[ins.tipo]||T.muted;
+            return(<div key={i} style={{padding:"12px 18px",borderBottom:i<insights.length-1?`1px solid ${T.borderL}`:"none",borderLeft:`3px solid ${co}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}><div style={{width:22,height:22,borderRadius:T.rXs,background:`${co}12`,display:"flex",alignItems:"center",justifyContent:"center"}}><Ic size={11} color={co}/></div><span style={{fontSize:11,fontWeight:700,color:T.text}}>{ins.titulo}</span></div>
+              <div style={{fontSize:10,color:T.sub,lineHeight:1.5,paddingLeft:28}}>{ins.descricao}</div>
+            </div>);
+          })}
+        </div>
+      </div>
+    </div>
+
+    {/* Metas vs Realizado */}
+    {metas.length>0&&(<div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden"}}>
+      <SectionTitle title="Metas vs Realizado" info="Comparação entre metas definidas e resultado efetivo. Barra verde ≥100%, amarela 60-99%, vermelha <60%."/>
+      <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr>
+        <TH info="Unidade franqueada.">Unidade</TH><TH info="Meta de receita do período.">Meta</TH><TH info="Valor realizado.">Realizado</TH><TH info="% da meta atingido.">% Atingido</TH><TH info="Meta e resultado de clientes.">Clientes</TH>
+      </tr></thead>
+      <tbody>{metas.map((m,i)=>{const pc2=m.pct_receita>=100?T.success:m.pct_receita>=60?T.warning:T.danger;return(<tr key={m.empresa_id} style={{borderBottom:`1px solid ${T.borderL}`}}>
+        <td style={{padding:"10px 14px",fontWeight:700,color:T.text}}>{m.apelido}</td>
+        <td style={{padding:"10px 14px",color:T.sub}}>{fmt(m.meta_receita)}</td>
+        <td style={{padding:"10px 14px",fontWeight:700,color:T.text}}>{fmt(m.real_receita)}</td>
+        <td style={{padding:"10px 14px"}}><div style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:70,height:5,borderRadius:3,background:T.borderL,overflow:"hidden"}}><div style={{height:"100%",borderRadius:3,background:pc2,width:`${Math.min(m.pct_receita,100)}%`}}/></div><span style={{fontSize:10,fontWeight:700,color:pc2}}>{m.pct_receita}%</span></div></td>
+        <td style={{padding:"10px 14px",color:T.sub}}>{m.real_clientes}/{m.meta_clientes}</td>
+      </tr>);})}
+      </tbody></table></div>
+    </div>)}
+  </div>);
+}
+
+/* ── Sub-aba: Ranking detalhado ── */
+function PerfRanking({d,periodo,setPeriodo,comparacao,setComparacao,customDates,setCustomDates}){
+  const ranking=d.ranking||[];
+  return(<div>
+    <PerfFilters periodo={periodo} setPeriodo={setPeriodo} comparacao={comparacao} setComparacao={setComparacao} per={d.periodo} comp={d.comparacao} customDates={customDates} setCustomDates={setCustomDates}/>
+    <div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden"}}>
+      <SectionTitle title="Ranking Completo" info="Todas as unidades ordenadas por receita do período atual. Mostra crescimento e diferença vs média da rede." right={<span style={{fontSize:11,color:T.muted,fontWeight:600}}>{ranking.length} unidades</span>}/>
+      <div style={{overflowX:"auto"}}><table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}><thead><tr>
+        <TH>#</TH><TH info="Nome da unidade.">Unidade</TH><TH info="Receita do período atual.">Receita Atual</TH><TH info="Receita do período anterior.">Anterior</TH><TH info="Variação % entre períodos.">Crescimento</TH><TH info="Diferença vs média da rede.">vs Média</TH><TH info="Clientes únicos (atual / anterior).">Clientes</TH>
+      </tr></thead>
+      <tbody>{ranking.map((r,i)=>{const vc=r.variacao>=0?T.success:T.danger;const dc=r.diff_media>=0?T.success:T.danger;
+        const mc=i===0?"#FFD700":i===1?"#C0C0C0":i===2?"#CD7F32":null;
+        return(<tr key={r.empresa_id} style={{borderBottom:`1px solid ${T.borderL}`}} onMouseEnter={e=>e.currentTarget.style.background=T.primaryLight} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <td style={{padding:"11px 14px",width:40}}>{mc?<div style={{width:22,height:22,borderRadius:"50%",background:`${mc}25`,border:`2px solid ${mc}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:mc}}>{i+1}</div>:<span style={{color:T.muted,fontWeight:600}}>{i+1}</span>}</td>
+          <td style={{padding:"11px 14px",fontWeight:700,color:T.text}}>{r.apelido}</td>
+          <td style={{padding:"11px 14px",fontWeight:700,color:T.text}}>{fmt(r.receita_atual)}</td>
+          <td style={{padding:"11px 14px",color:T.sub}}>{fmt(r.receita_anterior)}</td>
+          <td style={{padding:"11px 14px"}}><span style={{display:"inline-flex",alignItems:"center",gap:3,fontWeight:700,color:vc}}>{r.variacao>=0?<ArrowUpRight size={11}/>:<ArrowDownRight size={11}/>}{r.variacao>0?"+":""}{r.variacao}%</span></td>
+          <td style={{padding:"11px 14px"}}><span style={{fontWeight:600,color:dc}}>{r.diff_media>=0?"+":""}{fmt(r.diff_media)}</span></td>
+          <td style={{padding:"11px 14px",color:T.sub}}>{r.clientes_atual} <span style={{fontSize:10,color:T.muted}}>({r.clientes_anterior})</span></td>
+        </tr>);})}
+      </tbody></table></div>
+    </div>
+  </div>);
+}
+
+/* ── Sub-aba: Geográfico (mapa + mapa de calor) ── */
+function PerfGeo({ranking,redeId,onSelectUnit}){
+  const mapRef=useRef(null);const mapI=useRef(null);const mk=useRef([]);const [loaded,setLoaded]=useState(false);const [fqs,setFqs]=useState([]);
+  const [metricaGeo,setMetricaGeo]=useState("receita");
+  const [heatMetric,setHeatMetric]=useState("receita");
+
+  useEffect(()=>{(async()=>{try{const url=redeId?`/franqueador-module/mapa?rede_id=${redeId}`:"/franqueador-module/mapa";const r=await api.get(url);
+    const merged=(r.data||[]).map(f=>{const rk=ranking.find(x=>x.empresa_id===f.empresa_id);return{...f,variacao:rk?.variacao||0,receita_atual:rk?.receita_atual||f.receita,clientes_atual:rk?.clientes_atual||f.clientes,ranking_pos:ranking.findIndex(x=>x.empresa_id===f.empresa_id)+1};});
+    setFqs(merged);
+  }catch(e){console.error(e);}})();},[redeId,ranking]);
+
+  // Leaflet load
+  useEffect(()=>{if(window.L){setLoaded(true);return;}const css=document.createElement("link");css.rel="stylesheet";css.href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";document.head.appendChild(css);const js=document.createElement("script");js.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";js.onload=()=>setLoaded(true);document.head.appendChild(js);},[]);
+
+  // Map init (once)
+  useEffect(()=>{if(!loaded||!mapRef.current||mapI.current)return;mapI.current=window.L.map(mapRef.current).setView([-6.5,-36],7);window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM",maxZoom:18}).addTo(mapI.current);setTimeout(()=>mapI.current.invalidateSize(),300);},[loaded]);
+
+  // Redraw markers when metric or data changes
+  useEffect(()=>{
+    if(!mapI.current||!window.L||!fqs.length)return;
+    const L=window.L;
+    // Clear old markers
+    mk.current.forEach(m=>{try{mapI.current.removeLayer(m);}catch(e){}});
+    mk.current=[];
+
+    fqs.forEach(f=>{
+      if(!f.latitude||!f.longitude)return;
+      // Determine color based on selected metric
+      let c=T.muted;
+      if(metricaGeo==="receita"){
+        c=f.receita_atual>50000?T.success:f.receita_atual>10000?T.warning:T.danger;
+      }else if(metricaGeo==="crescimento"){
+        c=f.variacao>10?T.success:f.variacao>-5?T.warning:T.danger;
+      }else if(metricaGeo==="clientes"){
+        c=f.clientes_atual>10?T.success:f.clientes_atual>3?T.warning:T.danger;
+      }else if(metricaGeo==="ocupacao"){
+        const ocu=f.receita_atual>0?70:30; // approximation from data
+        c=ocu>70?T.success:ocu>40?T.warning:T.danger;
+      }
+
+      const sz=Math.max(16,Math.min(28,14+f.receita_atual/40000));
+      const icon=L.divIcon({className:"",html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;cursor:pointer;">${f.ranking_pos||""}</div>`,iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});
+      const m=L.marker([f.latitude,f.longitude],{icon}).addTo(mapI.current);
+      m.bindPopup(`<div style="font-family:system-ui;min-width:220px;padding:4px;">
+        <div style="font-weight:800;font-size:14px;margin-bottom:2px;">#${f.ranking_pos} ${f.apelido||f.nome}</div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:8px;">${f.regiao||""}</div>
+        <div style="font-size:12px;line-height:1.8;">
+          <b>Receita:</b> ${fmt(f.receita_atual)}<br>
+          <b>Crescimento:</b> <span style="color:${f.variacao>=0?"#22A06B":"#D93025"};font-weight:700;">${f.variacao>0?"+":""}${f.variacao}%</span><br>
+          <b>Clientes:</b> ${f.clientes_atual}
+        </div>
+      </div>`);
+      m.on("click",()=>onSelectUnit&&onSelectUnit(f));
+      mk.current.push(m);
+    });
+    // Fit bounds
+    const valid=fqs.filter(f=>f.latitude&&f.longitude);
+    if(valid.length>1){const bounds=L.latLngBounds(valid.map(f=>[f.latitude,f.longitude]));mapI.current.fitBounds(bounds,{padding:[40,40]});}
+  },[fqs,loaded,metricaGeo]);
+
+  // Regional aggregation for heat map
+  const regioes=useMemo(()=>{
+    const map={};
+    fqs.forEach(f=>{
+      const r=f.regiao||"Sem região";
+      if(!map[r])map[r]={receita:0,count:0,var_sum:0,clientes:0,locacoes:0};
+      map[r].receita+=f.receita_atual||0;
+      map[r].count++;
+      map[r].var_sum+=f.variacao||0;
+      map[r].clientes+=f.clientes_atual||0;
+    });
+    return Object.entries(map).map(([nome,v])=>({
+      nome,receita:v.receita,count:v.count,
+      var_media:v.count>0?Math.round(v.var_sum/v.count):0,
+      clientes:v.clientes,
+    })).sort((a,b)=>b.receita-a.receita);
+  },[fqs]);
+  const totalRec=regioes.reduce((s,g)=>s+g.receita,0);
+  const totalCli=regioes.reduce((s,g)=>s+g.clientes,0);
+
+  // Heat map value by selected metric
+  const getHeatVal=(r)=>{
+    if(heatMetric==="receita")return r.receita;
+    if(heatMetric==="crescimento")return r.var_media;
+    if(heatMetric==="clientes")return r.clientes;
+    if(heatMetric==="concentracao")return totalRec>0?Math.round(r.receita/totalRec*100):0;
+    return r.receita;
+  };
+  const heatMax=Math.max(...regioes.map(r=>Math.abs(getHeatVal(r))),1);
+  const getHeatColor=(val)=>{
+    if(heatMetric==="crescimento"){
+      return val>10?T.success:val>0?`${T.success}88`:val>-10?T.warning:T.danger;
+    }
+    const intensity=Math.min(Math.abs(val)/heatMax,1);
+    if(intensity>0.7)return T.success;
+    if(intensity>0.4)return T.warning;
+    return T.danger;
+  };
+  const heatLabel=(val)=>{
+    if(heatMetric==="receita")return fmt(val);
+    if(heatMetric==="crescimento")return `${val>0?"+":""}${val}%`;
+    if(heatMetric==="clientes")return String(val);
+    if(heatMetric==="concentracao")return `${val}%`;
+    return String(val);
+  };
+
+  return(<div>
+    {/* Metric filter for map */}
+    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:14,flexWrap:"wrap"}}>
+      <span style={{fontSize:11,color:T.muted,fontWeight:700}}>Colorir mapa por:</span>
+      {[["receita","Faturamento"],["crescimento","Crescimento %"],["clientes","Volume Clientes"]].map(([v,l])=>(
+        <button key={v} onClick={()=>setMetricaGeo(v)} style={{padding:"5px 12px",borderRadius:T.rXs,border:`1px solid ${metricaGeo===v?T.primary:T.border}`,background:metricaGeo===v?T.primaryLight:T.card,color:metricaGeo===v?T.primary:T.sub,fontSize:10,fontWeight:metricaGeo===v?700:500,cursor:"pointer",transition:"all .15s"}}>{l}</button>
+      ))}
+      <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8,fontSize:10}}>
+        <span style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:10,height:10,borderRadius:"50%",background:T.success}}/> Alta</span>
+        <span style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:10,height:10,borderRadius:"50%",background:T.warning}}/> Média</span>
+        <span style={{display:"flex",alignItems:"center",gap:3}}><div style={{width:10,height:10,borderRadius:"50%",background:T.danger}}/> Baixa</span>
+      </div>
+    </div>
+
+    <div style={{display:"grid",gridTemplateColumns:"1fr 340px",gap:14,marginBottom:18}}>
+      {/* Map */}
+      <div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden"}}>
+        {!loaded&&<Spinner/>}<div ref={mapRef} style={{width:"100%",height:480}}/>
+      </div>
+
+      {/* Regional sidebar */}
+      <div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        <div style={{padding:"12px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:5}}>
+          <MapPin size={13} color={T.primary}/><span style={{fontSize:13,fontWeight:700,color:T.text}}>Análise Regional</span><InfoTip text="Resumo de performance por região geográfica. Clique numa unidade no mapa para análise individual."/>
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {regioes.map((g,i)=>{const pctRec=totalRec>0?Math.round(g.receita/totalRec*100):0;
+            return(<div key={i} style={{padding:"12px 18px",borderBottom:`1px solid ${T.borderL}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                <span style={{fontSize:12,fontWeight:700,color:T.text}}>{g.nome}</span>
+                <span style={{fontSize:10,color:T.muted}}>{g.count} unid.</span>
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
+                <div style={{flex:1,height:5,borderRadius:3,background:T.borderL,overflow:"hidden"}}><div style={{height:"100%",borderRadius:3,background:T.primary,width:`${pctRec}%`}}/></div>
+                <span style={{fontSize:10,fontWeight:700,color:T.primary,minWidth:28,textAlign:"right"}}>{pctRec}%</span>
+              </div>
+              <div style={{display:"flex",gap:10,fontSize:10,color:T.sub}}>
+                <span>Receita: <strong style={{color:T.text}}>{fmt(g.receita)}</strong></span>
+                <span>Cresc: <strong style={{color:g.var_media>=0?T.success:T.danger}}>{g.var_media>0?"+":""}{g.var_media}%</strong></span>
+              </div>
+            </div>);
+          })}
+        </div>
+      </div>
+    </div>
+
+    {/* ── MAPA DE CALOR POR REGIÃO ── */}
+    <div style={{background:T.card,borderRadius:T.r,border:`1px solid ${T.border}`,boxShadow:T.sh,overflow:"hidden"}}>
+      <div style={{padding:"14px 22px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:5}}>
+          <Activity size={14} color={T.primary}/>
+          <span style={{fontSize:14,fontWeight:700,color:T.text}}>Mapa de Calor por Região</span>
+          <InfoTip text="Visualização de intensidade por região. Quanto mais escura a cor, maior o valor do indicador selecionado. Permite comparar performance regional rapidamente."/>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          <span style={{fontSize:10,color:T.muted,fontWeight:700}}>Indicador:</span>
+          {[["receita","Faturamento"],["crescimento","Crescimento %"],["clientes","Clientes"],["concentracao","Concentração %"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setHeatMetric(v)} style={{padding:"4px 10px",borderRadius:T.rXs,border:`1px solid ${heatMetric===v?T.primary:T.border}`,background:heatMetric===v?T.primaryLight:T.card,color:heatMetric===v?T.primary:T.sub,fontSize:10,fontWeight:heatMetric===v?700:500,cursor:"pointer",transition:"all .15s"}}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:20}}>
+        <div style={{display:"grid",gridTemplateColumns:`repeat(${Math.min(regioes.length,4)},1fr)`,gap:12}}>
+          {regioes.map((r,i)=>{
+            const val=getHeatVal(r);
+            const hc=getHeatColor(val);
+            return(<div key={i} style={{background:`${hc}12`,borderRadius:T.r,border:`2px solid ${hc}30`,padding:"20px 18px",textAlign:"center",transition:"all .2s",cursor:"default"}} onMouseEnter={e=>{e.currentTarget.style.transform="scale(1.03)";e.currentTarget.style.boxShadow=`0 4px 16px ${hc}25`;}} onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)";e.currentTarget.style.boxShadow="none";}}>
+              <div style={{fontSize:12,fontWeight:700,color:T.text,marginBottom:6}}>{r.nome}</div>
+              <div style={{fontSize:24,fontWeight:800,color:hc,lineHeight:1.2,marginBottom:4,wordBreak:"break-word"}}>{heatLabel(val)}</div>
+              <div style={{fontSize:10,color:T.muted}}>{r.count} unidade{r.count!==1?"s":""}</div>
+              <div style={{marginTop:8,height:6,borderRadius:3,background:`${hc}20`,overflow:"hidden"}}>
+                <div style={{height:"100%",borderRadius:3,background:hc,width:`${Math.min(Math.abs(val)/heatMax*100,100)}%`,transition:"width .4s"}}/>
+              </div>
+            </div>);
+          })}
+        </div>
+        {/* Geo insights */}
+        {regioes.length>1&&(<div style={{marginTop:16,padding:"12px 16px",background:T.bg,borderRadius:T.rS,fontSize:11,color:T.sub,lineHeight:1.6}}>
+          <strong style={{color:T.text}}>Insights Geográficos:</strong>
+          {regioes[0]&&totalRec>0&&<span> A região <strong>{regioes[0].nome}</strong> concentra {Math.round(regioes[0].receita/totalRec*100)}% do faturamento da rede.</span>}
+          {regioes.filter(r=>r.var_media<-5).length>0&&<span> {regioes.filter(r=>r.var_media<-5).length} região(ões) com crescimento negativo: {regioes.filter(r=>r.var_media<-5).map(r=>r.nome).join(", ")}.</span>}
+          {regioes.filter(r=>r.var_media>15).length>0&&<span> Destaque positivo: {regioes.filter(r=>r.var_media>15).map(r=>r.nome).join(", ")} com crescimento acima de 15%.</span>}
+        </div>)}
+      </div>
+    </div>
+  </div>);
+}
+
+/* ── Sub-aba: Unidade Individual (painel micro) ── */
+function PerfUnidade({empresaId,onBack,redeId}){
+  const [d,setD]=useState(null);const [loading,setLoading]=useState(true);
+  useEffect(()=>{(async()=>{try{setLoading(true);const url=`/franqueador-module/performance/unidade/${empresaId}${redeId?`?rede_id=${redeId}`:""}`;const r=await api.get(url);setD(r.data);}catch(e){console.error(e);}finally{setLoading(false);}})();},[empresaId,redeId]);
+  if(loading)return<Spinner/>;if(!d)return<div style={{padding:60,textAlign:"center",color:T.muted}}>Erro ao carregar</div>;
+  const info=d.info||{};const k=d.kpis||{};const evo=d.evolucao||[];const media=d.media_rede||{};
+
+  // Merge evo with media for overlay chart
+  const chartLabels=evo.map(e=>e.mes?.slice(5)||"");
+  const chartUnidade=evo.map(e=>e.receita);
+  const chartMedia=evo.map(e=>media[e.mes]?.receita||0);
+
+  return(<div>
+    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
+      <button onClick={onBack} style={{width:32,height:32,borderRadius:T.rS,border:`1px solid ${T.border}`,background:T.card,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:T.sub}}><ArrowLeft size={14}/></button>
+      <div style={{flex:1}}><h3 style={{fontSize:18,fontWeight:800,color:T.text,margin:0}}>{info.apelido}</h3><div style={{fontSize:11,color:T.muted}}>{info.nome} • {info.regiao||""}</div></div>
+      <Badge color={T.info}>#{k.ranking_posicao} de {k.total_unidades}</Badge>
+    </div>
+
+    {/* KPIs */}
+    <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:10,marginBottom:18}}>
+      <KpiCard icon={DollarSign} label="Receita" value={fmt(k.receita)} color={T.success} info="Receita desta unidade no mês atual." trend={k.var_receita>=0?"up":"down"} tv={`${k.var_receita>0?"+":""}${k.var_receita}%`}/>
+      <KpiCard icon={DollarSign} label="Ticket Médio" value={fmt(k.ticket_medio)} color={T.primary} info="Receita ÷ clientes desta unidade no mês."/>
+      <KpiCard icon={Users} label="Clientes" value={k.clientes} color={T.info} info="Clientes únicos que locaram neste mês." trend={k.var_clientes>=0?"up":"down"} tv={`${k.var_clientes>0?"+":""}${k.var_clientes}%`}/>
+      <KpiCard icon={Target} label="Ocupação" value={pct(k.ocupacao)} color={T.primary} info="Ativos locados ÷ operacionais desta unidade."/>
+      <KpiCard icon={AlertTriangle} label="Inadimplência" value={pct(k.inadimplencia)} color={k.inadimplencia>10?T.danger:T.success} info="Percentual de locações atrasadas neste mês."/>
+      <KpiCard icon={Trophy} label="Ranking" value={`#${k.ranking_posicao}`} sub={`de ${k.total_unidades} unidades`} color={k.ranking_posicao<=3?"#FFD700":T.sub} info="Posição desta unidade no ranking de receita da rede."/>
+    </div>
+
+    {/* Overlay chart: Unidade vs Média da Rede */}
+    <ExpandableChart title="Receita: Unidade vs Média da Rede" sub="Linha laranja = esta unidade • Linha cinza = média da rede" drillDown={null}>
+      <ChartCanvas type="line" data={{labels:chartLabels,datasets:[
+        {label:info.apelido,data:chartUnidade,borderColor:T.primary,backgroundColor:T.primary+"15",tension:.4,fill:true,pointRadius:4,pointBackgroundColor:T.card,pointBorderColor:T.primary,pointBorderWidth:2},
+        {label:"Média da Rede",data:chartMedia,borderColor:T.muted,backgroundColor:"transparent",tension:.4,borderDash:[5,5],pointRadius:3,pointBackgroundColor:T.card,pointBorderColor:T.muted,pointBorderWidth:1.5},
+      ]}} options={{_tc:{label:c=>fmt(c.raw)},_yt:{callback:v=>fmtK(v)}}}/>
+    </ExpandableChart>
+  </div>);
+}
+
+/* ── Performance Tab principal (controla sub-abas) ── */
+function PerformanceTab({redeId,showToast}){
+  const [d,setD]=useState(null);const [loading,setLoading]=useState(true);
+  const [periodo,setPeriodo]=useState("mes_atual");
+  const [comparacao,setComparacao]=useState("mes_anterior");
+  const [metrica,setMetrica]=useState("receita");
+  const [subTab,setSubTab]=useState("visao");
+  const [selUnit,setSelUnit]=useState(null);
+  const [customDates,setCustomDates]=useState({p1_ini:"",p1_fim:"",p2_ini:"",p2_fim:""});
+
+  const load=async()=>{
+    try{setLoading(true);
+      let url=`/franqueador-module/performance?periodo=${periodo}&comparacao=${comparacao==="custom_comp"?"custom":comparacao}${redeId?`&rede_id=${redeId}`:""}`;
+      // Add custom dates if applicable
+      if(periodo==="custom"&&customDates.p1_ini&&customDates.p1_fim){
+        url+=`&data_inicio=${customDates.p1_ini}&data_fim=${customDates.p1_fim}`;
+        if(comparacao==="custom_comp"&&customDates.p2_ini&&customDates.p2_fim){
+          url+=`&comp_inicio=${customDates.p2_ini}&comp_fim=${customDates.p2_fim}`;
+        }
+      }
+      const r=await api.get(url);setD(r.data);
+    }catch(e){
+      console.error("Performance error:",e);
+      if(e.response?.status===404)setD({_error:"Endpoint não encontrado. Atualize franqueador_routes.py e reinicie o backend."});
+    }finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[redeId,periodo,comparacao]);
+  // Reload when custom dates change and period is custom
+  useEffect(()=>{if(periodo==="custom"&&customDates.p1_ini&&customDates.p1_fim)load();},[customDates.p1_ini,customDates.p1_fim,customDates.p2_ini,customDates.p2_fim]);
+
+  if(loading)return<Spinner/>;
+  if(!d)return<div style={{textAlign:"center",padding:60,color:T.muted}}>Erro ao carregar</div>;
+  if(d._error)return<div style={{textAlign:"center",padding:60}}><AlertTriangle size={28} color={T.warning} style={{marginBottom:10}}/><div style={{fontSize:14,fontWeight:700,color:T.text,marginBottom:6}}>Endpoint não encontrado</div><div style={{fontSize:12,color:T.muted,maxWidth:500,margin:"0 auto",lineHeight:1.6}}>{d._error}</div></div>;
+
+  // If viewing a specific unit, show its panel
+  if(selUnit)return<PerfUnidade empresaId={selUnit.empresa_id} onBack={()=>setSelUnit(null)} redeId={redeId}/>;
+
+  const subTabs=[{id:"visao",l:"Visão Geral",ic:BarChart3},{id:"ranking",l:"Ranking",ic:Trophy},{id:"geo",l:"Geográfico",ic:Globe}];
+
+  return(<div>
+    {/* Sub-tab bar */}
+    <div style={{display:"flex",alignItems:"center",gap:2,marginBottom:16}}>
+      {subTabs.map(t=>{const a=subTab===t.id;return(<button key={t.id} onClick={()=>setSubTab(t.id)} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:T.rXs,border:"none",background:a?`${T.primary}12`:"transparent",color:a?T.primary:T.muted,fontSize:11,fontWeight:a?700:600,cursor:"pointer"}}><t.ic size={13}/>{t.l}</button>);})}
+    </div>
+
+    {subTab==="visao"&&<PerfVisaoGeral d={d} periodo={periodo} setPeriodo={setPeriodo} comparacao={comparacao} setComparacao={setComparacao} metrica={metrica} setMetrica={setMetrica} redeId={redeId} customDates={customDates} setCustomDates={setCustomDates}/>}
+    {subTab==="ranking"&&<PerfRanking d={d} periodo={periodo} setPeriodo={setPeriodo} comparacao={comparacao} setComparacao={setComparacao} customDates={customDates} setCustomDates={setCustomDates}/>}
+    {subTab==="geo"&&<PerfGeo ranking={d.ranking||[]} redeId={redeId} onSelectUnit={u=>setSelUnit(u)}/>}
+  </div>);
+}
+
+/* ═══════════════════════════════════════════════════════════
    ALERTAS
    ═══════════════════════════════════════════════════════════ */
 function AlertasFranqueador({redeId,showToast}){
@@ -438,7 +866,8 @@ export default function CentroComandoFranqueador({styles:ps,currentUser,showToas
   const goBack=useCallback(()=>{sSel(null);setViewMode(null);sTab("dashboard");},[]);
 
   const tabs=[
-    {id:"dashboard",l:"Dashboard",ic:LayoutDashboard},
+    {id:"dashboard",l:"Visão Geral",ic:LayoutDashboard},
+    {id:"performance",l:"Performance",ic:Activity},
     {id:"mapa",l:"Mapa da Rede",ic:Globe},
     {id:"alertas",l:"Alertas",ic:BellRing},
   ];
@@ -458,6 +887,7 @@ export default function CentroComandoFranqueador({styles:ps,currentUser,showToas
     </div>)}
 
     {tab==="dashboard"&&<DashboardFranqueador redeId={redeId} onSelectFranquia={(f,mode)=>goFranquia(f,mode||"dossie")}/>}
+    {tab==="performance"&&<PerformanceTab redeId={redeId} showToast={showToast}/>}
     {tab==="detail"&&sel&&viewMode==="dossie"&&<DossieFranquia empresaId={sel.empresa_id} onBack={goBack}/>}
     {tab==="detail"&&sel&&viewMode==="gestao"&&<GestaoFranquia empresaId={sel.empresa_id} onBack={goBack}/>}
     {tab==="mapa"&&<MapaRede redeId={redeId} onSelectFranquia={f=>goFranquia(f,"dossie")}/>}
