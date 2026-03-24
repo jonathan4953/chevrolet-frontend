@@ -20,6 +20,25 @@ const C = {
   bgAlt: "#f8fafc" 
 };
 
+const scrollbarStyles = `
+  .sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: ${C.border};
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: ${C.muted};
+  }
+`;
+
 function GroupTitle({ children, isOpen }) {
   return (
     <div style={{
@@ -140,6 +159,7 @@ export default function Sidebar({ activeTab, setActiveTab, currentUser, loadDash
 
   return (
     <aside style={{ ...styles?.sidebar, position: "fixed", top: 0, left: 0, height: "100vh", backgroundColor: C.bg, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", overflow: "visible", zIndex: 1000, width: isOpen ? "260px" : "80px", boxShadow: "4px 0 24px rgba(0,0,0,0.02)", transition: "width 0.3s ease-in-out" }}>
+      <style>{scrollbarStyles}</style>
       <button onClick={() => setIsOpen(!isOpen)} style={{ position: "absolute", right: "-14px", top: "32px", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", backgroundColor: "#ffffff", border: `2px solid ${C.primary}`, borderRadius: "50%", boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)", color: C.primary, cursor: "pointer", transition: "all 0.2s ease-in-out" }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = C.primary; e.currentTarget.style.color = "#ffffff"; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#ffffff"; e.currentTarget.style.color = C.primary; }}>
         {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
@@ -191,7 +211,7 @@ export default function Sidebar({ activeTab, setActiveTab, currentUser, loadDash
         </div>
 
         {/* Nav */}
-        <nav style={{ ...styles?.nav, flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 0 20px 0", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+        <nav className="sidebar-nav" style={{ ...styles?.nav, flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 0 20px 0", scrollbarWidth: "thin", scrollbarColor: `${C.border} transparent` }}>
           
           {isSearching && filteredItems.length === 0 && isOpen && (
             <div style={{ padding: "30px 20px", textAlign: "center" }}>
