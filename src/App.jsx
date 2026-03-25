@@ -2068,9 +2068,126 @@ const clienteDadosExtras = clienteSelecionado ? {
     // MANTÉM INTACTO: Lógica do Primeiro Acesso continua no App.jsx por segurança
     if (showFirstAccessModal) {
       return (
-        <div style={styles.loginPage}>
-          <div style={styles.loginCard}>
-             {/* ... todo o seu código do modal de primeiro acesso continua aqui ... */}
+        <div style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          padding: 16,
+        }}>
+          <div style={{
+            background: "#FFFFFF",
+            borderRadius: 24,
+            padding: "44px 40px",
+            width: "100%",
+            maxWidth: 440,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04)",
+            border: "1px solid #E5E7EB",
+          }}>
+            {/* Logo */}
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <img src={sysLogos?.login || LogoOmni} alt="Omni26" style={{ height: 40, objectFit: "contain" }} />
+            </div>
+
+            {/* Accent bar + Title */}
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <div style={{ width: 4, height: 28, borderRadius: 2, background: "linear-gradient(to bottom, #F26B25, #FF9B6A)" }} />
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "#2A2B2D" }}>Criar Nova Senha</h2>
+            </div>
+            <p style={{ margin: "0 0 28px 16px", color: "#8E9093", fontSize: 13, fontWeight: 500, lineHeight: 1.5 }}>
+              Bem-vindo(a), <strong style={{ color: "#2A2B2D" }}>{pendingUser?.name || "Usuário"}</strong>! Por segurança, defina uma nova senha para continuar.
+            </p>
+
+            <form onSubmit={handleFirstAccessSubmit}>
+              {/* Nova Senha */}
+              <div style={{ marginBottom: 18 }}>
+                <label style={{ display: "block", fontSize: 10, color: "#8E9093", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                  Nova Senha <span style={{ color: "#D93025" }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  minLength={6}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: "1px solid #D4D5D6",
+                    fontSize: 14,
+                    color: "#2A2B2D",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                    background: "#FFFFFF",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "#F26B25"; e.target.style.boxShadow = "0 0 0 3px rgba(242, 107, 37, 0.1)"; }}
+                  onBlur={e => { e.target.style.borderColor = "#D4D5D6"; e.target.style.boxShadow = "none"; }}
+                />
+              </div>
+
+              {/* Confirmar Senha */}
+              <div style={{ marginBottom: 28 }}>
+                <label style={{ display: "block", fontSize: 10, color: "#8E9093", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
+                  Confirmar Senha <span style={{ color: "#D93025" }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={e => setConfirmNewPassword(e.target.value)}
+                  placeholder="Repita a nova senha"
+                  required
+                  minLength={6}
+                  style={{
+                    width: "100%",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: `1px solid ${confirmNewPassword && confirmNewPassword !== newPassword ? "#D93025" : "#D4D5D6"}`,
+                    fontSize: 14,
+                    color: "#2A2B2D",
+                    outline: "none",
+                    boxSizing: "border-box",
+                    transition: "border-color 0.2s, box-shadow 0.2s",
+                    background: "#FFFFFF",
+                  }}
+                  onFocus={e => { e.target.style.borderColor = "#F26B25"; e.target.style.boxShadow = "0 0 0 3px rgba(242, 107, 37, 0.1)"; }}
+                  onBlur={e => { e.target.style.borderColor = confirmNewPassword && confirmNewPassword !== newPassword ? "#D93025" : "#D4D5D6"; e.target.style.boxShadow = "none"; }}
+                />
+                {confirmNewPassword && confirmNewPassword !== newPassword && (
+                  <p style={{ margin: "6px 0 0 0", fontSize: 11, color: "#D93025", fontWeight: 600 }}>As senhas não coincidem.</p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={!newPassword || newPassword.length < 6 || newPassword !== confirmNewPassword}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  borderRadius: 12,
+                  border: "none",
+                  background: (!newPassword || newPassword.length < 6 || newPassword !== confirmNewPassword) ? "#D4D5D6" : "#F26B25",
+                  color: "#FFFFFF",
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: (!newPassword || newPassword.length < 6 || newPassword !== confirmNewPassword) ? "not-allowed" : "pointer",
+                  boxShadow: (!newPassword || newPassword.length < 6 || newPassword !== confirmNewPassword) ? "none" : "0 4px 14px rgba(242, 107, 37, 0.3)",
+                  transition: "all 0.2s",
+                }}
+              >
+                Salvar e Entrar
+              </button>
+            </form>
+
+            {/* Footer hint */}
+            <p style={{ textAlign: "center", margin: "20px 0 0 0", fontSize: 11, color: "#8E9093", fontWeight: 500 }}>
+              Sua senha temporária será substituída permanentemente.
+            </p>
           </div>
         </div>
       );
