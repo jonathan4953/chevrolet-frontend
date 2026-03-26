@@ -32,6 +32,7 @@ import CentroComandoFranqueador from "./CentroComandoFranqueador";
 import Login from "./Login"; // Ajuste o caminho se ele estiver dentro de alguma pasta, ex: "./components/Login"
 import PrimeiroAcesso from "./PrimeiroAcesso";
 import GestaoRelatorios from "./GestaoRelatorios";
+import { ConfirmProvider } from './components/ConfirmContext';
 
 // Função auxiliar para formatar moeda no frontend
 const formatar_moeda_brl = (valor) => {

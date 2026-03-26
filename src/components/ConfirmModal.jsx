@@ -1,69 +1,107 @@
 import React from 'react';
+import './ConfirmModal.css'; // Como você disse que criou esse arquivo, mantive o import!
 
-function ConfirmModal({ message, onConfirm, onCancel }) {
+export default function ConfirmModal({ message, onConfirm, onCancel }) {
+  // Estilos inline garantindo que ele fique bonito e por cima de tudo no ERP
+  const s = {
+    overlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: "rgba(42, 43, 45, 0.7)",
+      backdropFilter: "blur(4px)",
+      zIndex: 99999, // Bem alto para ficar acima de menus e sidebars
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    },
+    content: {
+      background: "#FFFFFF",
+      border: "1px solid #E5E7EB",
+      borderRadius: "16px",
+      padding: "24px",
+      width: "100%",
+      maxWidth: "400px",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+      textAlign: "center",
+      animation: "popUp 0.2s ease-out"
+    },
+    icon: {
+      fontSize: "32px",
+      marginBottom: "16px",
+      display: "block"
+    },
+    title: {
+      margin: "0 0 12px 0",
+      fontSize: "18px",
+      fontWeight: 800,
+      color: "#2A2B2D"
+    },
+    message: {
+      margin: "0 0 24px 0",
+      fontSize: "14px",
+      color: "#636466",
+      lineHeight: "1.5"
+    },
+    buttons: {
+      display: "flex",
+      gap: "12px",
+      justifyContent: "center"
+    },
+    btnCancel: {
+      padding: "10px 20px",
+      borderRadius: "10px",
+      fontSize: "13px",
+      fontWeight: 800,
+      cursor: "pointer",
+      background: "#F9FAFB",
+      color: "#636466",
+      border: "1px solid #E5E7EB"
+    },
+    btnConfirm: {
+      padding: "10px 20px",
+      borderRadius: "10px",
+      fontSize: "13px",
+      fontWeight: 800,
+      cursor: "pointer",
+      background: "#D93025", // Vermelho de alerta
+      color: "#FFFFFF",
+      border: "none",
+      boxShadow: "0 4px 10px rgba(217,48,37,0.3)"
+    }
+  };
+
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 10000
-    }}>
-      <div style={{
-        backgroundColor: '#fff1f0',
-        padding: '24px 36px',
-        borderRadius: '16px',
-        width: 360,
-        boxShadow: '0 12px 25px rgba(166, 32, 21, 0.5)',
-        color: '#7a1f1f',
-        fontFamily: "'Inter', sans-serif",
-        fontWeight: 600,
-        fontSize: 15,
-        lineHeight: 1.4,
-        textAlign: 'center',
-        userSelect: 'none',
-      }}>
-        <p style={{ whiteSpace: 'pre-line', marginBottom: 28 }}>{message}</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-          <button onClick={onCancel} style={{
-            backgroundColor: '#f7d6d5',
-            border: 'none',
-            borderRadius: 12,
-            padding: '10px 24px',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: 14,
-            color: '#7a1f1f',
-            transition: 'background-color 0.3s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f4bcb9'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#f7d6d5'}
-          >
+    <div style={s.overlay}>
+      <div style={s.content}>
+        <span style={s.icon}>⚠️</span>
+        <h3 style={s.title}>Atenção</h3>
+        {/* Renderiza a mensagem permitindo quebra de linha (\n) se houver */}
+        <p style={s.message}>
+          {message.split('\n').map((linha, i) => (
+            <React.Fragment key={i}>
+              {linha}
+              <br />
+            </React.Fragment>
+          ))}
+        </p>
+        
+        <div style={s.buttons}>
+          <button style={s.btnCancel} onClick={onCancel}>
             Cancelar
           </button>
-          <button onClick={onConfirm} style={{
-            backgroundColor: '#8f2a24',
-            border: 'none',
-            borderRadius: 12,
-            padding: '10px 24px',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: 14,
-            color: '#fff',
-            boxShadow: '0 0 14px #8f2a24a8',
-            transition: 'background-color 0.3s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = '#7a251f'}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = '#8f2a24'}
-          >
-            OK
+          <button style={s.btnConfirm} onClick={onConfirm}>
+            Confirmar
           </button>
         </div>
       </div>
+      
+      {/* Animação suave de entrada */}
+      <style>
+        {`@keyframes popUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}
+      </style>
     </div>
   );
 }
-
-export default ConfirmModal;

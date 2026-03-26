@@ -1,0 +1,77 @@
+/* Fundo escuro atrás do modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Fundo semi-transparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999; /* Garante que fique por cima de tudo */
+}
+
+/* A caixa branca do modal */
+.modal-container {
+  background-color: #ffffff;
+  padding: 24px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.modal-title {
+  margin-top: 0;
+  color: #333333;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-message {
+  color: #666666;
+  margin-bottom: 24px;
+  font-size: 1rem;
+}
+
+/* Botões */
+.modal-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-cancel:hover {
+  background-color: #e5e7eb;
+}
+
+/* Usando uma cor próxima ao laranja do seu botão "CRIAR PERFIL" */
+.btn-confirm {
+  flex: 1;
+  padding: 10px 16px;
+  background-color: #c04b2b; /* Cor baseada na sua tela */
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn-confirm:hover {
+  background-color: #a33e22; /* Laranja mais escuro no hover */
+}
