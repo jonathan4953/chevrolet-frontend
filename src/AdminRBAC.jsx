@@ -3,7 +3,7 @@ import { api } from "./api";
 import { useConfirm } from "./components/ConfirmContext";
 
 // ============================================================
-// AdminRBAC.jsx — Administração do Sistema
+// AdminRBAC.jsx — Administração do Sistema (com 2FA)
 // ============================================================
 
 const C = {
@@ -48,7 +48,7 @@ const Icon = ({ name, size = 16, color = "currentColor", strokeWidth = 1.8 }) =>
   return icons[name] || null;
 };
 
-/* ── Ícone com fundo redondo (estilo Módulo Comercial) ── */
+/* ── Ícone com fundo redondo ── */
 const IconBadge = ({ name, color = C.primary, size = 32 }) => (
   <div style={{
     width: size, height: size, borderRadius: 10,
@@ -59,7 +59,7 @@ const IconBadge = ({ name, color = C.primary, size = 32 }) => (
   </div>
 );
 
-/* ── Dropdown de Ações (três pontos, position: fixed) ── */
+/* ── Dropdown de Ações ── */
 function ActionsDropdown({ children, id, openDropdown, setOpenDropdown }) {
   const ref = useRef(null);
   const btnRef = useRef(null);
@@ -120,11 +120,40 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   const [editingEmpresa, setEditingEmpresa] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
   const [creatingUser, setCreatingUser] = useState(false);
-  const [novoUsuario, setNovoUsuario] = useState({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false });
+  const [novoUsuario, setNovoUsuario] = useState({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false, enable_2fa: true, two_fa_method: 'email', two_fa_email: '' });
   const [openDropdown, setOpenDropdown] = useState(null);
   const [moduloSearch, setModuloSearch] = useState('');
+  const [twoFALoading, setTwoFALoading] = useState({});
 
-  // INICIALIZAÇÃO DO HOOK DE CONFIRMAÇÃO
+  // ── 2FA Helpers ──
+  const disable2FAForUser = async (userId, nome) => {
+    setTwoFALoading(prev => ({ ...prev, [userId]: true }));
+    try {
+      await api.post("/rbac/2fa/admin-disable", { user_id: userId });
+      showToast?.(`2FA desativado para ${nome}`, "success");
+      logAction?.("RBAC", `Desativou 2FA: ${nome}`);
+      loadUsuarios();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao desativar 2FA.", "error");
+    } finally {
+      setTwoFALoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const enable2FAForUser = async (userId, nome) => {
+    setTwoFALoading(prev => ({ ...prev, [userId]: true }));
+    try {
+      await api.post("/rbac/2fa/admin-enable", { user_id: userId });
+      showToast?.(`2FA ativado para ${nome}!`, "success");
+      logAction?.("RBAC", `Ativou 2FA: ${nome}`);
+      loadUsuarios();
+    } catch (e) {
+      showToast?.(e.response?.data?.detail || "Erro ao ativar 2FA.", "error");
+    } finally {
+      setTwoFALoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
   const confirm = useConfirm();
 
   // ── Carregamento ──
@@ -147,14 +176,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   const deleteEmpresa = async (id, nome) => { 
     const isConfirmed = await confirm(`Excluir "${nome}"?`);
     if (!isConfirmed) return; 
-
-    try { 
-      await api.delete(`/rbac/empresas/${id}`); 
-      showToast?.("Excluída!", "success"); 
-      loadEmpresas(); 
-    } catch(e) { 
-      showToast?.(e.response?.data?.detail || "Erro.", "error"); 
-    } 
+    try { await api.delete(`/rbac/empresas/${id}`); showToast?.("Excluída!", "success"); loadEmpresas(); } catch(e) { showToast?.(e.response?.data?.detail || "Erro.", "error"); } 
   };
 
   // ── Perfis ──
@@ -163,26 +185,14 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
   const togglePermissaoRole = (id) => setRolePermissoes(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
   const salvarPermissoesRole = async () => { if (!selectedRole) return; setLoading(true); try { await api.post("/rbac/role-permissoes", { role_id: selectedRole, permissao_ids: rolePermissoes }); showToast?.("Permissões salvas!", "success"); } catch(e) { showToast?.("Erro.", "error"); } finally { setLoading(false); } };
   
-  // Tratamento de Erro de Foreign Key na exclusão de Perfil + Modal Customizado
   const handleExcluirRole = async (id) => { 
     const isConfirmed = await confirm("Excluir perfil?");
     if (!isConfirmed) return; 
-
-    try { 
-      await api.delete(`/rbac/roles/${id}`); 
-      showToast?.("Excluído!", "success"); 
-      loadRoles(); 
-      if (selectedRole === id) { 
-        setSelectedRole(null); 
-        setRolePermissoes([]); 
-      } 
-    } catch(e) { 
+    try { await api.delete(`/rbac/roles/${id}`); showToast?.("Excluído!", "success"); loadRoles(); if (selectedRole === id) { setSelectedRole(null); setRolePermissoes([]); } } catch(e) { 
       const errorMsg = e.response?.data?.detail || String(e);
       if (typeof errorMsg === 'string' && (errorMsg.includes("foreign key constraint") || errorMsg.includes("violates foreign key"))) {
         showToast?.("Este perfil não pode ser excluído porque existem usuários vinculados a ele.", "error");
-      } else {
-        showToast?.(errorMsg || "Erro ao excluir o perfil.", "error");
-      }
+      } else { showToast?.(errorMsg || "Erro ao excluir o perfil.", "error"); }
     } 
   };
 
@@ -191,32 +201,23 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
 
   const toggleUserStatus = async (userId, nome, atualmenteAtivo) => {
     const acao = atualmenteAtivo ? "Inativar" : "Ativar";
-    
     const isConfirmed = await confirm(`${acao} o usuário "${nome}"?`);
     if (!isConfirmed) return;
-
-    try {
-      await api.put(`/rbac/usuarios/${userId}/toggle-status`, { ativo: !atualmenteAtivo });
-      showToast?.(`${nome} ${atualmenteAtivo ? 'inativado' : 'ativado'}!`, "success");
-      logAction?.("RBAC", `${acao}ou usuário: ${nome}`);
-      loadUsuarios();
-    } catch(e) { 
-      showToast?.(e.response?.data?.detail || `Erro ao ${acao.toLowerCase()}.`, "error"); 
-    }
+    try { await api.put(`/rbac/usuarios/${userId}/toggle-status`, { ativo: !atualmenteAtivo }); showToast?.(`${nome} ${atualmenteAtivo ? 'inativado' : 'ativado'}!`, "success"); logAction?.("RBAC", `${acao}ou usuário: ${nome}`); loadUsuarios(); } catch(e) { showToast?.(e.response?.data?.detail || `Erro ao ${acao.toLowerCase()}.`, "error"); }
   };
 
-  const resetUserPassword = async (userId, nome, senhaProvisoria = '123') => { 
+  const resetUserPassword = async (userId, nome, senhaProvisoria = '123', skipConfirm = false) => { 
     const senha = senhaProvisoria.trim() || '123'; 
-    
-    const isConfirmed = await confirm(`Resetar senha de "${nome}" para "${senha}"?`);
-    if (!isConfirmed) return; 
-
+    if (!skipConfirm) {
+      const isConfirmed = await confirm(`Resetar senha de "${nome}" para "${senha}"?`);
+      if (!isConfirmed) return;
+    }
     try { 
       await api.put(`/rbac/usuarios/${userId}/reset-password`, { nova_senha: senha }); 
-      showToast?.(`Senha resetada!`, "success"); 
+      showToast?.(`Senha de "${nome}" resetada para "${senha}"!`, "success"); 
       logAction?.("RBAC", `Reset senha: ${nome}`); 
     } catch(e) { 
-      showToast?.("Erro.", "error"); 
+      showToast?.(e.response?.data?.detail || "Erro ao resetar senha.", "error"); 
     } 
   };
 
@@ -236,23 +237,15 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
     e.preventDefault();
     if (!novoUsuario.nome || !novoUsuario.email || !novoUsuario.role_id || !novoUsuario.empresa_id) { showToast?.("Preencha todos os campos.", "error"); return; }
     setLoading(true);
-    try { await api.post("/rbac/usuarios", { nome: novoUsuario.nome, email: novoUsuario.email, password: novoUsuario.password || '123', role_id: Number(novoUsuario.role_id), empresa_id: Number(novoUsuario.empresa_id), is_master: novoUsuario.is_master }); showToast?.(`"${novoUsuario.nome}" criado!`, "success"); setNovoUsuario({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false }); setCreatingUser(false); loadUsuarios(); }
+    try { await api.post("/rbac/usuarios", { nome: novoUsuario.nome, email: novoUsuario.email, password: novoUsuario.password || '123', role_id: Number(novoUsuario.role_id), empresa_id: Number(novoUsuario.empresa_id), is_master: novoUsuario.is_master, enable_2fa: novoUsuario.enable_2fa, two_fa_method: novoUsuario.two_fa_method, two_fa_email: novoUsuario.two_fa_email || null }); showToast?.(`"${novoUsuario.nome}" criado!`, "success"); setNovoUsuario({ nome: '', email: '', password: '123', role_id: '', empresa_id: '', is_master: false, enable_2fa: true, two_fa_method: 'email', two_fa_email: '' }); setCreatingUser(false); loadUsuarios(); }
     catch(e) { showToast?.(e.response?.data?.detail || "Erro.", "error"); } finally { setLoading(false); }
   };
 
   const deleteUser = async (id, nome, isMaster) => {
     if (isMaster) { showToast?.("Revogue MASTER primeiro.", "error"); return; }
-    
     const isConfirmed = await confirm(`Excluir "${nome}"?`);
     if (!isConfirmed) return;
-
-    try { 
-      await api.delete(`/rbac/usuarios/${id}`); 
-      showToast?.("Excluído!", "success"); 
-      setUsuarios(prev => prev.filter(u => u.id !== id)); 
-    } catch(e) { 
-      showToast?.(e.response?.data?.detail || "Erro.", "error"); 
-    }
+    try { await api.delete(`/rbac/usuarios/${id}`); showToast?.("Excluído!", "success"); setUsuarios(prev => prev.filter(u => u.id !== id)); } catch(e) { showToast?.(e.response?.data?.detail || "Erro.", "error"); }
   };
 
   const permissoesPorModulo = useMemo(() => { const map = {}; permissoes.forEach(p => { if (!map[p.modulo_slug]) map[p.modulo_slug] = { modulo_nome: p.modulo_nome, items: [] }; map[p.modulo_slug].items.push(p); }); return map; }, [permissoes]);
@@ -440,11 +433,11 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
         <div style={{ ...s.card, padding: 0, borderRadius: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: "20px 24px", borderBottom: `1px solid ${C.border}` }}>
             <h3 style={{ ...s.sectionTitle, margin: 0 }}><IconBadge name="user" color={C.blue} size={28} /> Usuários ({usuarios.length})</h3>
-            <button onClick={() => { setCreatingUser(true); setNovoUsuario({ nome: '', email: '', password: '123', role_id: roles[0]?.id || '', empresa_id: empresas[0]?.id || '', is_master: false }); }} style={{ ...s.btn(C.green), padding: '10px 20px' }}><Icon name="plus" size={14} color="#FFF" /> Novo Usuário</button>
+            <button onClick={() => { setCreatingUser(true); setNovoUsuario({ nome: '', email: '', password: '123', role_id: roles[0]?.id || '', empresa_id: empresas[0]?.id || '', is_master: false, enable_2fa: true, two_fa_method: 'email', two_fa_email: '' }); }} style={{ ...s.btn(C.green), padding: '10px 20px' }}><Icon name="plus" size={14} color="#FFF" /> Novo Usuário</button>
           </div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead><tr>{['ID', 'Nome', 'E-mail', 'Empresa', 'Perfil', 'Master', 'Status', ''].map((h, i) => <th key={i} style={{ ...s.th, ...(h === '' ? { width: 48 } : {}) }}>{h}</th>)}</tr></thead>
+              <thead><tr>{['ID', 'Nome', 'E-mail', 'Empresa', 'Perfil', 'Master', '2FA', 'Status', ''].map((h, i) => <th key={i} style={{ ...s.th, ...(h === '' ? { width: 48 } : {}) }}>{h}</th>)}</tr></thead>
               <tbody>{usuarios.map(u => (
                 <tr key={u.id} style={{ transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={{ ...s.td, color: C.muted, fontWeight: 700 }}>{u.id}</td>
@@ -453,6 +446,15 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                   <td style={s.td}>{u.empresa_nome}</td>
                   <td style={s.td}><span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800, background: u.role === 'admin' ? `${C.red}15` : u.role === 'gestor' ? `${C.blue}15` : `${C.muted}15`, color: u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.subtle, border: `1px solid ${u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.muted}40`, textTransform: 'uppercase' }}>{u.role}</span></td>
                   <td style={s.td}>{u.is_master ? <span style={s.masterBadge}><Icon name="crown" size={11} color={C.yellow} /> MASTER</span> : <span style={{ color: C.muted }}>—</span>}</td>
+                  <td style={s.td}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800, background: u.is_2fa_enabled ? `${C.green}15` : `${C.red}15`, color: u.is_2fa_enabled ? C.green : C.red, border: `1px solid ${u.is_2fa_enabled ? C.green : C.red}40`, cursor: 'pointer', transition: 'all 0.2s', opacity: twoFALoading[u.id] ? 0.5 : 1 }}
+                      onClick={(e) => { e.stopPropagation(); if (twoFALoading[u.id]) return; u.is_2fa_enabled ? disable2FAForUser(u.id, u.nome) : enable2FAForUser(u.id, u.nome); }}
+                      title={u.is_2fa_enabled ? `2FA ${u.two_fa_method === 'email' ? 'Email' : 'App'} — Clique para desativar` : 'Clique para ativar 2FA'}
+                    >
+                      <Icon name={u.is_2fa_enabled ? "shield" : "lock"} size={11} color={u.is_2fa_enabled ? C.green : C.red} />
+                      {twoFALoading[u.id] ? '...' : u.is_2fa_enabled ? (u.two_fa_method === 'email' ? '📧' : '📱') : 'OFF'}
+                    </span>
+                  </td>
                   <td style={s.td}><span style={s.badge(u.ativo)}>{u.ativo ? 'Ativo' : 'Inativo'}</span></td>
                   <td style={{ ...s.td, textAlign: "center" }}>
                     <ActionsDropdown id={u.id} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
@@ -505,6 +507,38 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                   <input type="checkbox" checked={novoUsuario.is_master} onChange={e => setNovoUsuario({...novoUsuario, is_master: e.target.checked})} style={s.checkbox(novoUsuario.is_master)} />
                   <Icon name="crown" size={14} color={C.yellow} /> Acesso MASTER
                 </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: novoUsuario.enable_2fa ? `${C.green}10` : "#F9FAFB", padding: "12px 16px", borderRadius: 10, border: `1px solid ${novoUsuario.enable_2fa ? `${C.green}30` : C.border}`, transition: "all 0.2s", marginTop: 8 }}>
+                  <input type="checkbox" checked={novoUsuario.enable_2fa} onChange={e => setNovoUsuario({...novoUsuario, enable_2fa: e.target.checked})} style={s.checkbox(novoUsuario.enable_2fa)} />
+                  <Icon name="shield" size={14} color={C.green} /> Autenticação em Dois Fatores (2FA)
+                  <span style={{ fontSize: 10, color: C.muted, fontWeight: 500, marginLeft: 'auto' }}>Recomendado</span>
+                </label>
+                {novoUsuario.enable_2fa && (
+                  <div style={{ marginTop: 12, padding: 16, borderRadius: 12, background: `${C.green}05`, border: `1px solid ${C.green}20` }}>
+                    <label style={s.label}>Método de Verificação</label>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                      {[{ key: 'email', icon: '📧', label: 'E-mail' }, { key: 'app', icon: '📱', label: 'App Autenticador' }].map(m => (
+                        <button key={m.key} type="button" onClick={() => setNovoUsuario({...novoUsuario, two_fa_method: m.key})}
+                          style={{ flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            border: novoUsuario.two_fa_method === m.key ? `2px solid ${C.green}` : `1px solid ${C.border}`,
+                            background: novoUsuario.two_fa_method === m.key ? `${C.green}15` : '#FFFFFF',
+                            color: novoUsuario.two_fa_method === m.key ? C.green : C.subtle,
+                          }}>
+                          {m.icon} {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    {novoUsuario.two_fa_method === 'email' && (
+                      <>
+                        <label style={s.label}>E-mail para receber o código 2FA</label>
+                        <input style={s.input} type="email" value={novoUsuario.two_fa_email} onChange={e => setNovoUsuario({...novoUsuario, two_fa_email: e.target.value})} placeholder="Deixe vazio para usar o e-mail de login" onFocus={e => e.target.style.borderColor = C.green} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
+                        <p style={{ fontSize: 11, color: C.subtle, marginTop: -6, marginBottom: 0 }}>Se vazio, o código será enviado para o e-mail de login do usuário.</p>
+                      </>
+                    )}
+                    {novoUsuario.two_fa_method === 'app' && (
+                      <p style={{ fontSize: 11, color: C.subtle, margin: 0 }}>O usuário configurará o Google Authenticator ou Authy no primeiro login.</p>
+                    )}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 12, marginTop: 30, justifyContent: 'flex-end' }}>
                   <button type="button" style={{ ...s.btn('#F9FAFB'), border: `1px solid ${C.border}`, color: C.subtle, boxShadow: 'none' }} onClick={() => setCreatingUser(false)}>Cancelar</button>
                   <button type="submit" style={s.btn(C.green)} disabled={loading}>{loading ? 'Criando...' : 'Criar Usuário'}</button>
@@ -539,12 +573,63 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                   <Icon name={editingUser.ativo ? "toggleOn" : "toggleOff"} size={18} color={editingUser.ativo ? C.green : C.red} />
                   {editingUser.ativo ? 'Conta Ativa' : 'Conta Inativa'}
                 </label>
+                <div onClick={() => {
+                  if (twoFALoading[editingUser.id]) return;
+                  if (editingUser.is_2fa_enabled) {
+                    disable2FAForUser(editingUser.id, editingUser.nome).then(() => setEditingUser(prev => prev ? {...prev, is_2fa_enabled: false} : null));
+                  } else {
+                    enable2FAForUser(editingUser.id, editingUser.nome).then(() => setEditingUser(prev => prev ? {...prev, is_2fa_enabled: true} : null));
+                  }
+                }} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, cursor: 'pointer', padding: '12px 16px', borderRadius: 10, background: editingUser.is_2fa_enabled ? `${C.green}10` : `${C.red}10`, border: `1px solid ${editingUser.is_2fa_enabled ? `${C.green}30` : `${C.red}30`}`, color: editingUser.is_2fa_enabled ? C.green : C.red, fontWeight: 800, transition: 'all 0.2s', opacity: twoFALoading[editingUser.id] ? 0.5 : 1 }}>
+                  <Icon name="shield" size={18} color={editingUser.is_2fa_enabled ? C.green : C.red} />
+                  {twoFALoading[editingUser.id] ? 'Processando...' : editingUser.is_2fa_enabled ? '2FA Ativo — Clique para Desativar' : '2FA Inativo — Clique para Ativar'}
+                </div>
+                {editingUser.is_2fa_enabled && (
+                  <div style={{ padding: 16, borderRadius: 12, background: `${C.green}05`, border: `1px solid ${C.green}20` }}>
+                    <label style={s.label}>Método de Verificação</label>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                      {[{ key: 'email', icon: '📧', label: 'E-mail' }, { key: 'app', icon: '📱', label: 'App Autenticador' }].map(m => (
+                        <button key={m.key} type="button" onClick={() => {
+                          const newMethod = m.key;
+                          setEditingUser(prev => prev ? {...prev, two_fa_method: newMethod} : null);
+                          api.post("/rbac/2fa/update-method", { user_id: editingUser.id, two_fa_method: newMethod, two_fa_email: newMethod === 'email' ? (editingUser.two_fa_email || editingUser.email) : null })
+                            .then(() => { showToast?.(`Método 2FA alterado para ${newMethod === 'email' ? 'E-mail' : 'App'}`, "success"); loadUsuarios(); })
+                            .catch(e => showToast?.(e.response?.data?.detail || "Erro.", "error"));
+                        }}
+                          style={{ flex: 1, padding: '10px 14px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                            border: (editingUser.two_fa_method || 'app') === m.key ? `2px solid ${C.green}` : `1px solid ${C.border}`,
+                            background: (editingUser.two_fa_method || 'app') === m.key ? `${C.green}15` : '#FFFFFF',
+                            color: (editingUser.two_fa_method || 'app') === m.key ? C.green : C.subtle,
+                          }}>
+                          {m.icon} {m.label}
+                        </button>
+                      ))}
+                    </div>
+                    {(editingUser.two_fa_method || 'app') === 'email' && (
+                      <>
+                        <label style={s.label}>E-mail para código 2FA</label>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <input style={{ ...s.input, marginBottom: 0, flex: 1 }} type="email" value={editingUser.two_fa_email || ''} onChange={e => setEditingUser({...editingUser, two_fa_email: e.target.value})} placeholder={editingUser.email} onFocus={e => e.target.style.borderColor = C.green} onBlur={e => e.target.style.borderColor = "#D4D5D6"} />
+                          <button type="button" onClick={() => {
+                            const emailToSave = editingUser.two_fa_email || editingUser.email;
+                            api.post("/rbac/2fa/update-method", { user_id: editingUser.id, two_fa_method: 'email', two_fa_email: emailToSave })
+                              .then(() => { showToast?.(`E-mail 2FA atualizado!`, "success"); loadUsuarios(); })
+                              .catch(e => showToast?.(e.response?.data?.detail || "Erro.", "error"));
+                          }} style={{ ...s.btn(C.green), padding: '10px 16px', whiteSpace: 'nowrap', fontSize: 11 }}>
+                            <Icon name="save" size={12} color="#FFF" /> Salvar
+                          </button>
+                        </div>
+                        <p style={{ fontSize: 11, color: C.subtle, marginTop: 8, marginBottom: 0 }}>Se vazio, usa o e-mail de login.</p>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
               <div style={{ marginTop: 24, padding: 16, borderRadius: 12, background: `${C.blue}05`, border: `1px solid ${C.blue}30` }}>
                 <label style={{ ...s.label, color: C.blue, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="key" size={13} color={C.blue} /> Reset de Senha</label>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                   <input style={{ ...s.input, marginBottom: 0, flex: 1, borderColor: `${C.blue}40` }} value={editingUser.resetSenha || ''} onChange={e => setEditingUser({...editingUser, resetSenha: e.target.value})} placeholder="Senha provisória (ex: 123)" onFocus={e => e.target.style.borderColor = C.blue} onBlur={e => e.target.style.borderColor = `${C.blue}40`} />
-                  <button onClick={() => resetUserPassword(editingUser.id, editingUser.nome, editingUser.resetSenha || '123')} style={{ ...s.btn(C.blue), whiteSpace: 'nowrap' }}><Icon name="refresh" size={13} color="#FFF" /> Resetar</button>
+                  <button onClick={() => resetUserPassword(editingUser.id, editingUser.nome, editingUser.resetSenha || '123', true)} style={{ ...s.btn(C.blue), whiteSpace: 'nowrap' }}><Icon name="refresh" size={13} color="#FFF" /> Resetar</button>
                 </div>
                 <p style={{ fontSize: 11, color: C.subtle, marginTop: 8, marginBottom: 0 }}>Troca obrigatória no próximo login.</p>
               </div>
