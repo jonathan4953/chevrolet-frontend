@@ -7,10 +7,11 @@ const C = {
   muted: "#94a3b8",
   subtle: "#475569",
   border: "#e2e8f0",
-  // Cor especial para o fundo escuro do Launcher (um tom ardósia bem escuro)
-  overlayBg: "rgba(15, 23, 42, 0.96)", 
+  // OPÇÃO 1: Mais claro e translúcido (Recomendado)
+  overlayBg: "rgba(30, 41, 59, 0.85)", 
+  // OPÇÃO 2: Se quiser manter o tom escuro mas ver mais o fundo:
+  // overlayBg: "rgba(15, 23, 42, 0.80)", 
 };
-
 export default function OmniLauncher({ isOpen, onClose, modulosAtivos = [], onNavigate }) {
   const [activeTab, setActiveTab] = useState('todos');
   const [busca, setBusca] = useState('');
