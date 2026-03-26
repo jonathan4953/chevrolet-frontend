@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { api } from "./api";
 
 // ============================================================
@@ -18,6 +18,79 @@ const C = {
   subtle: "#636466",
   border: "#E5E7EB",
 };
+
+/* ── Dropdown de Ações (três pontos verticais) ── */
+function ActionsDropdown({ children, id, openDropdown, setOpenDropdown }) {
+  const ref = useRef(null);
+  const btnRef = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const isOpen = openDropdown === id;
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target) && btnRef.current && !btnRef.current.contains(e.target)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isOpen]);
+
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (isOpen) { setOpenDropdown(null); return; }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPos({ top: rect.bottom + 4, left: rect.right });
+    setOpenDropdown(id);
+  };
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        style={{
+          background: isOpen ? "#F3F4F6" : "transparent",
+          border: `1px solid ${isOpen ? "#D4D5D6" : "transparent"}`,
+          borderRadius: 8, width: 32, height: 32,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          cursor: "pointer", transition: "all 0.15s", color: C.subtle,
+        }}
+        onMouseEnter={e => { if (!isOpen) { e.currentTarget.style.background = "#F3F4F6"; e.currentTarget.style.borderColor = "#D4D5D6"; }}}
+        onMouseLeave={e => { if (!isOpen) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent"; }}}
+        title="Ações"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="3" r="1.3" fill="currentColor"/>
+          <circle cx="8" cy="8" r="1.3" fill="currentColor"/>
+          <circle cx="8" cy="13" r="1.3" fill="currentColor"/>
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div ref={ref} style={{
+          position: "fixed",
+          top: pos.top,
+          left: pos.left,
+          transform: "translateX(-100%)",
+          zIndex: 9000,
+          background: "#FFFFFF",
+          border: `1px solid ${C.border}`,
+          borderRadius: 12,
+          padding: 4,
+          minWidth: 180,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.12), 0 2px 6px rgba(0,0,0,0.04)",
+          animation: "dropInRBAC 0.12s ease-out",
+        }}>
+          {children}
+        </div>
+      )}
+
+      <style>{`@keyframes dropInRBAC { from { opacity: 0; transform: translateX(-100%) translateY(-4px); } to { opacity: 1; transform: translateX(-100%) translateY(0); } }`}</style>
+    </>
+  );
+}
 
 export default function AdminRBAC({ styles, currentUser, showToast, logAction }) {
   const [activeSection, setActiveSection] = useState("empresas");
@@ -254,24 +327,19 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
     if (!editingUser) return;
     setLoading(true);
     try {
-      // Atualiza role_id via endpoint existente ou RBAC
       if (editingUser.role_id_changed) {
         await api.post("/rbac/role-permissoes", {
           role_id: editingUser.role_id,
-          permissao_ids: [] // mantém permissões existentes
+          permissao_ids: []
         }).catch(() => {});
       }
-      // Atualiza empresa via RBAC
       await api.put(`/rbac/usuarios/${editingUser.id}/empresa`, { empresa_id: editingUser.empresa_id });
-      // Toggle master se mudou
       if (editingUser.is_master !== editingUser.original_is_master) {
         await api.put(`/rbac/usuarios/${editingUser.id}/toggle-master`);
       }
-      // Toggle ativo/inativo se mudou
       if (editingUser.ativo !== editingUser.original_ativo) {
         await api.put(`/rbac/usuarios/${editingUser.id}/toggle-status`, { ativo: editingUser.ativo });
       }
-      // Toggle permissão edição
       await api.put(`/users/${editingUser.id}/toggle-permission`).catch(() => {});
       
       showToast?.("Usuário atualizado!", "success");
@@ -324,21 +392,11 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       await api.delete(`/rbac/usuarios/${userId}`);
       showToast?.(`Usuário "${nome}" excluído com sucesso!`, "success");
       logAction?.("RBAC", `Excluiu usuário: ${nome} (ID ${userId})`);
-      // Remove da lista local para feedback imediato
       setUsuarios(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       showToast?.(err.response?.data?.detail || "Erro ao excluir usuário.", "error");
     }
   };
-
-  // Fechar dropdown ao clicar fora
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
-    if (openDropdown !== null) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
-    }
-  }, [openDropdown]);
 
   // ============================================================
   // AGRUPAMENTO DE PERMISSÕES POR MÓDULO
@@ -401,9 +459,10 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       backgroundPosition: 'center', backgroundSize: '80%', backgroundRepeat: 'no-repeat'
     }),
     dropdownItem: {
-      display: 'block', width: '100%', padding: '9px 16px', fontSize: 12, fontWeight: 600,
+      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+      padding: '9px 14px', fontSize: 12, fontWeight: 600,
       color: C.text, background: 'transparent', border: 'none', textAlign: 'left',
-      cursor: 'pointer', borderRadius: 0, transition: "background 0.2s"
+      cursor: 'pointer', borderRadius: 6, transition: "background 0.15s"
     },
     modalOverlay: { position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(42, 43, 45, 0.7)", backdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" },
     modalContent: { background: "#FFFFFF", border: `1px solid ${C.border}`, borderRadius: 24, padding: 32, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" },
@@ -618,7 +677,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                 <button type="submit" style={{...s.btn(), width: "100%", marginTop: 8}} disabled={loading}>CRIAR PERFIL</button>
               </form>
             </div>
-<div style={s.card}>
+            <div style={s.card}>
               <h3 style={s.sectionTitle}>🎭 Perfis ({roles.length})</h3>
               {roles.map(r => (
                 <div
@@ -636,15 +695,12 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
                     <div style={{ fontSize: 13, fontWeight: 800, color: selectedRole === r.id ? C.primary : C.text }}>{r.nome}</div>
                     {r.descricao && <div style={{ fontSize: 11, color: C.muted, fontWeight: 600, marginTop: 2 }}>{r.descricao}</div>}
                   </div>
-                  
-                  {/* Botão de excluir agora visível para TODOS os perfis */}
                   <button onClick={(e) => { e.stopPropagation(); handleExcluirRole(r.id); }}
                     style={{ background: 'none', border: 'none', color: C.red, cursor: 'pointer', fontSize: 14, fontWeight: 800 }}>✕</button>
-                    
                 </div>
               ))}
             </div>
-            </div>
+          </div>
 
           {/* Coluna direita: Permissões da Role selecionada */}
           <div style={s.card}>
@@ -720,7 +776,7 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
       {/* SEÇÃO: USUÁRIOS */}
       {/* ============================================================ */}
       {activeSection === "usuarios" && (
-        <div style={{ ...s.card, padding: 0, overflow: "hidden" }}>
+        <div style={{ ...s.card, padding: 0, borderRadius: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: "20px 24px", borderBottom: `1px solid ${C.border}` }}>
             <h3 style={{ ...s.sectionTitle, margin: 0 }}>👤 Usuários do Sistema ({usuarios.length})</h3>
             <button
@@ -728,87 +784,89 @@ export default function AdminRBAC({ styles, currentUser, showToast, logAction })
               style={{ ...s.btn(C.green), padding: '10px 20px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 8 }}
             >➕ Novo Usuário</button>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                {['ID', 'Nome', 'E-mail', 'Empresa', 'Perfil', 'Master', 'Status', 'Ações'].map(h => (
-                  <th key={h} style={s.th}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {usuarios.map(u => (
-                <tr key={u.id} style={{ transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ ...s.td, color: C.muted, fontWeight: 700 }}>{u.id}</td>
-                  <td style={{ ...s.td, color: C.text, fontWeight: 800 }}>{u.nome}</td>
-                  <td style={s.td}>{u.email}</td>
-                  <td style={s.td}>{u.empresa_nome}</td>
-                  <td style={s.td}>
-                    <span style={{
-                      padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800,
-                      background: u.role === 'admin' ? `${C.red}15` : u.role === 'gestor' ? `${C.blue}15` : `${C.muted}15`,
-                      color: u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.subtle,
-                      border: `1px solid ${u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.muted}40`,
-                      textTransform: 'uppercase'
-                    }}>{u.role}</span>
-                  </td>
-                  <td style={s.td}>
-                    {u.is_master ? <span style={s.masterBadge}>👑 MASTER</span> : <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>—</span>}
-                  </td>
-                  <td style={s.td}>
-                    <span style={s.badge(u.ativo)}>{u.ativo ? 'Ativo' : 'Inativo'}</span>
-                  </td>
-                  <td style={s.td}>
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === u.id ? null : u.id); }}
-                        style={{
-                          padding: '8px 16px', borderRadius: 10, fontSize: 11, fontWeight: 800, cursor: 'pointer',
-                          background: openDropdown === u.id ? `${C.primary}15` : '#F9FAFB',
-                          color: openDropdown === u.id ? C.primary : C.subtle,
-                          border: `1px solid ${openDropdown === u.id ? `${C.primary}50` : C.border}`,
-                          transition: 'all 0.15s'
-                        }}
-                      >⚙️ Ações ▾</button>
-
-                      {openDropdown === u.id && (
-                        <div style={{
-                          position: 'absolute', right: 0, top: '110%', zIndex: 1000,
-                          background: '#FFFFFF', border: `1px solid ${C.border}`,
-                          borderRadius: 12, minWidth: 180, padding: '6px 0',
-                          boxShadow: '0 12px 40px rgba(0,0,0,0.1)'
-                        }}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); setEditingUser({ ...u, original_is_master: u.is_master, original_ativo: u.ativo, role_id_changed: false, resetSenha: '' }); }}
-                            style={s.dropdownItem} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                          >✏️ Editar</button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); resetUserPassword(u.id, u.nome); }}
-                            style={s.dropdownItem} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                          >🔄 Reset Senha</button>
-                          {currentUser?.is_master && u.id !== currentUser.id && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); toggleMaster(u.id); }}
-                              style={{ ...s.dropdownItem, color: u.is_master ? C.red : C.green }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                            >{u.is_master ? '⬇ Revogar Master' : '⬆ Tornar Master'}</button>
-                          )}
-                          {currentUser?.is_master && u.id !== currentUser.id && !u.is_master && (
-                            <>
-                              <div style={{ height: 1, background: C.border, margin: '4px 0' }} />
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); deleteUser(u.id, u.nome, u.is_master); }}
-                                style={{ ...s.dropdownItem, color: C.red }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                              >🗑️ Excluir Usuário</button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  {['ID', 'Nome', 'E-mail', 'Empresa', 'Perfil', 'Master', 'Status', ''].map((h, i) => (
+                    <th key={i} style={{ ...s.th, ...(h === '' ? { width: 48 } : {}) }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {usuarios.map(u => (
+                  <tr key={u.id} style={{ transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "#F9FAFB"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                    <td style={{ ...s.td, color: C.muted, fontWeight: 700 }}>{u.id}</td>
+                    <td style={{ ...s.td, color: C.text, fontWeight: 800 }}>{u.nome}</td>
+                    <td style={s.td}>{u.email}</td>
+                    <td style={s.td}>{u.empresa_nome}</td>
+                    <td style={s.td}>
+                      <span style={{
+                        padding: '4px 10px', borderRadius: 20, fontSize: 10, fontWeight: 800,
+                        background: u.role === 'admin' ? `${C.red}15` : u.role === 'gestor' ? `${C.blue}15` : `${C.muted}15`,
+                        color: u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.subtle,
+                        border: `1px solid ${u.role === 'admin' ? C.red : u.role === 'gestor' ? C.blue : C.muted}40`,
+                        textTransform: 'uppercase'
+                      }}>{u.role}</span>
+                    </td>
+                    <td style={s.td}>
+                      {u.is_master ? <span style={s.masterBadge}>👑 MASTER</span> : <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>—</span>}
+                    </td>
+                    <td style={s.td}>
+                      <span style={s.badge(u.ativo)}>{u.ativo ? 'Ativo' : 'Inativo'}</span>
+                    </td>
+                    <td style={{ ...s.td, textAlign: "center" }}>
+                      <ActionsDropdown id={u.id} openDropdown={openDropdown} setOpenDropdown={setOpenDropdown}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); setEditingUser({ ...u, original_is_master: u.is_master, original_ativo: u.ativo, role_id_changed: false, resetSenha: '' }); }}
+                          style={s.dropdownItem}
+                          onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                          Editar
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); resetUserPassword(u.id, u.nome); }}
+                          style={s.dropdownItem}
+                          onMouseEnter={e => e.currentTarget.style.background = "#F3F4F6"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                          Reset Senha
+                        </button>
+                        {currentUser?.is_master && u.id !== currentUser.id && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); toggleMaster(u.id); }}
+                            style={{ ...s.dropdownItem, color: u.is_master ? C.red : C.green }}
+                            onMouseEnter={e => e.currentTarget.style.background = u.is_master ? "rgba(217,48,37,0.06)" : "rgba(34,160,107,0.06)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26Z"/></svg>
+                            {u.is_master ? 'Revogar Master' : 'Tornar Master'}
+                          </button>
+                        )}
+                        {currentUser?.is_master && u.id !== currentUser.id && !u.is_master && (
+                          <>
+                            <div style={{ height: 1, background: C.border, margin: "2px 6px" }} />
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); deleteUser(u.id, u.nome, u.is_master); }}
+                              style={{ ...s.dropdownItem, color: C.red }}
+                              onMouseEnter={e => e.currentTarget.style.background = "rgba(217,48,37,0.06)"}
+                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                              Excluir Usuário
+                            </button>
+                          </>
+                        )}
+                      </ActionsDropdown>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* MODAL CRIAÇÃO DE USUÁRIO */}
           {creatingUser && (
